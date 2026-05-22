@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flight Price Explorer — 机票价格查询</title>
+<link rel="stylesheet" href="/static/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ============================================================
+     View 1: Search Homepage
+     ============================================================ -->
+<div class="app-view active" id="view-search">
+  <div class="search-page">
+
+    <!-- Hero -->
+    <div class="search-hero">
+      <span class="hero-icon">&#9992;&#65039;</span>
+      <h1>探索全球机票价格</h1>
+      <p class="hero-subtitle">实时查询 · 免费使用 · 智能比价</p>
+    </div>
+
+    <!-- Search Card -->
+    <div class="search-card-wrap">
+      <div class="search-card">
+        <h2>&#128269; 搜索航班</h2>
+
+        <form id="searchForm" novalidate>
+          <!-- Trip type -->
+          <div class="trip-type-group">
+            <button type="button" class="trip-type-btn active" data-type="oneway">单程</button>
+            <button type="button" class="trip-type-btn" data-type="roundtrip">往返</button>
+          </div>
+
+          <!-- Cities with smart autocomplete -->
+          <div class="city-row">
+            <div class="city-group">
+              <label for="originInput">出发地</label>
+              <input type="text" id="originInput">
+            </div>
+
+            <button type="button" class="swap-btn" id="swapBtn" title="对调出发地与目的地">&#8644;</button>
+
+            <div class="city-group">
+              <label for="destInput">目的地</label>
+              <input type="text" id="destInput">
+            </div>
+          </div>
+
+          <!-- Dates -->
+          <div class="date-row" id="dateRow">
+            <div class="date-group">
+              <label for="departDate">出发日期</label>
+              <input type="date" id="departDate" required>
+            </div>
+            <div class="date-group" id="returnDateGroup" style="display:none;">
+              <label for="returnDate">返程日期</label>
+              <input type="date" id="returnDate">
+            </div>
+          </div>
+
+          <!-- Submit -->
+          <div class="search-submit-wrap">
+            <button type="submit" class="btn-search">&#128270; 搜索航班</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Features strip -->
+    <div class="features-strip">
+      <div class="feature-item"><span class="feat-icon">&#128225;</span> Google Flights 实时数据</div>
+      <div class="feature-item"><span class="feat-icon">&#127758;</span> 覆盖全球主要城市</div>
+      <div class="feature-item"><span class="feat-icon">&#128200;</span> 30 天价格趋势</div>
+      <div class="feature-item"><span class="feat-icon">&#128176;</span> 免费 · 无需注册</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     View 2: Results Page
+     ============================================================ -->
+<div class="app-view" id="view-results">
+  <div class="results-page">
+
+    <!-- Results header with search summary -->
+    <div class="results-header">
+      <div class="results-header-inner">
+        <button class="back-btn" id="backToSearch">&#8592; 修改搜索</button>
+        <div class="search-summary">
+          <span class="route-text"></span>
+          <span class="trip-badge date-info"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert area -->
+    <div class="results-container">
+      <div id="alertArea"></div>
+    </div>
+
+    <!-- Main: Single-day results (always visible, drives the page) -->
+    <div class="results-container" id="singleDaySection" style="padding-top:0;"></div>
+
+    <!-- Sub: Collapsible trend panel (injected inside singleDaySection by JS) -->
+
+    <!-- Footer -->
+    <footer>
+      数据来源: <span id="sourceInfo">Google Flights</span> &nbsp;|&nbsp;
+      免费 · 无需注册 &nbsp;|&nbsp;
+      <a href="http://flightprice88:5088">flightprice88:5088</a>
+    </footer>
+  </div>
+</div>
+
+<!-- App entry point -->
+<script type="module" src="/static/js/app.js"></script>
+
+</body>
+</html>
