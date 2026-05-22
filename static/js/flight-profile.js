@@ -450,7 +450,7 @@ function _buildGlobe(flight) {
     <div class="fp-section">
       <div class="fp-section-title"><span class="fp-section-icon">G</span> 3D 互动地球 — 大圆航线轨迹</div>
       <div class="fp-globe-wrap">
-        <div id="fpGlobe3D" class="fp-globe-3d"></div>
+        <div id="fpGlobe3D" class="fp-globe-3d" style="display:flex;align-items:center;justify-content:center;color:#64748b;font-size:0.8rem;">🌍 3D 地球加载中...</div>
         <div class="fp-globe-overlay">
           <span class="fp-globe-label">${escapeHtml(flight.origin || 'PEK')} &rarr; ${escapeHtml(flight.dest || 'SYD')}</span>
           <span class="fp-globe-label">ETOPS 180min 安全圈</span>
@@ -460,56 +460,78 @@ function _buildGlobe(flight) {
 }
 
 function _initGlobe3D(el, originLat, originLng, destLat, destLng) {
-  if (!window.Globe) return null;
+  if (!window.Globe) {
+    console.warn('[FlightProfile] window.Globe not available — CDN may not have loaded');
+    _showGlobeFallback(el, 'Globe.gl 库未加载，请刷新页面重试');
+    return null;
+  }
 
-  const globe = Globe()
-    .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-    .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
-    .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
-    .atmosphereColor('rgba(56,189,248,0.25)')
-    .atmosphereAltitude(0.25)
-    (el);
+  // Guard: container must have non-zero dimensions for WebGL context
+  const rect = el.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    console.warn('[FlightProfile] Globe container has zero dimensions, retrying...');
+    return null;
+  }
 
-  globe.controls().autoRotate = true;
-  globe.controls().autoRotateSpeed = 0.5;
+  try {
+    const globe = Globe()
+      .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+      .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
+      .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
+      .atmosphereColor('rgba(56,189,248,0.25)')
+      .atmosphereAltitude(0.25)
+      (el);
 
-  // PEK → SYD great-circle arc with animated dash particles
-  globe.arcsData([{
-    startLat: originLat, startLng: originLng,
-    endLat: destLat, endLng: destLng,
-    color: '#10b981'
-  }])
-  .arcColor('color')
-  .arcAltitude(0.38)
-  .arcStroke(1.2)
-  .arcDashLength(0.22)
-  .arcDashGap(0.9)
-  .arcDashAnimateTime(2200)
-  .arcDashInitialGap(() => 1)
-  .arcsTransitionDuration(0);
+    globe.controls().autoRotate = true;
+    globe.controls().autoRotateSpeed = 0.5;
 
-  // 3D labels for PEK and SYD
-  globe.labelsData([
-    { lat: originLat, lng: originLng, text: originLat === 39.9 ? 'PEK' : 'ORG', color: '#10b981', size: 2.2 },
-    { lat: destLat, lng: destLng, text: destLat === -33.9 ? 'SYD' : 'DST', color: '#10b981', size: 2.2 },
-  ])
-  .labelColor('color')
-  .labelSize('size')
-  .labelDotRadius(0.45)
-  .labelDotOrientation(() => 'bottom')
-  .labelsTransitionDuration(0);
+    // PEK → SYD great-circle arc with animated dash particles
+    globe.arcsData([{
+      startLat: originLat, startLng: originLng,
+      endLat: destLat, endLng: destLng,
+      color: '#10b981'
+    }])
+    .arcColor('color')
+    .arcAltitude(0.38)
+    .arcStroke(1.2)
+    .arcDashLength(0.22)
+    .arcDashGap(0.9)
+    .arcDashAnimateTime(2200)
+    .arcDashInitialGap(() => 1)
+    .arcsTransitionDuration(0);
 
-  // Pulse rings at endpoints
-  globe.ringsData([
-    { lat: originLat, lng: originLng, color: '#10b981', radius: 2.8 },
-    { lat: destLat, lng: destLng, color: '#10b981', radius: 2.8 },
-  ])
-  .ringColor('color')
-  .ringMaxRadius('radius')
-  .ringPropagationSpeed(2.5)
-  .ringRepeatPeriod(1600);
+    // 3D labels for PEK and SYD
+    globe.labelsData([
+      { lat: originLat, lng: originLng, text: 'PEK', color: '#10b981', size: 2.2 },
+      { lat: destLat, lng: destLng, text: 'SYD', color: '#10b981', size: 2.2 },
+    ])
+    .labelColor('color')
+    .labelSize('size')
+    .labelDotRadius(0.45)
+    .labelDotOrientation(() => 'bottom')
+    .labelsTransitionDuration(0);
 
-  return globe;
+    // Pulse rings at endpoints
+    globe.ringsData([
+      { lat: originLat, lng: originLng, color: '#10b981', radius: 2.8 },
+      { lat: destLat, lng: destLng, color: '#10b981', radius: 2.8 },
+    ])
+    .ringColor('color')
+    .ringMaxRadius('radius')
+    .ringPropagationSpeed(2.5)
+    .ringRepeatPeriod(1600);
+
+    console.log('[FlightProfile] Globe.gl 3D Earth initialized successfully');
+    return globe;
+  } catch (err) {
+    console.error('[FlightProfile] Globe.gl init failed:', err);
+    _showGlobeFallback(el, '3D 地球渲染失败 — 您的浏览器可能不支持 WebGL');
+    return null;
+  }
+}
+
+function _showGlobeFallback(el, msg) {
+  el.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;min-height:300px;color:#94a3b8;font-size:0.85rem;text-align:center;padding:40px;">${msg}</div>`;
 }
 
 // ============================================================
@@ -603,13 +625,29 @@ function openFlightProfile(flight) {
     document.getElementById('fpPanel').classList.add('active');
   });
 
-  // Delay globe init until after the 350ms CSS slide-in transition
-  setTimeout(() => {
-    const globeEl = document.getElementById('fpGlobe3D');
-    if (globeEl && window.Globe) {
-      _initGlobe3D(globeEl, originLat, originLng, destLat, destLng);
+  // Poll until the globe container has dimensions, then init (handles CDN latency + panel animation)
+  let attempts = 0;
+  const MAX_ATTEMPTS = 20;
+  const _tryInitGlobe = () => {
+    const el = container.querySelector('#fpGlobe3D');
+    if (!el) return; // panel got closed
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      if (!window.Globe) {
+        console.warn('[FlightProfile] Globe.gl CDN not loaded after ' + (attempts * 50 + 100) + 'ms');
+        _showGlobeFallback(el, 'Globe.gl 库加载超时，请刷新页面重试');
+        return;
+      }
+      _initGlobe3D(el, originLat, originLng, destLat, destLng);
+    } else if (attempts >= MAX_ATTEMPTS) {
+      console.warn('[FlightProfile] Globe container still zero-sized after ' + (MAX_ATTEMPTS * 50 + 100) + 'ms');
+      _showGlobeFallback(el, '3D 地球容器未就绪，请关闭面板重试');
+    } else {
+      attempts++;
+      setTimeout(_tryInitGlobe, 50);
     }
-  }, 400);
+  };
+  setTimeout(_tryInitGlobe, 100);
   activePanel = container;
 }
 

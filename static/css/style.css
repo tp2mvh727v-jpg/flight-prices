@@ -2222,6 +2222,7 @@ footer a { color: var(--primary); text-decoration: none; }
   display: block;
   width: 100%;
   height: 420px;
+  position: relative;
 }
 
 .fp-globe-overlay {
