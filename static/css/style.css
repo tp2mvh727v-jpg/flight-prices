@@ -1821,6 +1821,16 @@ footer a { color: var(--primary); text-decoration: none; }
   color: #1a1a1a;
 }
 
+.fp-cabin-divider-first {
+  justify-content: flex-start;
+  gap: 10px;
+  padding-left: 0;
+}
+.fp-cabin-divider-first .fp-cabin-line {
+  flex: 0 1 90px;
+}
+}
+
 /* Deck tabs for A380/B747 double-decker */
 .fp-deck-tabs {
   display: flex;
@@ -1943,48 +1953,55 @@ footer a { color: var(--primary); text-decoration: none; }
 }
 
 /* Seat detail popup — v2 with noise radar */
-.fp-seat-detail {
-  margin-top: 12px;
-  background: #fff;
-  border-radius: var(--radius);
-  padding: 0;
+/* ——— Seat Inspector Modal (v3.7) ——— */
+
+.fp-seat-inspector {
+  margin: 8px auto;
+  max-width: 540px;
   max-height: 0;
   overflow: hidden;
-  transition: all 0.35s ease;
-  border: 1px solid transparent;
+  opacity: 0;
+  transform: scale(0.95);
+  transition: max-height 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+              opacity 0.3s ease,
+              transform 0.3s ease;
+}
+.fp-seat-inspector.active {
+  max-height: 860px;
+  opacity: 1;
+  transform: scale(1);
 }
 
-.fp-seat-detail.active {
-  max-height: 420px;
-  padding: 20px 22px;
-  border-color: var(--border);
-  box-shadow: var(--shadow-md);
-}
-
-.fp-seat-detail-inner {
+.fp-inspector-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08), 0 0 0 1px rgba(255,255,255,0.6);
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
-.fp-detail-top {
+.fp-inspector-header {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.fp-detail-seat {
+.fp-inspector-seat {
   font-size: 1.6rem;
   font-weight: 800;
   color: var(--text);
   font-variant-numeric: tabular-nums;
   background: #f1f5f9;
-  padding: 4px 12px;
+  padding: 4px 14px;
   border-radius: 10px;
   letter-spacing: 0.5px;
 }
 
-.fp-detail-quality {
+.fp-inspector-quality {
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--primary);
@@ -1993,11 +2010,85 @@ footer a { color: var(--primary); text-decoration: none; }
   border-radius: 8px;
 }
 
-.fp-detail-text {
+/* Avgeek commentary */
+.fp-avgeek-commentary {
   font-size: 0.82rem;
   color: var(--text-secondary);
-  line-height: 1.6;
-  margin: 0;
+  line-height: 1.65;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+  border-radius: 12px;
+  border: 1px solid rgba(16,185,129,0.12);
+}
+
+/* Hardware museum */
+.fp-hardware-section {
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid rgba(148,163,184,0.10);
+}
+
+.fp-hardware-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.fp-hardware-specs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.fp-hardware-spec {
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: #e2e8f0;
+  padding: 4px 10px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+}
+
+.fp-hardware-highlight {
+  font-size: 0.72rem;
+  color: #475569;
+  margin: 10px 0 0;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* Seat profile silhouette */
+.fp-seat-profile {
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 8px 0 0;
+}
+
+.fp-silhouette {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  padding: 6px 12px;
+  background: #f1f5f9;
+  border-radius: 12px;
+}
+
+/* Responsive overrides */
+@media (max-width: 700px) {
+  .fp-inspector-card {
+    padding: 18px;
+  }
+  .fp-inspector-seat {
+    font-size: 1.3rem;
+  }
+  .fp-seat-inspector.active {
+    max-height: 900px;
+  }
 }
 
 /* Noise radar */
@@ -2351,7 +2442,7 @@ footer a { color: var(--primary); text-decoration: none; }
     min-height: 300px;
   }
 
-  .fp-detail-seat {
+  .fp-inspector-seat {
     font-size: 1.3rem;
   }
 

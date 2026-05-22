@@ -68,6 +68,64 @@ function _lookupCoords(iata) {
   return [0, 0]; // fallback — null island
 }
 
+// —— CDN fallback: fetch global airport database on first miss ——
+let _airportDbPromise = null;
+
+async function _fetchAirportDatabase() {
+  if (_airportDbPromise) return _airportDbPromise;
+  _airportDbPromise = fetch(
+    'https://cdn.jsdelivr.net/gh/mwgg/Airports@master/airports.json'
+  ).then(r => {
+    if (!r.ok) throw new Error(`CDN HTTP ${r.status}`);
+    return r.json();
+  }).catch(err => {
+    _airportDbPromise = null; // allow retry on next miss
+    throw err;
+  });
+  return _airportDbPromise;
+}
+
+async function _lookupCoordsAsync(iata) {
+  const cached = AIRPORT_COORDS[iata];
+  if (cached) return cached;
+
+  try {
+    const db = await _fetchAirportDatabase();
+    for (const entry of Object.values(db)) {
+      if (entry.iata === iata && entry.lat != null && entry.lon != null) {
+        const coords = [entry.lat, entry.lon];
+        AIRPORT_COORDS[iata] = coords; // cache for future lookups
+        return coords;
+      }
+    }
+  } catch (err) {
+    console.warn('[FlightProfile] CDN airport lookup failed:', err.message);
+  }
+
+  console.warn('[FlightProfile] Unknown airport IATA:', iata);
+  return [0, 0];
+}
+
+async function _resolveAllCoordsAsync(flight) {
+  const iatas = new Set();
+  if (flight.segments && flight.segments.length > 1) {
+    for (const seg of flight.segments) {
+      iatas.add(seg.origin);
+      iatas.add(seg.destination);
+    }
+  } else {
+    iatas.add(flight.origin || 'PEK');
+    iatas.add(flight.dest || 'SYD');
+  }
+  const map = new Map();
+  const results = await Promise.all(
+    [...iatas].map(async (iata) => {
+      map.set(iata, await _lookupCoordsAsync(iata));
+    })
+  );
+  return map;
+}
+
 // ============================================================
 
 import AppState from './state.js';
@@ -397,7 +455,12 @@ function _buildSeatExplorer(seatMap) {
     html += `<div class="fp-deck-section${di === 0 ? ' active' : ''}" data-deck-index="${di}">`;
 
     deck.sections.forEach((sec, si) => {
-      if (si > 0) {
+      if (si === 0) {
+        html += `<div class="fp-cabin-divider fp-cabin-divider-first">
+          <span class="fp-cabin-badge ${sec.cls}">${sec.name} (Row ${sec.rowStart}-${sec.rowEnd})</span>
+          <span class="fp-cabin-line"></span>
+        </div>`;
+      } else {
         html += `<div class="fp-cabin-divider">
           <span class="fp-cabin-line"></span>
           <span class="fp-cabin-badge ${sec.cls}">${sec.name} (Row ${sec.rowStart}-${sec.rowEnd})</span>
@@ -415,13 +478,23 @@ function _buildSeatExplorer(seatMap) {
 
   html += `
       </div>
-      <div class="fp-seat-detail" id="fpSeatDetail">
-        <div class="fp-seat-detail-inner">
-          <div class="fp-detail-top">
-            <span class="fp-detail-seat" id="fpDetailSeat"></span>
-            <span class="fp-detail-quality" id="fpDetailQuality"></span>
+      <!-- Seat Inspector Modal — avgeek hardware deep-dive -->
+      <div class="fp-seat-inspector" id="fpSeatInspector">
+        <div class="fp-inspector-card">
+          <div class="fp-inspector-header">
+            <span class="fp-inspector-seat" id="fpDetailSeat"></span>
+            <span class="fp-inspector-quality" id="fpDetailQuality"></span>
           </div>
-          <p class="fp-detail-text" id="fpDetailText"></p>
+          <div class="fp-avgeek-commentary" id="fpAvgeekCommentary"></div>
+          <div class="fp-hardware-section" id="fpHardwareSection">
+            <div class="fp-hardware-name" id="fpHardwareName"></div>
+            <div class="fp-hardware-specs">
+              <span class="fp-hardware-spec" id="fpHardwarePitch"></span>
+              <span class="fp-hardware-spec" id="fpHardwareWidth"></span>
+              <span class="fp-hardware-spec" id="fpHardwareRecline"></span>
+            </div>
+            <div class="fp-seat-profile" id="fpSeatProfile"></div>
+          </div>
           <div class="fp-noise-section">
             <div class="fp-noise-header">
               <span class="fp-noise-label-text">客舱音量降噪雷达</span>
@@ -460,6 +533,7 @@ function _buildCabinSeatsHTML(sec) {
         const isPremium = s.cabinClass === 'business' || s.cabinClass === 'premium' || s.cabinClass === 'first';
         html += `<button class="fp-seat fp-seat-${s.quality}${isPremium ? ' fp-seat-premium' : ''}"
           data-row="${s.row}" data-col="${s.col}"
+          data-quality="${s.quality}" data-cabin-class="${s.cabinClass}"
           data-label="${escapeHtml(s.qualityLabel)}"
           data-detail="${escapeHtml(s.qualityDetail)}"
           data-noise-db="${s.noise.level}" data-noise-desc="${escapeHtml(s.noise.desc)}" data-noise-rec="${escapeHtml(s.noise.rec)}"
@@ -511,13 +585,22 @@ function _buildLogs(logs) {
 // ============================================================
 
 function _buildGlobe(flight) {
+  let routeLabel;
+  if (flight.segments && flight.segments.length > 1) {
+    const chain = flight.segments.map(s => s.origin).join(' → ') + ' → ' + flight.segments[flight.segments.length - 1].destination;
+    routeLabel = escapeHtml(chain);
+  } else {
+    routeLabel = `${escapeHtml(flight.origin || 'PEK')} → ${escapeHtml(flight.dest || 'SYD')}`;
+  }
+  const stopsBadge = (flight.stops && flight.stops > 0) ? ` <span style="font-size:0.58rem;background:#f59e0b;color:#000;padding:2px 6px;border-radius:6px;margin-left:6px;">中转 ${flight.stops} 站</span>` : '';
+
   return `
     <div class="fp-section">
-      <div class="fp-section-title"><span class="fp-section-icon">G</span> 3D 互动地球 — 大圆航线轨迹</div>
+      <div class="fp-section-title"><span class="fp-section-icon">G</span> 3D 互动地球 — 大圆航线轨迹${stopsBadge}</div>
       <div class="fp-globe-wrap">
         <div id="fpGlobe3D" class="fp-globe-3d" style="display:flex;align-items:center;justify-content:center;color:#64748b;font-size:0.8rem;">🌍 3D 地球加载中...</div>
         <div class="fp-globe-overlay">
-          <span class="fp-globe-label">${escapeHtml(flight.origin || 'PEK')} &rarr; ${escapeHtml(flight.dest || 'SYD')}</span>
+          <span class="fp-globe-label">${routeLabel}</span>
           <span class="fp-globe-label">ETOPS 180min 安全圈</span>
         </div>
       </div>
@@ -609,6 +692,250 @@ function _showGlobeFallback(el, msg) {
   el.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;min-height:300px;color:#94a3b8;font-size:0.85rem;text-align:center;padding:40px;">${msg}</div>`;
 }
 
+// —— Multi-segment globe for connecting flights ——
+function _initMultiSegmentGlobe3D(el, flight, allCoords) {
+  if (!window.Globe) return null;
+  const rect = el.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return null;
+
+  const segments = flight.segments || [];
+  const arcData = [];
+  const labelSet = new Map(); // iata → { lat, lng }
+  const ringData = [];
+
+  for (const seg of segments) {
+    const oCoords = allCoords.get(seg.origin) || [0, 0];
+    const dCoords = allCoords.get(seg.destination) || [0, 0];
+    arcData.push({
+      startLat: oCoords[0], startLng: oCoords[1],
+      endLat: dCoords[0], endLng: dCoords[1],
+      color: '#10b981',
+    });
+    labelSet.set(seg.origin, { lat: oCoords[0], lng: oCoords[1] });
+    labelSet.set(seg.destination, { lat: dCoords[0], lng: dCoords[1] });
+  }
+
+  const allIATAs = [...labelSet.keys()];
+  const firstIATA = allIATAs[0];
+  const lastIATA = allIATAs[allIATAs.length - 1];
+
+  const labelData = [];
+  for (const [iata, coords] of labelSet) {
+    const isEndpoint = iata === firstIATA || iata === lastIATA;
+    labelData.push({
+      lat: coords.lat, lng: coords.lng,
+      text: iata,
+      color: isEndpoint ? '#10b981' : '#f59e0b',
+      size: isEndpoint ? 2.2 : 1.7,
+    });
+    ringData.push({
+      lat: coords.lat, lng: coords.lng,
+      color: isEndpoint ? '#10b981' : '#f59e0b',
+      radius: isEndpoint ? 2.8 : 2.0,
+    });
+  }
+
+  try {
+    const globe = Globe()
+      .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+      .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
+      .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
+      .atmosphereColor('rgba(56,189,248,0.25)')
+      .atmosphereAltitude(0.25)
+      (el);
+
+    globe.controls().autoRotate = true;
+    globe.controls().autoRotateSpeed = 0.5;
+
+    globe.arcsData(arcData)
+      .arcColor('color')
+      .arcAltitude(0.38)
+      .arcStroke(1.2)
+      .arcDashLength(0.22)
+      .arcDashGap(0.9)
+      .arcDashAnimateTime(2200)
+      .arcDashInitialGap(() => 1)
+      .arcsTransitionDuration(0);
+
+    globe.labelsData(labelData)
+      .labelColor('color')
+      .labelSize('size')
+      .labelDotRadius(0.45)
+      .labelDotOrientation(() => 'bottom')
+      .labelsTransitionDuration(0);
+
+    globe.ringsData(ringData)
+      .ringColor('color')
+      .ringMaxRadius('radius')
+      .ringPropagationSpeed(2.5)
+      .ringRepeatPeriod(1600);
+
+    // POV: bounding-box center of all coords
+    const lats = labelData.map(d => d.lat);
+    const lngs = labelData.map(d => d.lng);
+    const midLat = (Math.min(...lats) + Math.max(...lats)) / 2;
+    const midLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+    const latSpan = Math.max(...lats) - Math.min(...lats);
+    const lngSpan = Math.max(...lngs) - Math.min(...lngs);
+    const alt = Math.max(1.5, Math.min(4.0, Math.max(latSpan, lngSpan) * 0.022));
+    globe.pointOfView({ lat: midLat, lng: midLng, altitude: alt }, 1200);
+
+    console.log('[FlightProfile] Multi-segment Globe initialized —', allIATAs.join(' → '));
+    return globe;
+  } catch (err) {
+    console.error('[FlightProfile] Multi-segment Globe init failed:', err);
+    _showGlobeFallback(el, '3D 地球渲染失败');
+    return null;
+  }
+}
+
+// —— Async globe bootstrap: resolve coords (CDN fallback) then init ——
+async function _initGlobeAsync(container, flight) {
+  const el = container.querySelector('#fpGlobe3D');
+  if (!el) return;
+
+  try {
+    const allCoords = await _resolveAllCoordsAsync(flight);
+    // Defend: element may have been removed while fetching CDN
+    if (!el.isConnected) return;
+
+    // Wait for container dimensions
+    const ready = await _waitForDim(el, 20);
+    if (!ready) {
+      _showGlobeFallback(el, '3D 地球容器未就绪，请关闭面板重试');
+      return;
+    }
+
+    if (!window.Globe) {
+      _showGlobeFallback(el, 'Globe.gl 库加载超时，请刷新页面重试');
+      return;
+    }
+
+    if (flight.segments && flight.segments.length > 1 && allCoords.size > 2) {
+      _initMultiSegmentGlobe3D(el, flight, allCoords);
+    } else {
+      const originIATA = flight.origin || 'PEK';
+      const destIATA = flight.dest || 'SYD';
+      const [originLat, originLng] = allCoords.get(originIATA) || [0, 0];
+      const [destLat, destLng] = allCoords.get(destIATA) || [0, 0];
+      _initGlobe3D(el, originIATA, originLat, originLng, destIATA, destLat, destLng);
+    }
+  } catch (err) {
+    console.error('[FlightProfile] Async globe init failed:', err);
+    if (el.isConnected) _showGlobeFallback(el, '3D 地球加载失败，请重试');
+  }
+}
+
+function _waitForDim(el, maxAttempts = 20) {
+  return new Promise(resolve => {
+    let attempts = 0;
+    const poll = () => {
+      if (!el.isConnected) { resolve(false); return; }
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) { resolve(true); return; }
+      if (attempts >= maxAttempts) { resolve(false); return; }
+      attempts++;
+      setTimeout(poll, 50);
+    };
+    setTimeout(poll, 100);
+  });
+}
+
+// ============================================================
+//  SEAT HARDWARE MUSEUM — Cabin class specs + avgeek commentary
+// ============================================================
+
+const HARDWARE_SPECS = {
+  first: {
+    key: 'first', name: 'The Suite 豪华全封闭套房',
+    pitch: '82" (208cm) 间距', width: '22.5" 宽度', recline: '180° 全平躺睡床',
+    highlight: '自带独立隐私拉门，飞友终极奢华梦想。',
+    profile: 'suite',
+  },
+  business_wide: {
+    key: 'business_wide', name: 'Reverse Herringbone 1-2-1 反鱼骨大沙发',
+    pitch: '45" (114cm) 间距', width: '21" 宽度', recline: '180° 全平躺睡床',
+    highlight: '全独立过道接入，包裹感与隐私度极佳。',
+    profile: 'herringbone',
+  },
+  business_narrow: {
+    key: 'business_narrow', name: 'Regional Recliner 2-2 经典豪华大板凳',
+    pitch: '38" (96cm) 间距', width: '20" 宽度', recline: '125° 舒适后仰',
+    highlight: '窄体机商务舱标配，前排无敌安静。',
+    profile: 'recliner',
+  },
+  premium: {
+    key: 'premium', name: 'Premium Comfort 舒适超经座椅',
+    pitch: '38" (96cm) 间距', width: '19" 宽度', recline: '120° 后仰',
+    highlight: '加宽座椅、更大后仰角度，长途性价比之王。',
+    profile: 'premium',
+  },
+  economy: {
+    key: 'economy', name: 'Standard Slimline 标配轻薄独立座椅',
+    pitch: '31-32" (79cm) 间距', width: '17.5" 宽度', recline: '110° 后仰',
+    highlight: '中规中矩，选对位置依然舒适。',
+    profile: 'economy',
+  },
+};
+
+function _getHardwareKey(cabinClass, acCode) {
+  if (cabinClass === 'first') return 'first';
+  if (cabinClass === 'premium') return 'premium';
+  if (cabinClass === 'business') {
+    const widebodies = ['A359','A35K','A333','B789','B788','B77W','A388','B748'];
+    return widebodies.includes(acCode) ? 'business_wide' : 'business_narrow';
+  }
+  return 'economy';
+}
+
+function _getAvgeekCommentary(quality, cabinClass) {
+  const prefix = cabinClass === 'first' ? '[头等套房] ' : cabinClass === 'business' ? '[公务舱] ' : cabinClass === 'premium' ? '[超级经济舱] ' : '[经济舱] ';
+  const map = {
+    good: `${prefix}32寸无敌间距，窗口与视线完美齐平，拍照绝佳，飞友力荐！`,
+    bad: `${prefix}⚠️ 千万别选！这一排侧面是全封闭死墙，完全没有窗户，压抑得像在坐潜水艇！`,
+    warning: `${prefix}虽然空间大，但紧邻后方洗手间，冲水声音明显，且经常有人排队晃荡，睡眠不佳者慎选。`,
+    standard: `${prefix}中规中矩的标准客舱座位，没有惊喜也没有大坑。`,
+  };
+  return map[quality] || map.standard;
+}
+
+function _populateHardwareSection(cabinClass, acCode) {
+  const key = _getHardwareKey(cabinClass, acCode);
+  const spec = HARDWARE_SPECS[key] || HARDWARE_SPECS.economy;
+
+  document.getElementById('fpHardwareName').textContent = spec.name;
+  document.getElementById('fpHardwarePitch').textContent = spec.pitch;
+  document.getElementById('fpHardwareWidth').textContent = spec.width;
+  document.getElementById('fpHardwareRecline').textContent = spec.recline;
+
+  const profileEl = document.getElementById('fpSeatProfile');
+  profileEl.innerHTML = _buildSeatProfileHTML(spec.profile);
+  profileEl.className = 'fp-seat-profile fp-seat-profile--' + spec.profile;
+
+  const section = document.getElementById('fpHardwareSection');
+  section.querySelector('.fp-hardware-highlight')?.remove();
+  const highlight = document.createElement('p');
+  highlight.className = 'fp-hardware-highlight';
+  highlight.textContent = spec.highlight;
+  section.appendChild(highlight);
+}
+
+function _buildSeatProfileHTML(profile) {
+  const isEnclosed = profile === 'suite' || profile === 'herringbone';
+  const isRecliner = profile === 'recliner';
+  const backH = profile === 'suite' ? '46' : profile === 'economy' ? '32' : '38';
+  const seatH = profile === 'suite' ? '14' : profile === 'economy' ? '8' : '12';
+  const armW = isRecliner ? '6' : '4';
+  return `
+    <div class="fp-silhouette ${profile}">
+      <div class="fp-sil-left-arm" style="width:${armW}px;height:14px;border-radius:${armW/2}px;background:#94a3b8;align-self:center;"></div>
+      <div class="fp-sil-back" style="width:10px;height:${backH}px;border-radius:5px 5px 0 0;background:#64748b;"></div>
+      <div class="fp-sil-pan" style="width:24px;height:${seatH}px;border-radius:0 0 5px 5px;background:#475569;"></div>
+      <div class="fp-sil-right-arm" style="width:${armW}px;height:14px;border-radius:${armW/2}px;background:#94a3b8;align-self:center;"></div>
+      ${isEnclosed ? '<div class="fp-sil-door" style="width:3px;height:26px;border-radius:2px;background:#cbd5e1;align-self:flex-start;margin-top:4px;"></div>' : ''}
+    </div>`;
+}
+
 // ============================================================
 //  PANEL LIFECYCLE
 // ============================================================
@@ -658,20 +985,30 @@ function openFlightProfile(flight) {
     });
   });
 
-  // Bind seat clicks
-  const detailEl = document.getElementById('fpSeatDetail');
+  // Bind seat clicks — Seat Inspector Modal
+  const inspectorEl = document.getElementById('fpSeatInspector');
+  const acCode = flight.aircraft_code || 'B789';
   container.querySelectorAll('.fp-seat').forEach(seatBtn => {
     seatBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const row = seatBtn.dataset.row;
       const col = seatBtn.dataset.col;
+      const quality = seatBtn.dataset.quality;
+      const cabinClass = seatBtn.dataset.cabinClass;
       container.querySelectorAll('.fp-seat.selected').forEach(s => s.classList.remove('selected'));
       seatBtn.classList.add('selected');
 
+      // Seat identity
       document.getElementById('fpDetailSeat').textContent = `${row}${col}`;
       document.getElementById('fpDetailQuality').textContent = seatBtn.dataset.label;
-      document.getElementById('fpDetailText').innerHTML = seatBtn.dataset.detail;
 
+      // Avgeek commentary
+      document.getElementById('fpAvgeekCommentary').innerHTML = _getAvgeekCommentary(quality, cabinClass);
+
+      // Hardware micro-museum
+      _populateHardwareSection(cabinClass, acCode);
+
+      // Noise radar
       const db = parseInt(seatBtn.dataset.noiseDb) || 70;
       const bar = document.getElementById('fpNoiseBar');
       bar.style.width = Math.min(100, ((db - 50) / 40) * 100) + '%';
@@ -679,52 +1016,27 @@ function openFlightProfile(flight) {
       document.getElementById('fpNoiseDb').textContent = `${db}dB`;
       document.getElementById('fpNoiseDesc').textContent = seatBtn.dataset.noiseDesc;
       document.getElementById('fpNoiseRec').textContent = seatBtn.dataset.noiseRec;
-      detailEl.classList.add('active');
+
+      inspectorEl.classList.add('active');
     });
   });
 
-  // Dismiss detail on grid bg click
+  // Dismiss inspector on grid background click
   container.querySelectorAll('.fp-seat-grid').forEach(grid => {
     grid.addEventListener('click', (e) => {
-      if (!e.target.closest('.fp-seat')) detailEl.classList.remove('active');
+      if (!e.target.closest('.fp-seat')) inspectorEl.classList.remove('active');
     });
   });
-
-  // Resolve airport coordinates dynamically from the current flight
-  const originIATA = flight.origin || 'PEK';
-  const destIATA = flight.dest || 'SYD';
-  const [originLat, originLng] = _lookupCoords(originIATA);
-  const [destLat, destLng] = _lookupCoords(destIATA);
 
   requestAnimationFrame(() => {
     document.getElementById('fpOverlay').classList.add('active');
     document.getElementById('fpPanel').classList.add('active');
   });
 
-  // Poll until the globe container has dimensions, then init (handles CDN latency + panel animation)
-  let attempts = 0;
-  const MAX_ATTEMPTS = 20;
-  const _tryInitGlobe = () => {
-    const el = container.querySelector('#fpGlobe3D');
-    if (!el) return; // panel got closed
-    const rect = el.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0) {
-      if (!window.Globe) {
-        console.warn('[FlightProfile] Globe.gl CDN not loaded after ' + (attempts * 50 + 100) + 'ms');
-        _showGlobeFallback(el, 'Globe.gl 库加载超时，请刷新页面重试');
-        return;
-      }
-      _initGlobe3D(el, originIATA, originLat, originLng, destIATA, destLat, destLng);
-    } else if (attempts >= MAX_ATTEMPTS) {
-      console.warn('[FlightProfile] Globe container still zero-sized after ' + (MAX_ATTEMPTS * 50 + 100) + 'ms');
-      _showGlobeFallback(el, '3D 地球容器未就绪，请关闭面板重试');
-    } else {
-      attempts++;
-      setTimeout(_tryInitGlobe, 50);
-    }
-  };
-  setTimeout(_tryInitGlobe, 100);
+  // Fire-and-forget: globe loads asynchronously (CDN coords + dimension polling)
+  _initGlobeAsync(container, flight);
   activePanel = container;
+}
 }
 
 function closeFlightProfile() {
