@@ -1746,7 +1746,7 @@ footer a { color: var(--primary); text-decoration: none; }
 /* Seat grid — per-cabin alignment */
 .fp-seat-grid {
   display: grid;
-  grid-template-columns: 26px repeat(var(--cols, 6), 38px);
+  grid-template-columns: 26px repeat(6, 38px); /* fallback; overridden by inline style */
   gap: 3px 4px;
   align-items: center;
   justify-content: start;
@@ -1767,8 +1767,13 @@ footer a { color: var(--primary); text-decoration: none; }
 
 /* Aisle gap */
 .fp-aisle {
-  width: 16px;
-  flex-shrink: 0;
+  pointer-events: none;
+}
+
+/* Invisible placeholder — maintains grid column for alignment */
+.fp-placeholder {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* Cabin divider — visual class separator */
@@ -1810,6 +1815,47 @@ footer a { color: var(--primary); text-decoration: none; }
 }
 .fp-cabin-badge.economy {
   background: linear-gradient(135deg, #475569, #94a3b8);
+}
+.fp-cabin-badge.first {
+  background: linear-gradient(135deg, #b8860b, #ffd700);
+  color: #1a1a1a;
+}
+
+/* Deck tabs for A380/B747 double-decker */
+.fp-deck-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+  justify-content: center;
+}
+.fp-deck-tab {
+  padding: 7px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(148,163,184,0.25);
+  background: rgba(30,41,59,0.7);
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+.fp-deck-tab:hover {
+  border-color: rgba(16,185,129,0.4);
+  color: #10b981;
+}
+.fp-deck-tab.active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 10px rgba(16,185,129,0.3);
+}
+.fp-deck-section {
+  display: none;
+}
+.fp-deck-section.active {
+  display: block;
 }
 
 /* Seat button — base */
@@ -2162,20 +2208,20 @@ footer a { color: var(--primary); text-decoration: none; }
   font-weight: 500;
 }
 
-/* ——— 3D Wireframe Globe Canvas ——— */
+/* ——— 3D Interactive Globe (Globe.gl) ——— */
 
 .fp-globe-wrap {
   position: relative;
-  background: radial-gradient(ellipse at center, #0f1a2e 0%, #0a0f1a 100%);
+  background: radial-gradient(ellipse at center, #0f172a 0%, #0a0f1a 100%);
   border-radius: 14px;
   overflow: hidden;
-  min-height: 320px;
+  min-height: 380px;
 }
 
-.fp-globe-canvas {
+.fp-globe-3d {
   display: block;
   width: 100%;
-  height: 340px;
+  height: 420px;
 }
 
 .fp-globe-overlay {
@@ -2297,11 +2343,11 @@ footer a { color: var(--primary); text-decoration: none; }
     grid-template-columns: 1fr;
   }
 
-  .fp-globe-canvas {
-    height: 250px;
+  .fp-globe-3d {
+    height: 300px;
   }
   .fp-globe-wrap {
-    min-height: 250px;
+    min-height: 300px;
   }
 
   .fp-detail-seat {

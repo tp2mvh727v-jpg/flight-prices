@@ -1,9 +1,8 @@
 // ============================================================
-// FlightProfile v3 — Multi-class cabin + 3D Wireframe Globe
-//   - Business / Premium Economy / Economy cabin segmentation
-//   - Cabin divider banners with distinct layouts per class
-//   - 3D particle wireframe rotating globe (pure Canvas, no Three.js)
-//   - Great-circle arc with animated aircraft + particle trail
+// FlightProfile v3.5 — Real Aviation Seat Matrix + Globe.gl 3D
+//   - Authentic 1-2-1 / 2-2 business class column mappings
+//   - A380/B747 double-decker with deck-switching tabs
+//   - Globe.gl WebGL 3D interactive Earth (replaces 2D Canvas)
 // ============================================================
 
 import AppState from './state.js';
@@ -34,28 +33,71 @@ const EXIT_ROWS = {
 };
 
 function _getAcInfo(acCode) {
-  const isWide = ['A359','A35K','A333','A388','B789','B788','B77W','B748'].includes(acCode);
+  // —— Double-decker: Airbus A380 ——
+  if (acCode === 'A388') {
+    return {
+      isDoubleDecker: true, rows: 38,
+      decks: [{
+        name: '一楼客舱', short: 'Lower',
+        cabins: [
+          { cls: 'first', name: '头等套房', short: 'First', rowStart: 1, rowEnd: 4, layout: [1,2,1], refColumns: ['A','AISLE','D','G','AISLE','K'], noiseBase: 55, desc: '空中宫殿，极致私密。仅 4 排 16 座。' },
+          { cls: 'economy', name: '经济舱', short: 'Economy', rowStart: 10, rowEnd: 38, layout: [3,4,3], refColumns: ['A','B','C','AISLE','D','E','F','G','AISLE','H','J','K'], noiseBase: 70, desc: 'A380 独有静谧宽体经济舱。3-4-3 布局。' },
+        ]
+      }, {
+        name: '二楼客舱', short: 'Upper',
+        cabins: [
+          { cls: 'business', name: '公务舱', short: 'Business', rowStart: 1, rowEnd: 22, layout: [1,2,1], refColumns: ['A','AISLE','D','G','AISLE','K'], noiseBase: 58, desc: 'A380 上层全公务舱，尊享云端平躺体验。' },
+          { cls: 'premium', name: '超级经济舱', short: 'Premium Economy', rowStart: 23, rowEnd: 28, layout: [2,3,2], refColumns: ['A','B','AISLE','D','E','F','AISLE','H','K'], noiseBase: 64, desc: '上层尾部超经，加宽座椅、更大后仰。' },
+        ]
+      }]
+    };
+  }
+
+  // —— Double-decker: Boeing 747-8 ——
+  if (acCode === 'B748') {
+    return {
+      isDoubleDecker: true, rows: 33,
+      decks: [{
+        name: '一楼客舱', short: 'Lower',
+        cabins: [
+          { cls: 'first', name: '头等套房', short: 'First', rowStart: 1, rowEnd: 3, layout: [1,2,1], refColumns: ['A','AISLE','D','G','AISLE','K'], noiseBase: 55, desc: '747 机头鼻舱尊位，女王级空中体验。' },
+          { cls: 'economy', name: '经济舱', short: 'Economy', rowStart: 7, rowEnd: 33, layout: [3,4,3], refColumns: ['A','B','C','AISLE','D','E','F','G','AISLE','H','J','K'], noiseBase: 70, desc: '标准经济舱。翼根区域引擎声澎湃。' },
+        ]
+      }, {
+        name: '二楼客舱', short: 'Upper',
+        cabins: [
+          { cls: 'business', name: '公务舱', short: 'Business', rowStart: 1, rowEnd: 16, layout: [2,2], refColumns: ['A','C','AISLE','D','F'], noiseBase: 58, desc: '747 上层公务舱，经典 2-2 大板凳布局。' },
+        ]
+      }]
+    };
+  }
+
+  const isWide = ['A359','A35K','A333','B789','B788','B77W'].includes(acCode);
   const totalRows = isWide ? 33 : 29;
 
   if (isWide) {
     return {
-      rows: totalRows,
-      economyLayout: acCode === 'B77W' || acCode === 'A388' ? [3,4,3] : (acCode === 'A333' ? [2,4,2] : [3,3,3]),
-      cabins: [
-        { cls: 'business', name: '头等 / 公务舱', short: 'Business', rowStart: 1, rowEnd: 5, layout: [1,2,1], noiseBase: 58, desc: '平躺隐私包厢，极度安静 (58dB)。飞友终极梦想。' },
-        { cls: 'premium', name: '超级经济舱', short: 'Premium Economy', rowStart: 6, rowEnd: 9, layout: [2,3,2], noiseBase: 64, desc: '加宽座椅、更大后仰角度。舒适与性价比的黄金分割点。' },
-        { cls: 'economy', name: '经济舱', short: 'Economy', rowStart: 10, rowEnd: totalRows, layout: acCode === 'B77W' || acCode === 'A388' ? [3,4,3] : (acCode === 'A333' ? [2,4,2] : [3,3,3]), noiseBase: 70, desc: '标准经济舱。翼根区域引擎声澎湃。' },
-      ],
+      isDoubleDecker: false, rows: totalRows,
+      decks: [{
+        name: '', short: '',
+        cabins: [
+          { cls: 'business', name: '头等 / 公务舱', short: 'Business', rowStart: 1, rowEnd: 5, layout: [1,2,1], refColumns: ['A','AISLE','D','G','AISLE','K'], noiseBase: 58, desc: '平躺隐私包厢，极度安静 (58dB)。飞友终极梦想。' },
+          { cls: 'premium', name: '超级经济舱', short: 'Premium Economy', rowStart: 6, rowEnd: 9, layout: [2,3,2], refColumns: ['A','B','AISLE','D','E','F','AISLE','H','K'], noiseBase: 64, desc: '加宽座椅、更大后仰角度。舒适与性价比的黄金分割点。' },
+          { cls: 'economy', name: '经济舱', short: 'Economy', rowStart: 10, rowEnd: totalRows, layout: acCode === 'B77W' ? [3,4,3] : (acCode === 'A333' ? [2,4,2] : [3,3,3]), refColumns: ['A','B','C','AISLE','D','E','F','G','AISLE','H','J','K'], noiseBase: 70, desc: '标准经济舱。翼根区域引擎声澎湃。' },
+        ]
+      }]
     };
   }
   // Narrow-body
   return {
-    rows: totalRows,
-    economyLayout: [3,3],
-    cabins: [
-      { cls: 'business', name: '公务舱', short: 'Business', rowStart: 1, rowEnd: 3, layout: [2,2], noiseBase: 58, desc: '前排安静包厢。窄体机优选。' },
-      { cls: 'economy', name: '经济舱', short: 'Economy', rowStart: 4, rowEnd: totalRows, layout: [3,3], noiseBase: 68, desc: '标准经济舱。中后段感受引擎韵律。' },
-    ],
+    isDoubleDecker: false, rows: totalRows,
+    decks: [{
+      name: '', short: '',
+      cabins: [
+        { cls: 'business', name: '公务舱', short: 'Business', rowStart: 1, rowEnd: 3, layout: [2,2], refColumns: ['A','C','AISLE','D','F'], noiseBase: 58, desc: '前排安静包厢。窄体机 2-2 大板凳布局。' },
+        { cls: 'economy', name: '经济舱', short: 'Economy', rowStart: 4, rowEnd: totalRows, layout: [3,3], refColumns: ['A','B','C','AISLE','D','E','F'], noiseBase: 68, desc: '标准经济舱。中后段感受引擎韵律。' },
+      ]
+    }]
   };
 }
 
@@ -79,90 +121,96 @@ function _noiseColor(level) {
 }
 
 // ============================================================
-//  MULTI-CLASS SEAT GENERATION
+//  MULTI-CLASS SEAT GENERATION (with deck support)
 // ============================================================
 
 function generateSeatMap(acCode) {
   const acInfo = _getAcInfo(acCode);
   const totalRows = acInfo.rows;
   const allSeats = [];
-  const sections = [];
+  const decks = [];
 
   const badWindowA = (WINDOWLESS_SEATS[acCode] && WINDOWLESS_SEATS[acCode]['A']) || [];
   const badWindowLast = (WINDOWLESS_SEATS[acCode] && WINDOWLESS_SEATS[acCode]['K']) || [];
   const exitRows = EXIT_ROWS[acCode] || [];
   const bulkheadRows = [1];
 
-  for (const cabin of acInfo.cabins) {
-    const layout = cabin.layout;
-    const colLetters = _getColLetters(layout);
-    const windowCols = new Set([colLetters[0], colLetters[colLetters.length - 1]]);
-    const seats = [];
+  for (const deck of acInfo.decks) {
+    const sections = [];
 
-    for (let row = cabin.rowStart; row <= cabin.rowEnd; row++) {
-      let colIdx = 0;
-      for (let section = 0; section < layout.length; section++) {
-        const colsInSection = layout[section];
-        for (let c = 0; c < colsInSection; c++) {
-          const col = colLetters[colIdx];
-          const isWindow = windowCols.has(col);
-          const isAisle = (c === 0 || c === colsInSection - 1) && colsInSection > 1;
+    for (const cabin of deck.cabins) {
+      const layout = cabin.layout;
+      const colLetters = _getColLetters(layout);
+      const activeCols = _getActiveCols(cabin.refColumns, layout);
+      const windowCols = new Set([colLetters[0], colLetters[colLetters.length - 1]]);
+      const seats = [];
 
-          let quality = 'standard';
-          let qualityLabel = '标准座位';
-          let qualityDetail = '标准座位，中规中矩。';
+      for (let row = cabin.rowStart; row <= cabin.rowEnd; row++) {
+        let colIdx = 0;
+        for (let section = 0; section < layout.length; section++) {
+          const colsInSection = layout[section];
+          for (let c = 0; c < colsInSection; c++) {
+            const col = colLetters[colIdx];
+            const isWindow = windowCols.has(col);
+            const isAisle = (c === 0 || c === colsInSection - 1) && colsInSection > 1;
 
-          const badWindows = col === colLetters[0] ? badWindowA : (col === colLetters[colLetters.length - 1] ? badWindowLast : []);
+            let quality = 'standard';
+            let qualityLabel = '标准座位';
+            let qualityDetail = '标准座位，中规中矩。';
 
-          if (isWindow && badWindows.includes(row)) {
-            quality = 'bad';
-            qualityLabel = '无窗靠窗座 — 极度避坑';
-            qualityDetail = '该排靠窗实为一堵完整死墙，零舷窗视野。花钱买靠窗座，结果面壁思过两万里。飞友锐评：航空史上最大消费者欺诈之一。';
-          } else if (exitRows.includes(row) && (isWindow || isAisle)) {
-            quality = 'good';
-            qualityLabel = '安全出口加长腿空间';
-            qualityDetail = cabin.cls === 'business' ? '公务舱安全出口排，空间无敌奢华。' : '间距 38" / 宽度 18"。腿部空间极其充裕，长途飞行神器！';
-          } else if (bulkheadRows.includes(row) && (isWindow || isAisle)) {
-            quality = 'good';
-            qualityLabel = '隔板排额外空间';
-            qualityDetail = '前排无座椅后仰侵扰，空间开阔。' + (cabin.cls === 'business' ? '私密性极佳。' : '起身方便。');
-          } else if (isWindow && !badWindows.includes(row)) {
-            quality = 'good';
-            qualityLabel = '靠窗优质座';
-            qualityDetail = cabin.cls === 'business' ? '舷窗对齐完美，尊享私密视野。' : '窗口对齐完美，舷窗外景色一览无余。飞友力荐：拍照党最爱！';
-          } else if (row <= cabin.rowStart + 1 || row >= cabin.rowEnd - 1) {
-            quality = 'warning';
-            qualityLabel = '注意座 — 舱段边界区';
-            qualityDetail = '靠近舱段分隔或洗手间区域，可能有气味与人流干扰。';
-          } else if (!isWindow && !isAisle && layout.length >= 3 && section === Math.floor(layout.length / 2)) {
-            quality = 'warning';
-            qualityLabel = '中央夹心座';
-            qualityDetail = '左右均有人，出入需跨两人。长时间较局促。飞友锐评：社恐勿选。';
-          }
+            const badWindows = col === colLetters[0] ? badWindowA : (col === colLetters[colLetters.length - 1] ? badWindowLast : []);
 
-          if (cabin.cls === 'business') {
-            qualityDetail = `[公务舱专属] ${qualityDetail} 音量 ${cabin.noiseBase}dB — 极度安静。`;
-            if (quality === 'standard') {
+            if (isWindow && badWindows.includes(row)) {
+              quality = 'bad';
+              qualityLabel = '无窗靠窗座 — 极度避坑';
+              qualityDetail = '该排靠窗实为一堵完整死墙，零舷窗视野。花钱买靠窗座，结果面壁思过两万里。飞友锐评：航空史上最大消费者欺诈之一。';
+            } else if (exitRows.includes(row) && (isWindow || isAisle)) {
               quality = 'good';
-              qualityLabel = '公务舱尊享座';
-              qualityDetail = `平躺包厢，至高私密性。音量仅 ${cabin.noiseBase}dB。飞友终极梦想。`;
+              qualityLabel = '安全出口加长腿空间';
+              qualityDetail = cabin.cls === 'business' ? '公务舱安全出口排，空间无敌奢华。' : '间距 38" / 宽度 18"。腿部空间极其充裕，长途飞行神器！';
+            } else if (bulkheadRows.includes(row) && (isWindow || isAisle)) {
+              quality = 'good';
+              qualityLabel = '隔板排额外空间';
+              qualityDetail = '前排无座椅后仰侵扰，空间开阔。' + (cabin.cls === 'business' ? '私密性极佳。' : '起身方便。');
+            } else if (isWindow && !badWindows.includes(row)) {
+              quality = 'good';
+              qualityLabel = '靠窗优质座';
+              qualityDetail = cabin.cls === 'business' ? '舷窗对齐完美，尊享私密视野。' : '窗口对齐完美，舷窗外景色一览无余。飞友力荐：拍照党最爱！';
+            } else if (row <= cabin.rowStart + 1 || row >= cabin.rowEnd - 1) {
+              quality = 'warning';
+              qualityLabel = '注意座 — 舱段边界区';
+              qualityDetail = '靠近舱段分隔或洗手间区域，可能有气味与人流干扰。';
+            } else if (!isWindow && !isAisle && layout.length >= 3 && section === Math.floor(layout.length / 2)) {
+              quality = 'warning';
+              qualityLabel = '中央夹心座';
+              qualityDetail = '左右均有人，出入需跨两人。长时间较局促。飞友锐评：社恐勿选。';
             }
-          } else if (cabin.cls === 'premium' && quality === 'standard') {
-            qualityDetail = `[超经专属] ${qualityDetail} 加宽座椅、更大后仰。`;
-          }
 
-          const noise = _calcNoise(row, totalRows, cabin.noiseBase);
-          seats.push({ row, col, isWindow, isAisle, quality, qualityLabel, qualityDetail, noise, cabinClass: cabin.cls });
-          colIdx++;
+            if (cabin.cls === 'business') {
+              qualityDetail = `[公务舱专属] ${qualityDetail} 音量 ${cabin.noiseBase}dB — 极度安静。`;
+              if (quality === 'standard') { quality = 'good'; qualityLabel = '公务舱尊享座'; qualityDetail = `平躺包厢，至高私密性。音量仅 ${cabin.noiseBase}dB。飞友终极梦想。`; }
+            } else if (cabin.cls === 'first') {
+              quality = 'good'; qualityLabel = '头等套房尊享';
+              qualityDetail = `[头等专属] 空中宫殿级私密包厢，噪音仅 ${cabin.noiseBase}dB。飞友朝圣之选。`;
+            } else if (cabin.cls === 'premium' && quality === 'standard') {
+              qualityDetail = `[超经专属] ${qualityDetail} 加宽座椅、更大后仰。`;
+            }
+
+            const noise = _calcNoise(row, totalRows, cabin.noiseBase);
+            seats.push({ row, col, isWindow, isAisle, quality, qualityLabel, qualityDetail, noise, cabinClass: cabin.cls });
+            colIdx++;
+          }
         }
       }
+
+      sections.push({ ...cabin, seats, colLetters, layout, refColumns: cabin.refColumns, activeCols });
+      allSeats.push(...seats);
     }
 
-    sections.push({ ...cabin, seats, colLetters, layout });
-    allSeats.push(...seats);
+    decks.push({ ...deck, sections });
   }
 
-  return { sections, allSeats, totalRows, acInfo };
+  return { decks, allSeats, totalRows, acInfo };
 }
 
 function _getColLetters(layout) {
@@ -174,6 +222,24 @@ function _getColLetters(layout) {
   if (totalCols === 9) return ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J'];
   if (totalCols === 10) return ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K'];
   return Array.from({ length: totalCols }, (_, i) => String.fromCharCode(65 + i));
+}
+
+function _getActiveCols(refColumns, layout) {
+  const groups = [];
+  let current = [];
+  for (const ref of refColumns) {
+    if (ref === 'AISLE') { groups.push(current); current = []; }
+    else { current.push(ref); }
+  }
+  groups.push(current);
+  const active = new Set();
+  for (let i = 0; i < layout.length && i < groups.length; i++) {
+    const count = layout[i];
+    for (let j = 0; j < count && j < groups[i].length; j++) {
+      active.add(groups[i][j]);
+    }
+  }
+  return active;
 }
 
 // ============================================================
@@ -249,22 +315,38 @@ function _buildSeatExplorer(seatMap) {
         <span class="fp-legend-item warning"><i></i>注意座</span>
         <span class="fp-legend-item bad"><i></i>糟糕座</span>
         <span class="fp-legend-item standard"><i></i>标准座</span>
-      </div>
-      <div class="fp-seat-wrap">`;
-
-  for (let si = 0; si < seatMap.sections.length; si++) {
-    const sec = seatMap.sections[si];
-    if (si > 0) {
-      html += `<div class="fp-cabin-divider">
-        <span class="fp-cabin-line"></span>
-        <span class="fp-cabin-badge ${sec.cls}">${sec.name} (Row ${sec.rowStart}-${sec.rowEnd})</span>
-        <span class="fp-cabin-line"></span>
       </div>`;
-    }
-    html += `<div class="fp-seat-grid" style="--cols: ${sec.colLetters.length}">`;
-    html += _buildCabinSeatsHTML(sec);
+
+  // Deck tabs (only when double-decker)
+  if (seatMap.decks.length > 1) {
+    html += '<div class="fp-deck-tabs">';
+    seatMap.decks.forEach((deck, i) => {
+      html += `<button class="fp-deck-tab${i === 0 ? ' active' : ''}" data-deck-index="${i}">${deck.name}</button>`;
+    });
     html += '</div>';
   }
+
+  html += '<div class="fp-seat-wrap">';
+
+  seatMap.decks.forEach((deck, di) => {
+    html += `<div class="fp-deck-section${di === 0 ? ' active' : ''}" data-deck-index="${di}">`;
+
+    deck.sections.forEach((sec, si) => {
+      if (si > 0) {
+        html += `<div class="fp-cabin-divider">
+          <span class="fp-cabin-line"></span>
+          <span class="fp-cabin-badge ${sec.cls}">${sec.name} (Row ${sec.rowStart}-${sec.rowEnd})</span>
+          <span class="fp-cabin-line"></span>
+        </div>`;
+      }
+      const gridTemplateCols = '26px ' + sec.refColumns.map(c => c === 'AISLE' ? '16px' : '38px').join(' ');
+      html += `<div class="fp-seat-grid" style="grid-template-columns: ${gridTemplateCols}">`;
+      html += _buildCabinSeatsHTML(sec);
+      html += '</div>';
+    });
+
+    html += '</div>'; // close fp-deck-section
+  });
 
   html += `
       </div>
@@ -292,31 +374,34 @@ function _buildSeatExplorer(seatMap) {
 }
 
 function _buildCabinSeatsHTML(sec) {
-  const { seats, layout } = sec;
+  const { seats, refColumns, activeCols } = sec;
   const byRow = {};
   for (const s of seats) {
-    if (!byRow[s.row]) byRow[s.row] = [];
-    byRow[s.row].push(s);
+    if (!byRow[s.row]) byRow[s.row] = {};
+    byRow[s.row][s.col] = s;
   }
-  const aisleAfter = [];
-  let acc = 0;
-  for (let i = 0; i < layout.length - 1; i++) { acc += layout[i]; aisleAfter.push(acc); }
 
   let html = '';
   const rows = Object.keys(byRow).map(Number).sort((a, b) => a - b);
   for (const row of rows) {
-    const rowSeats = byRow[row];
     html += `<div class="fp-row-label">${row}</div>`;
-    for (let ci = 0; ci < rowSeats.length; ci++) {
-      const s = rowSeats[ci];
-      if (aisleAfter.includes(ci)) html += '<div class="fp-aisle"></div>';
-      const isPremium = s.cabinClass === 'business' || s.cabinClass === 'premium';
-      html += `<button class="fp-seat fp-seat-${s.quality}${isPremium ? ' fp-seat-premium' : ''}"
-        data-row="${s.row}" data-col="${s.col}"
-        data-label="${escapeHtml(s.qualityLabel)}"
-        data-detail="${escapeHtml(s.qualityDetail)}"
-        data-noise-db="${s.noise.level}" data-noise-desc="${escapeHtml(s.noise.desc)}" data-noise-rec="${escapeHtml(s.noise.rec)}"
-        title="${s.row}${s.col}">${s.col}</button>`;
+    const rowMap = byRow[row] || {};
+    for (const ref of refColumns) {
+      if (ref === 'AISLE') {
+        html += '<div class="fp-aisle"></div>';
+      } else if (activeCols.has(ref)) {
+        const s = rowMap[ref];
+        if (!s) { html += '<div class="fp-placeholder"></div>'; continue; }
+        const isPremium = s.cabinClass === 'business' || s.cabinClass === 'premium' || s.cabinClass === 'first';
+        html += `<button class="fp-seat fp-seat-${s.quality}${isPremium ? ' fp-seat-premium' : ''}"
+          data-row="${s.row}" data-col="${s.col}"
+          data-label="${escapeHtml(s.qualityLabel)}"
+          data-detail="${escapeHtml(s.qualityDetail)}"
+          data-noise-db="${s.noise.level}" data-noise-desc="${escapeHtml(s.noise.desc)}" data-noise-rec="${escapeHtml(s.noise.rec)}"
+          title="${s.row}${s.col}">${s.col}</button>`;
+      } else {
+        html += '<div class="fp-placeholder"></div>';
+      }
     }
   }
   return html;
@@ -356,323 +441,75 @@ function _buildLogs(logs) {
     </div>`;
 }
 
+// ============================================================
+//  3D INTERACTIVE GLOBE — Globe.gl WebGL Earth
+// ============================================================
+
 function _buildGlobe(flight) {
   return `
     <div class="fp-section">
-      <div class="fp-section-title"><span class="fp-section-icon">G</span> 3D 粒子矩阵旋转地球大圆航线图</div>
+      <div class="fp-section-title"><span class="fp-section-icon">G</span> 3D 互动地球 — 大圆航线轨迹</div>
       <div class="fp-globe-wrap">
-        <canvas id="fpGlobeCanvas" class="fp-globe-canvas"></canvas>
+        <div id="fpGlobe3D" class="fp-globe-3d"></div>
         <div class="fp-globe-overlay">
-          <span class="fp-globe-label" id="fpGlobeJetLabel">高空急流: --</span>
-          <span class="fp-globe-label" id="fpGlobeETOPSLabel">ETOPS --</span>
+          <span class="fp-globe-label">${escapeHtml(flight.origin || 'PEK')} &rarr; ${escapeHtml(flight.dest || 'SYD')}</span>
+          <span class="fp-globe-label">ETOPS 180min 安全圈</span>
         </div>
       </div>
     </div>`;
 }
 
-// ============================================================
-//  3D WIREFRAME GLOBE — Pure Canvas Orthographic Projection
-// ============================================================
+function _initGlobe3D(el, originLat, originLng, destLat, destLng) {
+  if (!window.Globe) return null;
 
-const GLOBE_R = 130;
+  const globe = Globe()
+    .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+    .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
+    .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
+    .atmosphereColor('rgba(56,189,248,0.25)')
+    .atmosphereAltitude(0.25)
+    (el);
 
-// Simplified continent outlines as [lat, lng][] polygons
-const CONTINENTS = {
-  eurasia: [[70,-10],[70,55],[68,90],[65,120],[60,150],[50,170],[40,140],[38,130],[45,50],[50,10],[55,-5],[60,-10],[68,-8],[70,-10]],
-  africa: [[35,-5],[35,20],[30,30],[15,40],[5,40],[-5,38],[-20,35],[-30,20],[-35,15],[-25,10],[-15,10],[-5,8],[5,-5],[15,-15],[25,-12],[30,-5],[35,-5]],
-  northAmerica: [[70,-160],[65,-140],[58,-125],[48,-125],[35,-120],[22,-110],[15,-95],[20,-85],[28,-82],[42,-70],[52,-68],[62,-76],[70,-90],[70,-130],[70,-160]],
-  southAmerica: [[10,-83],[5,-75],[0,-55],[-5,-38],[-15,-40],[-25,-50],[-35,-58],[-40,-70],[-32,-73],[-20,-70],[-8,-75],[5,-78],[10,-83]],
-  australia: [[-12,125],[-18,130],[-22,140],[-28,148],[-35,152],[-38,145],[-33,137],[-28,130],[-20,120],[-14,116],[-12,125]],
-  eastAsia: [[35,100],[38,105],[42,108],[45,110],[50,120],[55,130],[55,140],[48,145],[42,145],[38,140],[35,130],[30,122],[28,115],[35,100]],
-};
+  globe.controls().autoRotate = true;
+  globe.controls().autoRotateSpeed = 0.5;
 
-// City markers
-const CITIES = {
-  PEK: { lat: 40.08, lng: 116.58, name: 'PEK', dot: true },
-  SYD: { lat: -33.86, lng: 151.21, name: 'SYD', dot: true },
-  PVG: { lat: 31.14, lng: 121.81, name: '', dot: false },
-  HND: { lat: 35.55, lng: 139.78, name: '', dot: false },
-  LAX: { lat: 33.94, lng: -118.41, name: '', dot: false },
-  LHR: { lat: 51.47, lng: -0.46, name: '', dot: false },
-  DXB: { lat: 25.25, lng: 55.36, name: '', dot: false },
-  SIN: { lat: 1.36, lng: 103.99, name: '', dot: false },
-};
+  // PEK → SYD great-circle arc with animated dash particles
+  globe.arcsData([{
+    startLat: originLat, startLng: originLng,
+    endLat: destLat, endLng: destLng,
+    color: '#10b981'
+  }])
+  .arcColor('color')
+  .arcAltitude(0.38)
+  .arcStroke(1.2)
+  .arcDashLength(0.22)
+  .arcDashGap(0.9)
+  .arcDashAnimateTime(2200)
+  .arcDashInitialGap(() => 1)
+  .arcsTransitionDuration(0);
 
-function latLngTo3D(lat, lng, r) {
-  const phi = (90 - lat) * Math.PI / 180;
-  const theta = (lng + 180) * Math.PI / 180;
-  return {
-    x: -r * Math.sin(phi) * Math.cos(theta),
-    y: r * Math.cos(phi),
-    z: r * Math.sin(phi) * Math.sin(theta),
-  };
-}
+  // 3D labels for PEK and SYD
+  globe.labelsData([
+    { lat: originLat, lng: originLng, text: originLat === 39.9 ? 'PEK' : 'ORG', color: '#10b981', size: 2.2 },
+    { lat: destLat, lng: destLng, text: destLat === -33.9 ? 'SYD' : 'DST', color: '#10b981', size: 2.2 },
+  ])
+  .labelColor('color')
+  .labelSize('size')
+  .labelDotRadius(0.45)
+  .labelDotOrientation(() => 'bottom')
+  .labelsTransitionDuration(0);
 
-function rotateY(p, angle) {
-  const cos = Math.cos(angle), sin = Math.sin(angle);
-  return { x: p.x * cos - p.z * sin, y: p.y, z: p.x * sin + p.z * cos };
-}
+  // Pulse rings at endpoints
+  globe.ringsData([
+    { lat: originLat, lng: originLng, color: '#10b981', radius: 2.8 },
+    { lat: destLat, lng: destLng, color: '#10b981', radius: 2.8 },
+  ])
+  .ringColor('color')
+  .ringMaxRadius('radius')
+  .ringPropagationSpeed(2.5)
+  .ringRepeatPeriod(1600);
 
-function project(p, cx, cy) {
-  return { x: cx + p.x, y: cy - p.y, visible: p.z >= 0 };
-}
-
-// Great-circle interpolation
-function greatCirclePoints(lat1, lng1, lat2, lng2, steps) {
-  const toRad = Math.PI / 180;
-  const phi1 = lat1 * toRad, lambda1 = lng1 * toRad;
-  const phi2 = lat2 * toRad, lambda2 = lng2 * toRad;
-  const pts = [];
-  for (let i = 0; i <= steps; i++) {
-    const f = i / steps;
-    const d = Math.acos(Math.sin(phi1) * Math.sin(phi2) + Math.cos(phi1) * Math.cos(phi2) * Math.cos(lambda2 - lambda1));
-    const A = Math.sin((1 - f) * d) / Math.sin(d);
-    const B = Math.sin(f * d) / Math.sin(d);
-    const x = A * Math.cos(phi1) * Math.cos(lambda1) + B * Math.cos(phi2) * Math.cos(lambda2);
-    const y = A * Math.cos(phi1) * Math.sin(lambda1) + B * Math.cos(phi2) * Math.sin(lambda2);
-    const z = A * Math.sin(phi1) + B * Math.sin(phi2);
-    const lat = Math.asin(z) / toRad;
-    const lng = Math.atan2(y, x) / toRad;
-    pts.push({ lat, lng });
-  }
-  return pts;
-}
-
-let globeAnimId = null;
-
-function _startGlobeAnimation(canvas, origin, dest) {
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  const dpr = window.devicePixelRatio || 1;
-
-  function resize() {
-    const rect = canvas.parentElement.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = 340 * dpr;
-    canvas.style.width = rect.width + 'px';
-    canvas.style.height = '340px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  const cx = canvas.width / dpr / 2;
-  const cy = canvas.height / dpr / 2;
-  const R = Math.min(cx, cy) - 10;
-
-  const originCity = Object.values(CITIES).find(c => c.name === origin) || CITIES.PEK;
-  const destCity = Object.values(CITIES).find(c => c.name === dest) || CITIES.SYD;
-  const gcPoints = greatCirclePoints(originCity.lat, originCity.lng, destCity.lat, destCity.lng, 120);
-
-  // Pre-compute continent 3D points
-  const continent3D = {};
-  for (const [name, pts] of Object.entries(CONTINENTS)) {
-    continent3D[name] = pts.map(([lat, lng]) => latLngTo3D(lat, lng, R));
-  }
-  const city3D = {};
-  for (const [code, c] of Object.entries(CITIES)) {
-    city3D[code] = latLngTo3D(c.lat, c.lng, R);
-  }
-  const gc3D = gcPoints.map(({ lat, lng }) => latLngTo3D(lat, lng, R));
-
-  // Jet stream label
-  const jetH = (210 + Math.random() * 60).toFixed(0);
-  const jetK = (35 + Math.random() * 40).toFixed(0);
-  document.getElementById('fpGlobeJetLabel').textContent = `急流: W-${jetH} / ${jetK}kts`;
-  document.getElementById('fpGlobeETOPSLabel').textContent = `ETOPS 180min 安全圈 | ${origin} - ${dest}`;
-
-  let rotation = 0;
-  let trailPhase = 0;
-
-  function draw() {
-    const w = canvas.width / dpr;
-    const h = canvas.height / dpr;
-    const cxW = w / 2;
-    const cyW = h / 2;
-    ctx.clearRect(0, 0, w, h);
-
-    // Background stars
-    ctx.fillStyle = 'rgba(148,163,184,0.5)';
-    const starSeed = 42;
-    for (let i = 0; i < 80; i++) {
-      const sx = ((i * 137 + starSeed) % w);
-      const sy = ((i * 251 + starSeed * 3) % h);
-      ctx.beginPath();
-      ctx.arc(sx, sy, 0.6 + (i % 3) * 0.3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Draw globe sphere glow
-    ctx.beginPath();
-    ctx.arc(cxW, cyW, R + 8, 0, Math.PI * 2);
-    const glow = ctx.createRadialGradient(cxW, cyW, R - 5, cxW, cyW, R + 12);
-    glow.addColorStop(0, 'rgba(37,99,235,0)');
-    glow.addColorStop(0.5, 'rgba(37,99,235,0.08)');
-    glow.addColorStop(1, 'rgba(37,99,235,0)');
-    ctx.fillStyle = glow;
-    ctx.fill();
-
-    // Wireframe lat/lng lines
-    ctx.strokeStyle = 'rgba(100,140,200,0.12)';
-    ctx.lineWidth = 0.6;
-    // Latitude circles
-    for (let lat = -60; lat <= 60; lat += 30) {
-      ctx.beginPath();
-      let first = true;
-      for (let lng = 0; lng <= 360; lng += 5) {
-        const p3 = latLngTo3D(lat, lng, R);
-        const p3r = rotateY(p3, rotation);
-        const p2 = project(p3r, cxW, cyW);
-        if (p2.visible || true) {
-          if (first) { ctx.moveTo(p2.x, p2.y); first = false; }
-          else ctx.lineTo(p2.x, p2.y);
-        }
-      }
-      ctx.stroke();
-    }
-    // Longitude lines
-    for (let lng = 0; lng < 360; lng += 30) {
-      ctx.beginPath();
-      let first = true;
-      for (let lat = -90; lat <= 90; lat += 3) {
-        const p3 = latLngTo3D(lat, lng, R);
-        const p3r = rotateY(p3, rotation);
-        const p2 = project(p3r, cxW, cyW);
-        if (first) { ctx.moveTo(p2.x, p2.y); first = false; }
-        else ctx.lineTo(p2.x, p2.y);
-      }
-      ctx.stroke();
-    }
-
-    // Continents — draw only front-facing segments
-    for (const [name, pts] of Object.entries(continent3D)) {
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(16,185,129,0.25)';
-      ctx.lineWidth = 0.8;
-      ctx.fillStyle = 'rgba(16,185,129,0.04)';
-      let first = true;
-      let prevVisible = false;
-      for (let i = 0; i < pts.length; i++) {
-        const p3r = rotateY(pts[i], rotation);
-        const p2 = project(p3r, cxW, cyW);
-        if (first) { ctx.moveTo(p2.x, p2.y); first = false; }
-        else {
-          if (p3r.z < 0 && prevVisible) ctx.stroke();
-          ctx.lineTo(p2.x, p2.y);
-        }
-        prevVisible = p3r.z >= 0;
-      }
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-    }
-
-    // City dots
-    for (const [code, c3] of Object.entries(city3D)) {
-      const p3r = rotateY(c3, rotation);
-      const p2 = project(p3r, cxW, cyW);
-      if (p3r.z < 0 && code !== 'PEK' && code !== 'SYD') continue;
-      const cInfo = CITIES[code];
-      if (cInfo.dot || code === origin || code === dest) {
-        ctx.beginPath();
-        ctx.arc(p2.x, p2.y, (code === origin || code === dest) ? 4.5 : 2, 0, Math.PI * 2);
-        ctx.fillStyle = (code === origin || code === dest) ? '#10b981' : 'rgba(148,163,184,0.6)';
-        ctx.fill();
-        if (code === origin || code === dest) {
-          ctx.strokeStyle = '#fff';
-          ctx.lineWidth = 1.5;
-          ctx.stroke();
-          ctx.fillStyle = '#fff';
-          ctx.font = 'bold 8px system-ui';
-          ctx.textAlign = 'center';
-          ctx.fillText(code, p2.x, p2.y - 10);
-        }
-      }
-    }
-
-    // Great circle arc
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgba(16,185,129,0.35)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 3]);
-    let gcFirst = true;
-    let prevGcZ = 0;
-    for (const p3 of gc3D) {
-      const p3r = rotateY(p3, rotation);
-      const p2 = project(p3r, cxW, cyW);
-      if (gcFirst) { ctx.moveTo(p2.x, p2.y); gcFirst = false; }
-      else {
-        if (p3r.z < 0 && prevGcZ >= 0) ctx.stroke();
-        ctx.lineTo(p2.x, p2.y);
-      }
-      prevGcZ = p3r.z;
-    }
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Bright overlay arc (traveled portion)
-    const ti = Math.floor((trailPhase % 1) * gc3D.length);
-    ctx.beginPath();
-    ctx.strokeStyle = 'rgba(16,185,129,0.75)';
-    ctx.lineWidth = 2.5;
-    ctx.shadowColor = 'rgba(16,185,129,0.5)';
-    ctx.shadowBlur = 6;
-    for (let i = 0; i <= ti && i < gc3D.length; i++) {
-      const p3r = rotateY(gc3D[i], rotation);
-      const p2 = project(p3r, cxW, cyW);
-      if (i === 0) ctx.moveTo(p2.x, p2.y);
-      else ctx.lineTo(p2.x, p2.y);
-    }
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    // Aircraft on arc
-    const acIdx = Math.min(ti, gc3D.length - 1);
-    const acP3 = rotateY(gc3D[acIdx], rotation);
-    const acP2 = project(acP3, cxW, cyW);
-
-    // Aircraft glow
-    ctx.beginPath();
-    ctx.arc(acP2.x, acP2.y, 8, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(16,185,129,0.2)';
-    ctx.fill();
-
-    // Aircraft triangle
-    const acAngle = rotation + Math.PI / 2;
-    ctx.save();
-    ctx.translate(acP2.x, acP2.y);
-    ctx.beginPath();
-    ctx.moveTo(6, 0);
-    ctx.lineTo(-3, -3);
-    ctx.lineTo(-2, 0);
-    ctx.lineTo(-3, 3);
-    ctx.closePath();
-    ctx.fillStyle = '#10b981';
-    ctx.fill();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 0.7;
-    ctx.stroke();
-    // Particle trail
-    for (let j = 1; j <= 8; j++) {
-      const pIdx = Math.max(0, ti - j * 3);
-      const tp3 = rotateY(gc3D[pIdx], rotation);
-      const tp2 = project(tp3, cxW, cyW);
-      ctx.beginPath();
-      ctx.arc(tp2.x - acP2.x, tp2.y - acP2.y, Math.max(0.5, 3 - j * 0.35), 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(16,185,129,${0.5 - j * 0.06})`;
-      ctx.fill();
-    }
-    ctx.restore();
-
-    rotation += 0.004;
-    trailPhase += 0.005;
-    globeAnimId = requestAnimationFrame(draw);
-  }
-  draw();
-}
-
-function _stopGlobe() {
-  if (globeAnimId) { cancelAnimationFrame(globeAnimId); globeAnimId = null; }
+  return globe;
 }
 
 // ============================================================
@@ -715,6 +552,15 @@ function openFlightProfile(flight) {
 
   document.getElementById('fpClose').addEventListener('click', closeFlightProfile);
 
+  // Bind deck tab clicks
+  container.querySelectorAll('.fp-deck-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const idx = parseInt(tab.dataset.deckIndex);
+      container.querySelectorAll('.fp-deck-tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+      container.querySelectorAll('.fp-deck-section').forEach((s, i) => s.classList.toggle('active', i === idx));
+    });
+  });
+
   // Bind seat clicks
   const detailEl = document.getElementById('fpSeatDetail');
   container.querySelectorAll('.fp-seat').forEach(seatBtn => {
@@ -747,20 +593,28 @@ function openFlightProfile(flight) {
     });
   });
 
-  // Start 3D globe
-  const canvas = document.getElementById('fpGlobeCanvas');
-  if (canvas) _startGlobeAnimation(canvas, flight.origin || 'PEK', flight.dest || 'SYD');
+  // Start Globe.gl 3D Earth — wait for panel slide-in animation to complete
+  // so the container has its final rendered dimensions before WebGL init.
+  const originLat = 39.9, originLng = 116.4;   // PEK
+  const destLat = -33.9, destLng = 151.2;      // SYD
 
   requestAnimationFrame(() => {
     document.getElementById('fpOverlay').classList.add('active');
     document.getElementById('fpPanel').classList.add('active');
   });
+
+  // Delay globe init until after the 350ms CSS slide-in transition
+  setTimeout(() => {
+    const globeEl = document.getElementById('fpGlobe3D');
+    if (globeEl && window.Globe) {
+      _initGlobe3D(globeEl, originLat, originLng, destLat, destLng);
+    }
+  }, 400);
   activePanel = container;
 }
 
 function closeFlightProfile() {
   if (!activePanel) return;
-  _stopGlobe();
   const overlay = document.getElementById('fpOverlay');
   const panel = document.getElementById('fpPanel');
   if (overlay && panel) {
