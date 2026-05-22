@@ -5,6 +5,71 @@
 //   - Globe.gl WebGL 3D interactive Earth (replaces 2D Canvas)
 // ============================================================
 
+// ============================================================
+//  AIRPORT COORDINATE DICTIONARY — IATA → [lat, lng]
+// ============================================================
+
+const AIRPORT_COORDS = {
+  PEK: [39.9042, 116.4074],   // 北京首都
+  PKX: [39.5098, 116.4105],   // 北京大兴
+  SYD: [-33.8688, 151.2093],  // 悉尼
+  LHR: [51.4700, -0.4543],    // 伦敦希思罗
+  PVG: [31.1443, 121.8083],   // 上海浦东
+  SHA: [31.1979, 121.3363],   // 上海虹桥
+  DXB: [25.2532, 55.3657],    // 迪拜
+  ICN: [37.4602, 126.4407],   // 首尔仁川
+  FRA: [50.0379, 8.5622],     // 法兰克福
+  BKK: [13.6900, 100.7501],   // 曼谷素万那普
+  HKG: [22.3080, 113.9185],   // 香港
+  SIN: [1.3644, 103.9915],    // 新加坡
+  HND: [35.5494, 139.7798],   // 东京羽田
+  NRT: [35.7647, 140.3864],   // 东京成田
+  SFO: [37.6213, -122.3790],  // 旧金山
+  CDG: [49.0097, 2.5479],     // 巴黎戴高乐
+  LAX: [33.9416, -118.4085],  // 洛杉矶
+  JFK: [40.6413, -73.7781],   // 纽约肯尼迪
+  EWR: [40.6895, -74.1745],   // 纽约纽瓦克
+  CAN: [23.3924, 113.2990],   // 广州白云
+  SZX: [22.6394, 113.8144],   // 深圳宝安
+  CTU: [30.5785, 103.9469],   // 成都天府
+  CKG: [29.7192, 106.6417],   // 重庆江北
+  KUL: [2.7456, 101.7076],    // 吉隆坡
+  TPE: [25.0777, 121.2328],   // 台北桃园
+  MUC: [48.3537, 11.7860],    // 慕尼黑
+  AMS: [52.3105, 4.7683],     // 阿姆斯特丹
+  IST: [41.2611, 28.7420],    // 伊斯坦布尔
+  DOH: [25.2610, 51.5650],    // 多哈
+  AUH: [24.4330, 54.6511],    // 阿布扎比
+  MEL: [-37.6690, 144.8410],  // 墨尔本
+  AKL: [-37.0082, 174.7850],  // 奥克兰
+  YVR: [49.1947, -123.1790],  // 温哥华
+  ORD: [41.9742, -87.9073],   // 芝加哥
+  MIA: [25.7959, -80.2870],   // 迈阿密
+  GRU: [-23.4356, -46.4731],  // 圣保罗
+  CPT: [-33.9715, 18.6021],   // 开普敦
+  JNB: [-26.1372, 28.2416],   // 约翰内斯堡
+  DPS: [-8.7482, 115.1675],   // 巴厘岛
+  MNL: [14.5086, 121.0198],   // 马尼拉
+  DEL: [28.5562, 77.0992],    // 德里
+  BOM: [19.0890, 72.8680],    // 孟买
+  KIX: [34.4320, 135.2304],   // 大阪关西
+  CTS: [42.7752, 141.6923],   // 札幌新千岁
+  FUK: [33.5860, 130.4509],   // 福冈
+  DMK: [13.9125, 100.6067],   // 曼谷廊曼
+  CGK: [-6.1256, 106.6558],   // 雅加达
+  SGN: [10.8188, 106.6520],   // 胡志明市
+  HAN: [21.2212, 105.8072],   // 河内
+};
+
+function _lookupCoords(iata) {
+  const c = AIRPORT_COORDS[iata];
+  if (c) return c;
+  console.warn('[FlightProfile] Unknown airport IATA:', iata);
+  return [0, 0]; // fallback — null island
+}
+
+// ============================================================
+
 import AppState from './state.js';
 import { formatPrice, escapeHtml } from './utils.js';
 
@@ -459,7 +524,7 @@ function _buildGlobe(flight) {
     </div>`;
 }
 
-function _initGlobe3D(el, originLat, originLng, destLat, destLng) {
+function _initGlobe3D(el, originIATA, originLat, originLng, destIATA, destLat, destLng) {
   if (!window.Globe) {
     console.warn('[FlightProfile] window.Globe not available — CDN may not have loaded');
     _showGlobeFallback(el, 'Globe.gl 库未加载，请刷新页面重试');
@@ -485,7 +550,7 @@ function _initGlobe3D(el, originLat, originLng, destLat, destLng) {
     globe.controls().autoRotate = true;
     globe.controls().autoRotateSpeed = 0.5;
 
-    // PEK → SYD great-circle arc with animated dash particles
+    // Dynamic great-circle arc
     globe.arcsData([{
       startLat: originLat, startLng: originLng,
       endLat: destLat, endLng: destLng,
@@ -500,10 +565,10 @@ function _initGlobe3D(el, originLat, originLng, destLat, destLng) {
     .arcDashInitialGap(() => 1)
     .arcsTransitionDuration(0);
 
-    // 3D labels for PEK and SYD
+    // Dynamic 3D labels
     globe.labelsData([
-      { lat: originLat, lng: originLng, text: 'PEK', color: '#10b981', size: 2.2 },
-      { lat: destLat, lng: destLng, text: 'SYD', color: '#10b981', size: 2.2 },
+      { lat: originLat, lng: originLng, text: originIATA, color: '#10b981', size: 2.2 },
+      { lat: destLat, lng: destLng, text: destIATA, color: '#10b981', size: 2.2 },
     ])
     .labelColor('color')
     .labelSize('size')
@@ -511,7 +576,7 @@ function _initGlobe3D(el, originLat, originLng, destLat, destLng) {
     .labelDotOrientation(() => 'bottom')
     .labelsTransitionDuration(0);
 
-    // Pulse rings at endpoints
+    // Dynamic pulse rings
     globe.ringsData([
       { lat: originLat, lng: originLng, color: '#10b981', radius: 2.8 },
       { lat: destLat, lng: destLng, color: '#10b981', radius: 2.8 },
@@ -521,7 +586,17 @@ function _initGlobe3D(el, originLat, originLng, destLat, destLng) {
     .ringPropagationSpeed(2.5)
     .ringRepeatPeriod(1600);
 
-    console.log('[FlightProfile] Globe.gl 3D Earth initialized successfully');
+    // Smoothly animate POV to frame both endpoints
+    const midLat = (originLat + destLat) / 2;
+    const midLng = (originLng + destLng) / 2;
+    const latDiff = Math.abs(originLat - destLat);
+    const lngDiff = Math.abs(originLng - destLng);
+    const alt = Math.max(1.5, Math.min(3.5, Math.max(latDiff, lngDiff) * 0.025));
+    globe.pointOfView({
+      lat: midLat, lng: midLng, altitude: alt,
+    }, 1200);
+
+    console.log('[FlightProfile] Globe.gl 3D Earth initialized —', originIATA, '→', destIATA);
     return globe;
   } catch (err) {
     console.error('[FlightProfile] Globe.gl init failed:', err);
@@ -615,10 +690,11 @@ function openFlightProfile(flight) {
     });
   });
 
-  // Start Globe.gl 3D Earth — wait for panel slide-in animation to complete
-  // so the container has its final rendered dimensions before WebGL init.
-  const originLat = 39.9, originLng = 116.4;   // PEK
-  const destLat = -33.9, destLng = 151.2;      // SYD
+  // Resolve airport coordinates dynamically from the current flight
+  const originIATA = flight.origin || 'PEK';
+  const destIATA = flight.dest || 'SYD';
+  const [originLat, originLng] = _lookupCoords(originIATA);
+  const [destLat, destLng] = _lookupCoords(destIATA);
 
   requestAnimationFrame(() => {
     document.getElementById('fpOverlay').classList.add('active');
@@ -638,7 +714,7 @@ function openFlightProfile(flight) {
         _showGlobeFallback(el, 'Globe.gl 库加载超时，请刷新页面重试');
         return;
       }
-      _initGlobe3D(el, originLat, originLng, destLat, destLng);
+      _initGlobe3D(el, originIATA, originLat, originLng, destIATA, destLat, destLng);
     } else if (attempts >= MAX_ATTEMPTS) {
       console.warn('[FlightProfile] Globe container still zero-sized after ' + (MAX_ATTEMPTS * 50 + 100) + 'ms');
       _showGlobeFallback(el, '3D 地球容器未就绪，请关闭面板重试');
