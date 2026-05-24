@@ -48,7 +48,8 @@ export function flightInfo(p) {
   function segLabel(s) {
     const ac = s.airline || '';
     const fn = s.flight_no || '';
-    return escapeHtml(ac + fn);
+    // Avoid double-prefix when flight_no already includes the airline code (e.g. fixed routes, scraper)
+    return fn.startsWith(ac) ? escapeHtml(fn) : escapeHtml(ac + fn);
   }
 
   let fnRow;

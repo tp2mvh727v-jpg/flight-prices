@@ -864,12 +864,15 @@ function _buildAircraftIdBlock(flight, segIdx) {
   const airlineCode = flight.airline || '';
   const urls = _getAircraftImageUrls(acCode, airlineCode);
 
+  // Build display flight number with airline prefix when missing
+  const fnDisplay = flightNo.startsWith(airlineCode) ? flightNo : (airlineCode + flightNo);
+
   // Row 1: segment label + flight number
   let flightNoLabel;
   if (isMultiSeg) {
-    flightNoLabel = `第${segIdx + 1}程 ${escapeHtml(flightNo)}`;
+    flightNoLabel = `第${segIdx + 1}程 ${escapeHtml(fnDisplay)}`;
   } else {
-    flightNoLabel = escapeHtml(flightNo);
+    flightNoLabel = escapeHtml(fnDisplay);
   }
 
   // Row 3: model name + registration
