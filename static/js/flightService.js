@@ -432,6 +432,228 @@ const CHINA_AIRPORTS = new Set([
   'YNT','WUX','LYI','LJG','JHG','DYG','DOY',
 ]);
 
+// ——— Fixed aircraft assignments for iconic routes ———
+// Map `${origin}-${dest}` → { airline, flightNo, aircraft }
+const FIXED_AIRCRAFT_ROUTES = {
+  // === China ↔ USA ===
+  'PEK-JFK': { airline:'CA', flightNo:'CA981', aircraft:'B748' },
+  'JFK-PEK': { airline:'CA', flightNo:'CA982', aircraft:'B748' },
+  'PEK-LAX': { airline:'CA', flightNo:'CA983', aircraft:'B77W' },
+  'LAX-PEK': { airline:'CA', flightNo:'CA984', aircraft:'B77W' },
+  'PEK-SFO': { airline:'CA', flightNo:'CA985', aircraft:'B77W' },
+  'SFO-PEK': { airline:'CA', flightNo:'CA986', aircraft:'B77W' },
+  'PVG-JFK': { airline:'MU', flightNo:'MU587', aircraft:'B77W' },
+  'JFK-PVG': { airline:'MU', flightNo:'MU588', aircraft:'B77W' },
+  'PVG-LAX': { airline:'MU', flightNo:'MU583', aircraft:'B77W' },
+  'LAX-PVG': { airline:'MU', flightNo:'MU586', aircraft:'B77W' },
+  'PVG-SFO': { airline:'MU', flightNo:'MU589', aircraft:'B77W' },
+  'SFO-PVG': { airline:'MU', flightNo:'MU590', aircraft:'B77W' },
+  'CAN-JFK': { airline:'CZ', flightNo:'CZ699', aircraft:'B77W' },
+  'JFK-CAN': { airline:'CZ', flightNo:'CZ600', aircraft:'B77W' },
+  'CAN-LAX': { airline:'CZ', flightNo:'CZ327', aircraft:'B77W' },
+  'LAX-CAN': { airline:'CZ', flightNo:'CZ328', aircraft:'B77W' },
+  'CAN-SFO': { airline:'CZ', flightNo:'CZ657', aircraft:'B77W' },
+  'SFO-CAN': { airline:'CZ', flightNo:'CZ658', aircraft:'B77W' },
+  'SZX-LAX': { airline:'CA', flightNo:'CA769', aircraft:'B77W' },
+  'LAX-SZX': { airline:'CA', flightNo:'CA770', aircraft:'B77W' },
+  'FOC-JFK': { airline:'MF', flightNo:'MF849', aircraft:'B789' },
+  'JFK-FOC': { airline:'MF', flightNo:'MF850', aircraft:'B789' },
+  'CTU-LAX': { airline:'3U', flightNo:'3U3837', aircraft:'A359' },
+  'LAX-CTU': { airline:'3U', flightNo:'3U3838', aircraft:'A359' },
+  // === China ↔ Europe ===
+  'PEK-LHR': { airline:'CA', flightNo:'CA855', aircraft:'B77W' },
+  'LHR-PEK': { airline:'CA', flightNo:'CA856', aircraft:'B77W' },
+  'PVG-LHR': { airline:'MU', flightNo:'MU551', aircraft:'B77W' },
+  'LHR-PVG': { airline:'MU', flightNo:'MU552', aircraft:'B77W' },
+  'PEK-CDG': { airline:'CA', flightNo:'CA933', aircraft:'B77W' },
+  'CDG-PEK': { airline:'CA', flightNo:'CA934', aircraft:'B77W' },
+  'PVG-CDG': { airline:'MU', flightNo:'MU553', aircraft:'B77W' },
+  'CDG-PVG': { airline:'MU', flightNo:'MU554', aircraft:'B77W' },
+  'PEK-FRA': { airline:'CA', flightNo:'CA931', aircraft:'B77W' },
+  'FRA-PEK': { airline:'CA', flightNo:'CA932', aircraft:'B77W' },
+  'PVG-FRA': { airline:'MU', flightNo:'MU219', aircraft:'B77W' },
+  'FRA-PVG': { airline:'MU', flightNo:'MU220', aircraft:'B77W' },
+  // === China ↔ Oceania ===
+  'PEK-SYD': { airline:'CA', flightNo:'CA173', aircraft:'B789' },
+  'SYD-PEK': { airline:'CA', flightNo:'CA174', aircraft:'B789' },
+  'PVG-SYD': { airline:'MU', flightNo:'MU561', aircraft:'A359' },
+  'SYD-PVG': { airline:'MU', flightNo:'MU562', aircraft:'A359' },
+  'CAN-SYD': { airline:'CZ', flightNo:'CZ301', aircraft:'A359' },
+  'SYD-CAN': { airline:'CZ', flightNo:'CZ302', aircraft:'A359' },
+  'PEK-MEL': { airline:'CA', flightNo:'CA165', aircraft:'A359' },
+  'MEL-PEK': { airline:'CA', flightNo:'CA166', aircraft:'A359' },
+  // === China ↔ Middle East ===
+  'PEK-DXB': { airline:'EK', flightNo:'EK307', aircraft:'A388' },
+  'DXB-PEK': { airline:'EK', flightNo:'EK308', aircraft:'A388' },
+  'PVG-DXB': { airline:'EK', flightNo:'EK303', aircraft:'A388' },
+  'DXB-PVG': { airline:'EK', flightNo:'EK304', aircraft:'A388' },
+  'PEK-DOH': { airline:'QR', flightNo:'QR893', aircraft:'A359' },
+  'DOH-PEK': { airline:'QR', flightNo:'QR892', aircraft:'A359' },
+  'PVG-DOH': { airline:'QR', flightNo:'QR871', aircraft:'A359' },
+  'DOH-PVG': { airline:'QR', flightNo:'QR870', aircraft:'A359' },
+  // === China ↔ East Asia ===
+  'PEK-HND': { airline:'CA', flightNo:'CA925', aircraft:'A359' },
+  'HND-PEK': { airline:'CA', flightNo:'CA926', aircraft:'A359' },
+  'PVG-HND': { airline:'MU', flightNo:'MU537', aircraft:'A333' },
+  'HND-PVG': { airline:'MU', flightNo:'MU538', aircraft:'A333' },
+  'PEK-ICN': { airline:'CA', flightNo:'CA123', aircraft:'A359' },
+  'ICN-PEK': { airline:'CA', flightNo:'CA124', aircraft:'A359' },
+  'PVG-ICN': { airline:'MU', flightNo:'MU5033', aircraft:'A333' },
+  'ICN-PVG': { airline:'MU', flightNo:'MU5034', aircraft:'A333' },
+  'PEK-HKG': { airline:'CA', flightNo:'CA109', aircraft:'A359' },
+  'HKG-PEK': { airline:'CA', flightNo:'CA110', aircraft:'A359' },
+  'PVG-HKG': { airline:'MU', flightNo:'MU501', aircraft:'A333' },
+  'HKG-PVG': { airline:'MU', flightNo:'MU502', aircraft:'A333' },
+  'PEK-SIN': { airline:'CA', flightNo:'CA969', aircraft:'A359' },
+  'SIN-PEK': { airline:'CA', flightNo:'CA970', aircraft:'A359' },
+  'PVG-SIN': { airline:'MU', flightNo:'MU567', aircraft:'A333' },
+  'SIN-PVG': { airline:'MU', flightNo:'MU568', aircraft:'A333' },
+  // === Transpacific (non-China) ===
+  'HND-JFK': { airline:'JL', flightNo:'JL6', aircraft:'A35K' },
+  'JFK-HND': { airline:'JL', flightNo:'JL5', aircraft:'A35K' },
+  'HND-LAX': { airline:'NH', flightNo:'NH106', aircraft:'B789' },
+  'LAX-HND': { airline:'NH', flightNo:'NH105', aircraft:'B789' },
+  'NRT-JFK': { airline:'JL', flightNo:'JL4', aircraft:'B77W' },
+  'JFK-NRT': { airline:'JL', flightNo:'JL3', aircraft:'B77W' },
+  'ICN-JFK': { airline:'KE', flightNo:'KE81', aircraft:'B748' },
+  'JFK-ICN': { airline:'KE', flightNo:'KE82', aircraft:'B748' },
+  'ICN-LAX': { airline:'KE', flightNo:'KE17', aircraft:'B77W' },
+  'LAX-ICN': { airline:'KE', flightNo:'KE18', aircraft:'B77W' },
+  'HKG-JFK': { airline:'CX', flightNo:'CX830', aircraft:'A35K' },
+  'JFK-HKG': { airline:'CX', flightNo:'CX831', aircraft:'A35K' },
+  'HKG-LAX': { airline:'CX', flightNo:'CX880', aircraft:'A35K' },
+  'LAX-HKG': { airline:'CX', flightNo:'CX881', aircraft:'A35K' },
+  'HKG-LHR': { airline:'CX', flightNo:'CX251', aircraft:'A35K' },
+  'LHR-HKG': { airline:'CX', flightNo:'CX252', aircraft:'A35K' },
+  'SIN-JFK': { airline:'SQ', flightNo:'SQ24', aircraft:'A359' },
+  'JFK-SIN': { airline:'SQ', flightNo:'SQ23', aircraft:'A359' },
+  'SIN-LAX': { airline:'SQ', flightNo:'SQ36', aircraft:'A359' },
+  'LAX-SIN': { airline:'SQ', flightNo:'SQ35', aircraft:'A359' },
+  'SIN-LHR': { airline:'SQ', flightNo:'SQ322', aircraft:'A388' },
+  'LHR-SIN': { airline:'SQ', flightNo:'SQ321', aircraft:'A388' },
+  'DXB-JFK': { airline:'EK', flightNo:'EK203', aircraft:'A388' },
+  'JFK-DXB': { airline:'EK', flightNo:'EK204', aircraft:'A388' },
+  'DXB-LAX': { airline:'EK', flightNo:'EK215', aircraft:'A388' },
+  'LAX-DXB': { airline:'EK', flightNo:'EK216', aircraft:'A388' },
+  'DXB-LHR': { airline:'EK', flightNo:'EK1', aircraft:'A388' },
+  'LHR-DXB': { airline:'EK', flightNo:'EK2', aircraft:'A388' },
+  'DOH-JFK': { airline:'QR', flightNo:'QR703', aircraft:'A35K' },
+  'JFK-DOH': { airline:'QR', flightNo:'QR704', aircraft:'A35K' },
+  'DOH-LAX': { airline:'QR', flightNo:'QR739', aircraft:'A35K' },
+  'LAX-DOH': { airline:'QR', flightNo:'QR740', aircraft:'A35K' },
+  'SYD-LAX': { airline:'QF', flightNo:'QF11', aircraft:'A388' },
+  'LAX-SYD': { airline:'QF', flightNo:'QF12', aircraft:'A388' },
+  'SYD-LHR': { airline:'QF', flightNo:'QF1', aircraft:'B789' },
+  'LHR-SYD': { airline:'QF', flightNo:'QF2', aircraft:'B789' },
+  'MEL-LAX': { airline:'QF', flightNo:'QF93', aircraft:'B789' },
+  'LAX-MEL': { airline:'QF', flightNo:'QF94', aircraft:'B789' },
+};
+
+// ——— Real direct international airport pairs ———
+// Valid `${origin}-${dest}` pairs that actually have nonstop flights
+const _DIRECT_PAIRS = new Set();
+(function _initDirectPairs() {
+  const p = (from, toList) => { for (const t of toList) { _DIRECT_PAIRS.add(from+'-'+t); _DIRECT_PAIRS.add(t+'-'+from); } };
+  // China → USA (only these airports have nonstop flights)
+  p('PEK', ['JFK','LAX','SFO','EWR','ORD','IAD','BOS','SEA']);
+  p('PVG', ['JFK','LAX','SFO','EWR','ORD','SEA','DFW','DTW']);
+  p('CAN', ['JFK','LAX','SFO']);
+  p('SZX', ['LAX']);
+  p('FOC', ['JFK']);
+  p('CTU', ['LAX','SFO']);
+  // China → Europe
+  p('PEK', ['LHR','CDG','FRA','MUC','AMS','MAD','FCO','ZRH','SVO','IST']);
+  p('PVG', ['LHR','CDG','FRA','MUC','AMS','MAD','FCO','ZRH','IST']);
+  p('CAN', ['LHR','CDG','FRA','AMS','IST']);
+  p('SZX', ['LHR','CDG','FRA','MAD']);
+  p('CKG', ['LHR','CDG','FRA']);
+  p('XIY', ['LHR','CDG']);
+  p('CSX', ['LHR']);
+  p('CTU', ['LHR','FRA','IST']);
+  p('TAO', ['LHR','FRA']);
+  p('XMN', ['AMS','CDG']);
+  // China → Oceania
+  p('PEK', ['SYD','MEL','AKL']);
+  p('PVG', ['SYD','MEL','AKL','BNE']);
+  p('CAN', ['SYD','MEL','AKL','BNE']);
+  p('SZX', ['SYD','MEL']);
+  p('CTU', ['SYD','MEL']);
+  p('XMN', ['SYD','MEL']);
+  p('CKG', ['SYD']);
+  p('TAO', ['SYD']);
+  // China → Middle East
+  p('PEK', ['DXB','DOH','AUH','IST']);
+  p('PVG', ['DXB','DOH','AUH','IST']);
+  p('CAN', ['DXB','DOH','IST']);
+  p('SZX', ['DXB','DOH']);
+  p('CTU', ['DXB','DOH','IST']);
+  p('CKG', ['DXB','DOH']);
+  p('HGH', ['DOH']);
+  // China → East/SE Asia (abundant routes)
+  p('PEK', ['HND','NRT','KIX','CTS','FUK','ICN','HKG','SIN','BKK','DMK','KUL','SGN','HAN','MNL','CGK','DPS','TPE','DEL']);
+  p('PVG', ['HND','NRT','KIX','CTS','FUK','ICN','HKG','SIN','BKK','DMK','KUL','SGN','HAN','MNL','CGK','DPS','TPE','DEL']);
+  p('CAN', ['HND','NRT','KIX','ICN','HKG','SIN','BKK','KUL','SGN','HAN','MNL','CGK','DPS','TPE','DEL']);
+  p('SZX', ['NRT','KIX','ICN','HKG','SIN','BKK','KUL','SGN','HAN','TPE']);
+  p('CTU', ['NRT','KIX','ICN','HKG','SIN','BKK','KUL','SGN','HAN']);
+  p('CKG', ['NRT','ICN','HKG','SIN','BKK','KUL']);
+  p('XMN', ['NRT','KIX','ICN','HKG','SIN','BKK','KUL','TPE']);
+  p('TAO', ['NRT','KIX','ICN','HKG','SIN','BKK']);
+  p('DLC', ['NRT','KIX','ICN']);
+  p('SHE', ['NRT','ICN']);
+  p('HAK', ['SIN','BKK','KUL']);
+  p('KMG', ['BKK','KUL','SGN','HAN']);
+  p('WUH', ['NRT','ICN','HKG','SIN','BKK']);
+  p('HGH', ['NRT','KIX','ICN','HKG','SIN','BKK']);
+  // Major inter-hub routes (non-China endpoints)
+  p('HND', ['JFK','LAX','SFO','ORD','LHR','CDG','FRA','SYD','SIN','BKK','ICN','HKG','DXB','DOH']);
+  p('NRT', ['JFK','LAX','SFO','ORD','LHR','CDG','FRA','SYD','SIN','BKK','ICN','HKG','DXB','DOH']);
+  p('ICN', ['JFK','LAX','SFO','ORD','LHR','CDG','FRA','SYD','SIN','BKK','HKG','DXB','DOH']);
+  p('HKG', ['JFK','LAX','SFO','ORD','LHR','CDG','FRA','SYD','MEL','SIN','BKK','ICN','DXB','DOH','TPE','DEL']);
+  p('SIN', ['JFK','LAX','SFO','LHR','CDG','FRA','SYD','MEL','AKL','BKK','HKG','ICN','DXB','DOH','DEL','BOM','IST']);
+  p('BKK', ['LHR','CDG','FRA','SYD','MEL','SIN','HKG','ICN','DXB','DOH','DEL','IST']);
+  p('DXB', ['JFK','LAX','SFO','ORD','LHR','CDG','FRA','SYD','MEL','AKL','SIN','BKK','HKG','ICN','DOH','DEL','BOM','IST']);
+  p('DOH', ['JFK','LAX','SFO','ORD','LHR','CDG','FRA','SYD','MEL','AKL','SIN','BKK','HKG','ICN','DXB','DEL','BOM','IST']);
+  p('SYD', ['JFK','LAX','SFO','LHR','CDG','FRA','SIN','BKK','HKG','ICN','DXB','DOH','AKL','NRT','HND','DEL']);
+  p('LHR', ['JFK','LAX','SFO','ORD','BOS','MIA','DXB','DOH','SIN','HKG','ICN','HND','SYD','SIN','DEL','BOM','IST']);
+  p('JFK', ['LHR','CDG','FRA','MUC','AMS','MAD','FCO','ZRH','IST','DXB','DOH','HND','NRT','ICN','HKG','SIN','SYD','GRU']);
+  p('LAX', ['LHR','CDG','FRA','AMS','IST','DXB','DOH','HND','NRT','ICN','HKG','SIN','SYD','MEL','AKL','GRU']);
+  p('SFO', ['LHR','CDG','FRA','AMS','IST','DXB','DOH','HND','NRT','ICN','HKG','SIN','SYD','MEL','AKL']);
+})();
+
+function _hasDirectFlight(origin, dest) {
+  return _DIRECT_PAIRS.has(origin + '-' + dest);
+}
+
+function _getFixedRoute(origin, dest) {
+  return FIXED_AIRCRAFT_ROUTES[origin + '-' + dest] || null;
+}
+
+function _pickTransitHub(origin, dest, carrierCode) {
+  const hub = AIRLINE_HUBS[carrierCode];
+  const secHub = AIRLINE_SECONDARY_HUBS[carrierCode];
+  const originIsChina = CHINA_AIRPORTS.has(origin);
+  const destIsChina = CHINA_AIRPORTS.has(dest);
+
+  const _canConnect = (h) => {
+    if (h === origin || h === dest) return false;
+    const leg1Valid = (originIsChina && CHINA_AIRPORTS.has(h)) || _hasDirectFlight(origin, h);
+    const leg2Valid = (destIsChina && CHINA_AIRPORTS.has(h)) || _hasDirectFlight(h, dest);
+    return leg1Valid && leg2Valid;
+  };
+
+  const candidates = [];
+  if (hub && _canConnect(hub)) candidates.push(hub);
+  if (secHub && _canConnect(secHub)) candidates.push(secHub);
+
+  const majorHubs = ['PEK','PVG','CAN','HKG','ICN','NRT','HND','SIN','DXB','DOH','BKK'];
+  for (const h of majorHubs) {
+    if (!candidates.includes(h) && _canConnect(h)) candidates.push(h);
+  }
+
+  if (candidates.length > 0) return _pickRandom(candidates);
+  return hub || 'HKG';
+}
+
 function _isInternationalRoute(origin, dest) {
   // Route crosses country borders if both endpoints aren't in mainland China
   return !(CHINA_AIRPORTS.has(origin) && CHINA_AIRPORTS.has(dest));
@@ -548,8 +770,13 @@ function generateMockFlightAPIResponse(origin, dest, dateStr) {
     const secHub = AIRLINE_SECONDARY_HUBS[carrier.code];
 
     if (isIntl && hub) {
-      // International route: respect airline hub-and-spoke logic
-      if (hub === origin || hub === dest) {
+      const involvesChina = CHINA_AIRPORTS.has(origin) || CHINA_AIRPORTS.has(dest);
+
+      if (involvesChina && !_hasDirectFlight(origin, dest)) {
+        // No real direct flight on this China-international route → force transit
+        stops = 1;
+        layoverCode = _pickTransitHub(origin, dest, carrier.code);
+      } else if (hub === origin || hub === dest) {
         // Airline's home base is already on the route — direct flight
         stops = 0;
       } else if (secHub && (secHub === origin || secHub === dest)) {
@@ -592,8 +819,10 @@ function generateMockFlightAPIResponse(origin, dest, dateStr) {
       _addPlace(layoverCode, layoverAirport?.name || layoverCode);
     }
 
-    // Assign aircraft code
-    const acCode = _guessAircraft(carrier.code, stops);
+    // Assign aircraft code — check fixed route for this carrier first
+    const fixedRoute = stops === 0 ? _getFixedRoute(origin, dest) : null;
+    const useFixed = fixedRoute && fixedRoute.airline === carrier.code;
+    const acCode = useFixed ? fixedRoute.aircraft : _guessAircraft(carrier.code, stops);
 
     // Generate departure/arrival times
     const baseDepHour = stops === 0
@@ -623,7 +852,7 @@ function generateMockFlightAPIResponse(origin, dest, dateStr) {
         departure: _iso(depDateTime),
         arrival: _iso(arrDateTime),
         duration: totalMinutes,
-        marketing_flight_number: _genFlightNumber(origin, dest),
+        marketing_flight_number: useFixed ? fixedRoute.flightNo : _genFlightNumber(origin, dest),
         marketing_carrier_id: carrier.id,
         operating_carrier_id: carrier.id,
         mode: 'flight',
