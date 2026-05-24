@@ -1132,7 +1132,7 @@ function _buildGlobe(flight) {
     <div class="fp-section">
       <div class="fp-section-title"><span class="fp-section-icon">G</span> 3D 互动地球 — 大圆航线轨迹${stopsBadge}</div>
       <div class="fp-globe-wrap">
-        <div id="fpGlobe3D" class="fp-globe-3d skeleton-globe" style="display:flex;align-items:center;justify-content:center;color:#64748b;font-size:0.8rem;">🌍 3D 地球加载中...</div>
+        <div id="fpGlobe3D" class="fp-globe-3d">${_globeSkeletonHTML()}</div>
         <div class="fp-globe-overlay">
           <span class="fp-globe-label">${routeLabel}</span>
           <span class="fp-globe-label">ETOPS 180min 安全圈</span>
@@ -1231,11 +1231,14 @@ function _showGlobeFallback(el, msg, flight) {
   </div>`;
   if (flight) {
     el.querySelector('#retryGlobeBtn')?.addEventListener('click', () => {
-      el.style.cssText = 'display:flex;align-items:center;justify-content:center;color:#64748b;font-size:0.8rem;';
-      el.textContent = '🌍 3D 地球加载中...';
+      el.innerHTML = _globeSkeletonHTML();
       _initGlobeAsync(activePanel, flight);
     });
   }
+}
+
+function _globeSkeletonHTML() {
+  return '<div class="globe-skeleton"><div class="globe-skeleton-ring"></div><div class="globe-skeleton-shimmer"></div><span class="globe-skeleton-text">加载 3D 地球…</span></div>';
 }
 
 // —— Multi-segment globe for connecting flights ——

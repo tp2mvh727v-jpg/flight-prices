@@ -553,6 +553,11 @@ function renderSingleDaySection(data, summary) {
   if (backBtn) {
     backBtn.addEventListener('click', () => returnToOriginalDate());
   }
+
+  // Auto-expand trend panel on first load for discoverability
+  if (!trendPanelOpen && !trendDataLoaded) {
+    toggleTrendPanel();
+  }
 }
 
 // ============================================================

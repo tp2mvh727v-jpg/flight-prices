@@ -1165,6 +1165,20 @@ body {
 
 .search-summary .route-text {
   font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.search-summary .date-info {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.search-summary .pax-info {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--muted);
 }
 
 .search-summary .trip-badge {
@@ -2467,6 +2481,21 @@ footer a { color: var(--primary); text-decoration: none; }
   flex-direction: column;
 }
 
+/* Drag handle hint for swipe-to-close (mobile) */
+@media (max-width: 700px) {
+  .fp-panel::before {
+    content: '';
+    display: block;
+    width: 40px;
+    height: 5px;
+    background: var(--muted);
+    border-radius: 3px;
+    margin: 10px auto 4px;
+    flex-shrink: 0;
+    opacity: 0.5;
+  }
+}
+
 .fp-panel.active {
   transform: translateX(0);
 }
@@ -3574,6 +3603,51 @@ footer a { color: var(--primary); text-decoration: none; }
   width: 100%;
   height: 420px;
   position: relative;
+}
+
+.globe-skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 16px;
+  background: radial-gradient(ellipse at center, #0f172a 0%, #0a0f1a 100%);
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.globe-skeleton-ring {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 3px solid rgba(56,189,248,0.15);
+  border-top-color: rgba(56,189,248,0.35);
+  animation: globe-spin 1.5s linear infinite;
+}
+.globe-skeleton-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(56,189,248,0.04) 40%,
+    transparent 80%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-sweep 2s ease-in-out infinite;
+}
+.globe-skeleton-text {
+  color: #64748b;
+  font-size: 0.8rem;
+  z-index: 1;
+}
+@keyframes globe-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes shimmer-sweep {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 .fp-globe-overlay {
