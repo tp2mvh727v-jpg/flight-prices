@@ -3,8 +3,8 @@
 // ============================================================
 
 import AppState from './state.js';
-import { fetchPrices, fetchDateRange } from './api.js';
-import { renderFlightRow } from './flight-card.js';
+import { fetchPrices, fetchDateRange, createAbortController, abortPending } from './api.js';
+import { renderFlightRow, renderFlightCard, renderRoundtripSummary } from './flight-card.js';
 import {
   sourceLabel, modeBadge, formatDate, formatPrice,
   getTripTypeLabel, escapeHtml
@@ -18,25 +18,88 @@ let trendResultsCache = []; // cached for tooltip date formatting & card strip
 
 export function initResultsPage() {
   document.getElementById('backToSearch').addEventListener('click', () => {
+    // H6: Navigation guard — warn if roundtrip partially selected
+    if (AppState.tripType === 'roundtrip') {
+      const hasOutbound = AppState.selectedOutbound !== null;
+      const hasReturn = AppState.selectedReturn !== null;
+      const partialSelection = (hasOutbound || hasReturn) && !(hasOutbound && hasReturn);
+      if (partialSelection && !confirm('您尚未完成往返选择，确定要返回搜索吗？')) {
+        return;
+      }
+    }
     document.dispatchEvent(new CustomEvent('navigate', { detail: { view: 'search' } }));
   });
 }
 
 // ——— Entry: load ONLY single-day, nothing else ———
 
+let _abortController = null;
+
 export async function renderResults() {
   trendDataLoaded = false;
   trendPanelOpen = false;
   trendDays = 14;
+  AppState.selectedOutbound = null;
+  AppState.selectedReturn = null;
+
+  _abortController = createAbortController();
+  const signal = _abortController.signal;
 
   const summary = AppState.getSearchSummary();
   updateResultsHeader(summary);
 
+  const isRT = summary.tripType === 'roundtrip';
+  const legLabel = isRT ? 'STEP 1 · 去程航班' : '单日航班详情';
+  const lastColHeader = isRT ? '选择' : '操作';
   document.getElementById('singleDaySection').innerHTML = `
-    <div class="loading-state"><div class="spinner"></div>正在查询航班...</div>`;
+    <div class="section">
+      <div class="section-header">
+        <h2>${legLabel} — <span class="skeleton-line" style="display:inline-block;width:90px;vertical-align:middle;"></span></h2>
+        ${isRT ? '<p class="section-step-hint">请在下方选择一个去程航班，再选择返程航班以计算往返总价</p>' : ''}
+      </div>
+      <div class="section-body">
+        <div class="stats-grid">
+          ${[1,2,3,4].map(() => `
+            <div class="stat-card">
+              <div class="skeleton-line w-60" style="height:10px;margin:0 auto 8px;"></div>
+              <div class="skeleton-line w-80 h-lg" style="margin:0 auto;"></div>
+              <div class="skeleton-line w-40" style="height:10px;margin:8px auto 0;"></div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="filter-bar" id="filterBar">
+          <button class="filter-chip active" data-filter="all">全部航班</button>
+          <button class="filter-chip" data-filter="direct">仅直飞</button>
+          <select class="sort-select" id="sortSelect" aria-label="排序">
+            <option value="price">价格 ↑</option>
+            <option value="duration">飞行时长 ↑</option>
+            <option value="departure">出发时间 ↑</option>
+          </select>
+        </div>
+        <div class="table-header cols7">
+          <span>航空公司 / 航班号</span><span>起降时间</span><span>飞行时长</span><span>中转详情</span><span>机型</span><span>价格</span><span>${lastColHeader}</span>
+        </div>
+        ${[1,2,3,4,5].map(() => `
+          <div class="table-row cols7" style="border-bottom:1px solid var(--border);">
+            <div><div class="skeleton-line w-60"></div></div>
+            <div><div class="skeleton-line w-50"></div></div>
+            <div><div class="skeleton-line w-40"></div></div>
+            <div><div class="skeleton-line w-50"></div></div>
+            <div><div class="skeleton-line w-35"></div></div>
+            <div><div class="skeleton-line w-50 h-lg"></div></div>
+            <div><div class="skeleton-line w-55"></div></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
 
   await loadSingleDay(summary);
-  // NOTE: no trend pre-fetch — user must click the toggle to trigger it
+
+  if (isRT && summary.returnDate) {
+    await loadReturnDay(summary);
+    renderRoundtripBar();
+    bindRoundtripSelection();
+  }
 }
 
 // ——— Header ———
@@ -52,7 +115,16 @@ function updateResultsHeader(summary) {
   dateInfo += ` (${getTripTypeLabel(summary.tripType)})`;
   document.querySelector('.search-summary .date-info').textContent = dateInfo;
 
-  document.getElementById('alertArea').innerHTML = '';
+  // Pax + cabin badge
+  const pax = AppState.passengers || 1;
+  const cabinLabels = { economy: '经济舱', premium: '超值经济舱', business: '商务舱', first: '头等舱' };
+  const cabinLabel = cabinLabels[AppState.cabinClass] || '经济舱';
+  document.querySelector('.search-summary .pax-info').textContent = `${pax}人 · ${cabinLabel}`;
+
+  document.getElementById('alertArea').innerHTML = AppState.cityWarning
+    ? `<div class="alert alert-warning">${AppState.cityWarning}</div>`
+    : '';
+  if (AppState.cityWarning) AppState.cityWarning = '';
 }
 
 // ============================================================
@@ -65,11 +137,40 @@ async function loadSingleDay(summary) {
 
   if (!isDateSwitch) {
     container.innerHTML = `
-      <div class="loading-state"><div class="spinner"></div>正在查询航班...</div>`;
+      <div class="section">
+        <div class="section-header">
+          <h2><span class="skeleton-line" style="display:inline-block;width:200px;"></span></h2>
+        </div>
+        <div class="section-body">
+          <div class="stats-grid">
+            ${[1,2,3,4].map(() => `
+              <div class="stat-card">
+                <div class="skeleton-line w-60" style="height:10px;margin:0 auto 8px;"></div>
+                <div class="skeleton-line w-80 h-lg" style="margin:0 auto;"></div>
+                <div class="skeleton-line w-40" style="height:10px;margin:8px auto 0;"></div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="table-header cols7">
+            <span>航空公司 / 航班号</span><span>起降时间</span><span>飞行时长</span><span>中转详情</span><span>机型</span><span>价格</span><span>选择</span>
+          </div>
+          ${[1,2,3,4,5].map(() => `
+            <div class="table-row cols7" style="border-bottom:1px solid var(--border);">
+              <div><div class="skeleton-line w-60"></div></div>
+              <div><div class="skeleton-line w-50"></div></div>
+              <div><div class="skeleton-line w-40"></div></div>
+              <div><div class="skeleton-line w-50"></div></div>
+              <div><div class="skeleton-line w-35"></div></div>
+              <div><div class="skeleton-line w-50 h-lg"></div></div>
+              <div><div class="skeleton-line w-55"></div></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
   }
 
   try {
-    const data = await fetchPrices(summary.from.code, summary.to.code, summary.departDate);
+    const data = await fetchPrices(summary.from.code, summary.to.code, summary.departDate, _abortController?.signal);
     AppState.singleDayData = data;
 
     if (isDateSwitch) {
@@ -78,8 +179,192 @@ async function loadSingleDay(summary) {
       renderSingleDaySection(data, summary);
     }
   } catch (e) {
-    container.innerHTML = buildErrorState('网络请求失败，请检查服务器连接', () => loadSingleDay(summary));
+    if (e.name === 'AbortError') return;
+    const errInfo = _classifyError(e);
+    container.innerHTML = buildErrorState(errInfo.message, () => loadSingleDay(summary));
   }
+}
+
+// ============================================================
+//  ROUNDTRIP — return flight loading + selection
+// ============================================================
+
+async function loadReturnDay(summary) {
+  const isRT = summary.tripType === 'roundtrip';
+  if (!isRT || !summary.returnDate) return;
+
+  try {
+    const data = await fetchPrices(summary.to.code, summary.from.code, summary.returnDate, _abortController?.signal);
+    AppState.returnData = data;
+    renderReturnSection(data, summary);
+  } catch (e) {
+    if (e.name === 'AbortError') return;
+    const errInfo = _classifyError(e);
+    const container = document.getElementById('returnDaySection');
+    if (container) {
+      container.innerHTML = buildErrorState(errInfo.message, () => loadReturnDay(summary));
+    }
+  }
+}
+
+function renderReturnSection(data, summary) {
+  const container = document.getElementById('returnDaySection');
+  if (!container) return;
+
+  const prices = data.prices || [];
+  const dateStr = formatDate(data.date || summary.returnDate);
+  const sorted = [...prices].sort((a, b) => a.price - b.price);
+
+  // Store indices back into the array for profile button
+  prices.forEach((p, i) => { p._index = i; });
+
+  container.innerHTML = `
+    <div class="section">
+      <div class="section-header">
+        <h2>STEP 2 · 返程航班 — ${dateStr}</h2>
+        <span>${modeBadge(data)}</span>
+      </div>
+      <div class="section-body">
+        ${renderStatsGrid(prices)}
+        <div class="table-header cols7">
+          <span>航空公司 / 航班号</span><span>起降时间</span><span>飞行时长</span><span>中转详情</span><span>机型</span><span>价格</span><span>选择</span>
+        </div>
+        <div id="returnPriceList">
+          ${sorted.length
+            ? sorted.map((p, i) => renderFlightRow({ ...p, _index: prices.indexOf(p) }, data.date || summary.returnDate, 7, { selectable: true, selected: AppState.selectedReturn === prices.indexOf(p), leg: 'return' })).join('')
+            : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到返程航班</h3><p>请尝试更换返程日期</p></div>'
+          }
+        </div>
+        <!-- Mobile card list for return -->
+        <div class="flight-card-list" id="returnCardList">
+          ${sorted.length
+            ? sorted.map((p, i) => renderFlightCard({ ...p, _index: prices.indexOf(p) }, data.date || summary.returnDate, { selectable: true, selected: AppState.selectedReturn === prices.indexOf(p), leg: 'return' })).join('')
+            : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到返程航班</h3><p>请尝试更换返程日期</p></div>'}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderRoundtripBar() {
+  const bar = document.getElementById('roundtripSummaryBar');
+  if (!bar) return;
+
+  const outIdx = AppState.selectedOutbound;
+  const retIdx = AppState.selectedReturn;
+  const outFlight = outIdx !== null ? (AppState.singleDayData?.prices || [])[outIdx] : null;
+  const retFlight = retIdx !== null ? (AppState.returnData?.prices || [])[retIdx] : null;
+  const total = AppState.getRoundtripTotal();
+
+  bar.innerHTML = renderRoundtripSummary(outFlight, retFlight, total);
+}
+
+let _filterState = { mode: 'all', sort: 'price' };
+
+function _applyFilterSort(prices) {
+  let filtered = [...prices];
+  if (_filterState.mode === 'direct') {
+    filtered = filtered.filter(p => p.stops === 0);
+  }
+  filtered.sort((a, b) => {
+    if (_filterState.sort === 'duration') return (a.duration_minutes || 999) - (b.duration_minutes || 999);
+    if (_filterState.sort === 'departure') return (a.departure_time || '99:99').localeCompare(b.departure_time || '99:99');
+    return (a.price || 99999) - (b.price || 99999);
+  });
+  return filtered;
+}
+
+function _bindFilterBar(container, getPricesFn, renderFn) {
+  if (!container || container._filterBound) return;
+  container._filterBound = true;
+  container.addEventListener('click', (e) => {
+    const chip = e.target.closest('.filter-chip');
+    if (!chip) return;
+    container.querySelectorAll('.filter-chip').forEach(c => {
+      c.classList.toggle('active', c === chip);
+      c.setAttribute('aria-pressed', c === chip ? 'true' : 'false');
+    });
+    _filterState.mode = chip.dataset.filter;
+    renderFn(_applyFilterSort(getPricesFn()));
+  });
+  const sortSel = container.querySelector('.sort-select');
+  if (sortSel) {
+    sortSel.addEventListener('change', () => {
+      _filterState.sort = sortSel.value;
+      renderFn(_applyFilterSort(getPricesFn()));
+    });
+  }
+}
+
+function bindRoundtripSelection() {
+  const section = document.getElementById('singleDaySection');
+  if (!section) return;
+
+  // Remove old listener by cloning (simple approach: use a flag)
+  if (section._rtBound) return;
+  section._rtBound = true;
+
+  section.addEventListener('click', (e) => {
+    // Check for selection radio clicks
+    const radio = e.target.closest('.flight-sel-radio');
+    if (!radio) {
+      // Also allow clicking the entire row/card
+      const row = e.target.closest('[data-leg][data-idx]');
+      if (!row) return;
+      // Don't intercept profile button clicks
+      if (e.target.closest('.geek-profile-btn')) return;
+      const leg = row.dataset.leg;
+      const idx = parseInt(row.dataset.idx);
+      if (isNaN(idx)) return;
+
+      if (leg === 'outbound') {
+        AppState.selectOutbound(idx);
+      } else if (leg === 'return') {
+        AppState.selectReturn(idx);
+      }
+      refreshRoundtripUI();
+      return;
+    }
+
+    const leg = radio.dataset.leg;
+    const idx = parseInt(radio.dataset.idx);
+    if (isNaN(idx)) return;
+
+    if (leg === 'outbound') {
+      AppState.selectOutbound(idx);
+    } else if (leg === 'return') {
+      AppState.selectReturn(idx);
+    }
+    refreshRoundtripUI();
+  });
+}
+
+function refreshRoundtripUI() {
+  // Update row/card selected states
+  const outIdx = AppState.selectedOutbound;
+  const retIdx = AppState.selectedReturn;
+
+  // Outbound rows
+  document.querySelectorAll('#singleDaySection [data-leg="outbound"]').forEach(el => {
+    const idx = parseInt(el.dataset.idx);
+    el.classList.toggle('flight-row-selected', idx === outIdx);
+    const radio = el.querySelector('.flight-sel-radio');
+    if (radio) radio.classList.toggle('checked', idx === outIdx);
+    if (el.classList.contains('flight-card')) {
+      el.classList.toggle('flight-card-selected', idx === outIdx);
+    }
+  });
+  // Return rows
+  document.querySelectorAll('#singleDaySection [data-leg="return"]').forEach(el => {
+    const idx = parseInt(el.dataset.idx);
+    el.classList.toggle('flight-row-selected', idx === retIdx);
+    const radio = el.querySelector('.flight-sel-radio');
+    if (radio) radio.classList.toggle('checked', idx === retIdx);
+    if (el.classList.contains('flight-card')) {
+      el.classList.toggle('flight-card-selected', idx === retIdx);
+    }
+  });
+
+  renderRoundtripBar();
 }
 
 // ——— Surgical update for date switches — leaves trend panel intact ———
@@ -88,10 +373,15 @@ function updateSingleDayContent(data, summary) {
   const prices = data.prices || [];
   const dateStr = formatDate(data.date || summary.departDate);
   const sorted = [...prices].sort((a, b) => a.price - b.price);
+  const isRT = summary.tripType === 'roundtrip';
+
+  // Store indices for profile button
+  prices.forEach((p, i) => { p._index = i; });
 
   // Section header date
   const h2 = document.querySelector('#singleDaySection .section-header h2');
-  if (h2) h2.textContent = `单日航班详情 — ${dateStr}`;
+  const legLabel = isRT ? 'STEP 1 · 去程航班' : '单日航班详情';
+  if (h2) h2.textContent = `${legLabel} — ${dateStr}`;
 
   // Mode badge
   const badge = document.getElementById('singleModeBadge');
@@ -121,10 +411,23 @@ function updateSingleDayContent(data, summary) {
   if (stats) stats.outerHTML = renderStatsGrid(prices);
 
   // Flight list
+  const outIdx = AppState.selectedOutbound;
+  const lastColHeader = isRT ? '选择' : '操作';
+  const thLast = document.querySelector('#singleDaySection .table-header span:last-child');
+  if (thLast) thLast.textContent = lastColHeader;
+
   const list = document.getElementById('singlePriceList');
   if (list) {
     list.innerHTML = sorted.length
-      ? sorted.map((p, i) => renderFlightRow({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, 7)).join('')
+      ? sorted.map((p) => renderFlightRow({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, 7, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
+      : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>';
+  }
+
+  // Mobile card list
+  const cardList = document.getElementById('outboundCardList');
+  if (cardList) {
+    cardList.innerHTML = sorted.length
+      ? sorted.map((p) => renderFlightCard({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
       : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>';
   }
 
@@ -135,8 +438,11 @@ function renderSingleDaySection(data, summary) {
   const container = document.getElementById('singleDaySection');
   const prices = data.prices || [];
   const dateStr = formatDate(data.date || summary.departDate);
+  const isRT = summary.tripType === 'roundtrip';
 
-  // Sort: price low to high
+  // Store indices for profile button lookups
+  prices.forEach((p, i) => { p._index = i; });
+
   const sorted = [...prices].sort((a, b) => a.price - b.price);
 
   const returnBtnHtml = AppState.isViewingDifferentDate() ? `
@@ -144,24 +450,47 @@ function renderSingleDaySection(data, summary) {
           ← 返回基准日 (${formatDate(AppState.originalSearchDate)})
         </button>` : '';
 
+  const outIdx = AppState.selectedOutbound;
+  const legLabel = isRT ? '去程航班' : '单日航班详情';
+  const lastColHeader = isRT ? '选择' : '操作';
+
   container.innerHTML = `
     <div class="section">
       <div class="section-header">
-        <h2>单日航班详情 — ${dateStr}</h2>
+        <h2>${legLabel} — ${dateStr}</h2>
         <span id="singleModeBadge">${modeBadge(data)}</span>
         ${returnBtnHtml}
       </div>
       <div class="section-body">
         ${renderStatsGrid(prices)}
+        <div class="filter-bar" id="filterBarLive">
+          <button class="filter-chip active" data-filter="all">全部航班</button>
+          <button class="filter-chip" data-filter="direct">仅直飞</button>
+          <select class="sort-select" id="sortSelectLive" aria-label="排序">
+            <option value="price">价格 ↑</option>
+            <option value="duration">飞行时长 ↑</option>
+            <option value="departure">出发时间 ↑</option>
+          </select>
+        </div>
         <div class="table-header cols7">
-          <span>航空公司 / 航班号</span><span>起降时间</span><span>飞行时长</span><span>中转详情</span><span>机型</span><span>价格</span><span>操作</span>
+          <span>航空公司 / 航班号</span><span>起降时间</span><span>飞行时长</span><span>中转详情</span><span>机型</span><span>价格</span><span>${lastColHeader}</span>
         </div>
         <div id="singlePriceList">
           ${sorted.length
-            ? sorted.map((p, i) => renderFlightRow({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, 7)).join('')
+            ? sorted.map((p) => renderFlightRow({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, 7, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
             : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>'
           }
         </div>
+        <!-- Mobile card list for outbound -->
+        <div class="flight-card-list" id="outboundCardList">
+          ${sorted.length
+            ? sorted.map((p) => renderFlightCard({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
+            : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>'}
+        </div>
+        <!-- Return section placeholder (populated by loadReturnDay) -->
+        <div id="returnDaySection"></div>
+        <!-- Roundtrip summary bar -->
+        <div id="roundtripSummaryBar"></div>
         <!-- Collapsible trend panel (lazy-loaded on click) -->
         <div class="trend-collapse" id="trendCollapse"></div>
       </div>
@@ -171,6 +500,30 @@ function renderSingleDaySection(data, summary) {
 
   // Render the toggle button (no data loaded yet)
   renderTrendToggle();
+
+  // Bind filter bar
+  const filterContainer = document.getElementById('singleDaySection');
+  if (filterContainer) {
+    const isRT = summary.tripType === 'roundtrip';
+    const outIdx = AppState.selectedOutbound;
+    _bindFilterBar(filterContainer,
+      () => prices,
+      (filtered) => {
+        const list = document.getElementById('singlePriceList');
+        if (list) {
+          list.innerHTML = filtered.length
+            ? filtered.map((p) => renderFlightRow({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, 7, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
+            : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>';
+        }
+        const cardList = document.getElementById('outboundCardList');
+        if (cardList) {
+          cardList.innerHTML = filtered.length
+            ? filtered.map((p) => renderFlightCard({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
+            : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>';
+        }
+      }
+    );
+  }
 
   // Bind return-to-original button if present
   const backBtn = document.getElementById('backToOriginalBtn');
@@ -209,8 +562,10 @@ function toggleTrendPanel() {
   const panel = document.getElementById('trendPanel');
   const arrow = document.getElementById('trendArrow');
 
+  const toggleBtn = document.getElementById('trendToggle');
   if (trendPanelOpen) {
     panel.classList.add('trend-open');
+    if (toggleBtn) toggleBtn.classList.add('trend-open');
     if (arrow) arrow.textContent = '▾';
 
     // LAZY LOAD: only fetch when first opening
@@ -226,6 +581,7 @@ function toggleTrendPanel() {
     }
   } else {
     panel.classList.remove('trend-open');
+    if (toggleBtn) toggleBtn.classList.remove('trend-open');
     if (arrow) arrow.textContent = '▸';
   }
 }
@@ -236,14 +592,23 @@ async function fetchTrendData(summary, days) {
   const body = document.getElementById('trendPanelBody');
   if (!body) return;
 
-  body.innerHTML = '<div class="loading-state"><div class="spinner"></div>正在加载趋势数据...</div>';
+  body.innerHTML = `
+    <div class="trend-quick-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+      ${[1,2,3].map(() => `
+        <div style="border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;">
+          <div class="skeleton-line w-40" style="height:10px;margin:0 auto 8px;"></div>
+          <div class="skeleton-line w-60 h-lg" style="margin:0 auto;"></div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="skeleton-line" style="width:100%;height:280px;border-radius:12px;"></div>`;
 
   const origin = summary?.from?.code || AppState.origin;
   const dest = summary?.to?.code || AppState.dest;
   const start = summary?.departDate || AppState.originalSearchDate;
 
   try {
-    const data = await fetchDateRange(origin, dest, start, days);
+    const data = await fetchDateRange(origin, dest, start, days, _abortController?.signal);
     AppState.trendData = data;
     trendDataLoaded = true;
 
@@ -576,6 +941,10 @@ function scrollDateCardIntoView(dateStr) {
 async function switchToDate(newDate) {
   AppState.setFocusDate(newDate);
 
+  // H3: Add pulse indicator to the date card being loaded
+  const activeCard = document.getElementById(`dateCard-${newDate}`);
+  if (activeCard) activeCard.classList.add('loading');
+
   const summary = AppState.getSearchSummary();
   let dateInfo = formatDate(summary.departDate);
   if (summary.tripType === 'roundtrip' && summary.returnDate) {
@@ -584,7 +953,11 @@ async function switchToDate(newDate) {
   dateInfo += ` (${getTripTypeLabel(summary.tripType)})`;
   document.querySelector('.search-summary .date-info').textContent = dateInfo;
 
+  // H7: Sync URL hash with current focus date
+  updateResultsHash(summary);
+
   await loadSingleDay(summary);
+  if (activeCard) activeCard.classList.remove('loading');
 
   // Update savings text if trend is loaded
   if (trendDataLoaded && AppState.trendData) {
@@ -646,6 +1019,20 @@ function updateDateGridHighlight(newDate) {
   }
 }
 
+// H7: Sync URL hash with current focus date (without reloading)
+function updateResultsHash(summary) {
+  const p = new URLSearchParams();
+  if (summary.from.code) p.set('from', summary.from.code);
+  if (summary.to.code) p.set('to', summary.to.code);
+  if (summary.departDate) p.set('date', summary.departDate);
+  if (summary.returnDate) p.set('return', summary.returnDate);
+  if (summary.tripType) p.set('trip', summary.tripType);
+  const url = new URL(window.location);
+  url.hash = '#results';
+  if ([...p.keys()].length) url.hash += '?' + p.toString();
+  history.replaceState({ view: 'results', from: summary.from.code, to: summary.to.code, date: summary.departDate, returnDate: summary.returnDate, trip: summary.tripType }, '', url);
+}
+
 // ——— Return to original search date ———
 
 async function returnToOriginalDate() {
@@ -694,6 +1081,18 @@ function renderStatsGrid(prices) {
         <div class="sub">${escapeHtml(sorted[sorted.length - 1].airline_name || '')}</div>
       </div>
     </div>`;
+}
+
+function _classifyError(e) {
+  if (!e) return { type: 'unknown', message: '未知错误' };
+  if (e.name === 'AbortError') return { type: 'abort', message: '' };
+  if (e.name === 'TypeError' || e.message?.includes('fetch') || e.message?.includes('network') || e.message?.includes('Failed to fetch'))
+    return { type: 'network', message: '网络连接失败，请检查网络后重试' };
+  if (e.name === 'TimeoutError' || e.message?.includes('timeout'))
+    return { type: 'timeout', message: '请求超时，服务器响应缓慢' };
+  if (e.status >= 500 || e.message?.includes('server'))
+    return { type: 'server', message: '服务暂时不可用，请稍后重试' };
+  return { type: 'error', message: '数据加载失败，请重试' };
 }
 
 function buildErrorState(message, retryFn) {

@@ -3,6 +3,7 @@
 // ============================================================
 
 import { CODE_MAP } from './airports.js';
+import Analytics from './analytics.js';
 
 export function getAirport(code) {
   return CODE_MAP[code] || { code, city: code, name: code };
@@ -27,10 +28,18 @@ const AppState = {
 
   // Results data
   singleDayData: null,
-  trendData: null, // lazy-loaded on demand, cached after first fetch
+  returnData: null,        // roundtrip return flight data
+  trendData: null,         // lazy-loaded on demand, cached after first fetch
+  selectedOutbound: null,  // index into singleDayData.prices
+  selectedReturn: null,    // index into returnData.prices
 
   // UI state
   currentView: 'search', // 'search' | 'results'
+  cityWarning: '',       // M2: same-city multi-airport warning text
+
+  // Search options
+  passengers: 1,
+  cabinClass: 'economy',
 
   // ——— Methods ———
 
@@ -88,9 +97,39 @@ const AppState = {
     this.currentView = view;
   },
 
+  selectOutbound(idx) {
+    if (this.selectedOutbound === idx) return;
+    this.selectedOutbound = idx;
+    this._trackRoundtrip();
+  },
+  selectReturn(idx) {
+    if (this.selectedReturn === idx) return;
+    this.selectedReturn = idx;
+    this._trackRoundtrip();
+  },
+  _trackRoundtrip() {
+    if (this.tripType !== 'roundtrip') return;
+    if (this.selectedOutbound === null || this.selectedReturn === null) return;
+    const outPrice = this.singleDayData?.prices?.[this.selectedOutbound]?.price || 0;
+    const retPrice = this.returnData?.prices?.[this.selectedReturn]?.price || 0;
+    Analytics.trackRoundtripComplete(outPrice, retPrice, outPrice + retPrice, this.origin, this.dest);
+  },
+  getRoundtripTotal() {
+    const outPrice = this.singleDayData?.prices?.[this.selectedOutbound]?.price || 0;
+    const retPrice = this.returnData?.prices?.[this.selectedReturn]?.price || 0;
+    return outPrice + retPrice;
+  },
+  isRoundtripComplete() {
+    return this.tripType === 'roundtrip' &&
+      this.selectedOutbound !== null && this.selectedReturn !== null;
+  },
+
   clearResults() {
     this.singleDayData = null;
+    this.returnData = null;
     this.trendData = null;
+    this.selectedOutbound = null;
+    this.selectedReturn = null;
   },
 };
 

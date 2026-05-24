@@ -1,8 +1,42 @@
 // ============================================================
-// FlightProfile v3.5 — Real Aviation Seat Matrix + Globe.gl 3D
+// FlightProfile v5.3 — Real Aviation Seat Matrix + Globe.gl 3D
 //   - Authentic 1-2-1 / 2-2 business class column mappings
 //   - A380/B747 double-decker with deck-switching tabs
 //   - Globe.gl WebGL 3D interactive Earth (replaces 2D Canvas)
+//   - Airline alliance badges (Star Alliance / oneworld / SkyTeam)
+
+// ============================================================
+//  AIRLINE ALLIANCES — Star Alliance / oneworld / SkyTeam
+// ============================================================
+
+const ALLIANCES = {
+  'star':    { name: 'Star Alliance',  name_zh: '星空联盟', color: '#1a1a1a' },
+  'oneworld':{ name: 'oneworld',       name_zh: '寰宇一家', color: '#96232b' },
+  'skyteam': { name: 'SkyTeam',        name_zh: '天合联盟', color: '#0b1b41' },
+};
+
+const AIRLINE_ALLIANCE = {
+  // Star Alliance
+  'CA': 'star', 'NH': 'star', 'NZ': 'star', 'OZ': 'star', 'BR': 'star',
+  'LH': 'star', 'MS': 'star', 'SA': 'star', 'SQ': 'star', 'TG': 'star',
+  'UA': 'star', 'AC': 'star', 'CM': 'star', 'ET': 'star',
+  'TK': 'star', 'ZH': 'star',
+  // oneworld
+  'AA': 'oneworld', 'BA': 'oneworld', 'CX': 'oneworld', 'JL': 'oneworld',
+  'MH': 'oneworld', 'QF': 'oneworld', 'QR': 'oneworld', 'AT': 'oneworld',
+  // SkyTeam
+  'AF': 'skyteam', 'AM': 'skyteam', 'CI': 'skyteam', 'DL': 'skyteam',
+  'GA': 'skyteam', 'KE': 'skyteam', 'KQ': 'skyteam', 'MU': 'skyteam',
+  'VN': 'skyteam',
+  // Non-allied (CZ left SkyTeam 2019; MF/3U/EK/EY/HU/PR/TR/5J/TN/AD/LA never in alliance)
+};
+
+function _allianceBadge(airlineCode) {
+  const allianceKey = AIRLINE_ALLIANCE[airlineCode];
+  if (!allianceKey) return '';
+  const a = ALLIANCES[allianceKey];
+  return `<span class="fp-alliance-badge fp-alliance-${allianceKey}" title="${a.name} · ${a.name_zh}">${a.name_zh}</span>`;
+}
 // ============================================================
 
 // ============================================================
@@ -118,11 +152,20 @@ async function _resolveAllCoordsAsync(flight) {
     iatas.add(flight.dest || 'SYD');
   }
   const map = new Map();
-  const results = await Promise.all(
-    [...iatas].map(async (iata) => {
-      map.set(iata, await _lookupCoordsAsync(iata));
+  const entries = [...iatas];
+  const results = await Promise.allSettled(
+    entries.map(async (iata) => {
+      const coords = await _lookupCoordsAsync(iata);
+      return { iata, coords };
     })
   );
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      map.set(result.value.iata, result.value.coords);
+    } else {
+      map.set(entries[results.indexOf(result)], [0, 0]);
+    }
+  }
   return map;
 }
 
@@ -130,6 +173,7 @@ async function _resolveAllCoordsAsync(flight) {
 
 import AppState from './state.js';
 import { formatPrice, escapeHtml } from './utils.js';
+import Analytics from './analytics.js';
 
 // ============================================================
 //  AIRCRAFT DATABASE — cabin class config per type
@@ -189,16 +233,26 @@ function _getAcInfo(acCode) {
       }, {
         name: '二楼客舱', short: 'Upper',
         cabins: [
-          { cls: 'business', name: '公务舱', short: 'Business', rowStart: 1, rowEnd: 16, layout: [2,2], refColumns: ['A','C','AISLE','D','F'], noiseBase: 58, desc: '747 上层公务舱，经典 2-2 大板凳布局。' },
+          { cls: 'business', name: '公务舱', short: 'Business', rowStart: 1, rowEnd: 16, layout: [2,2], refColumns: ['A','B','AISLE','E','F'], noiseBase: 58, desc: '747 上层公务舱，经典 2-2 大板凳布局。' },
         ]
       }]
     };
   }
 
-  const isWide = ['A359','A35K','A333','B789','B788','B77W'].includes(acCode);
+  const isWide = ['A359','A35K','A332','A333','B78X','B789','B788','B77W'].includes(acCode);
   const totalRows = isWide ? 33 : 29;
 
   if (isWide) {
+    // Economy layout & column letters vary by aircraft type
+    let econLayout, econRefColumns;
+    if (acCode === 'B77W') {
+      econLayout = [3,4,3]; econRefColumns = ['A','B','C','AISLE','D','E','F','G','AISLE','H','J','K'];
+    } else if (acCode === 'A333' || acCode === 'A332') {
+      econLayout = [2,4,2]; econRefColumns = ['A','B','AISLE','D','E','F','G','AISLE','H','K'];
+    } else {
+      econLayout = [3,3,3]; econRefColumns = ['A','B','C','AISLE','D','E','F','AISLE','H','J','K'];
+    }
+
     return {
       isDoubleDecker: false, rows: totalRows,
       decks: [{
@@ -206,7 +260,7 @@ function _getAcInfo(acCode) {
         cabins: [
           { cls: 'business', name: '头等 / 公务舱', short: 'Business', rowStart: 1, rowEnd: 5, layout: [1,2,1], refColumns: ['A','AISLE','D','G','AISLE','K'], noiseBase: 58, desc: '平躺隐私包厢，极度安静 (58dB)。飞友终极梦想。' },
           { cls: 'premium', name: '超级经济舱', short: 'Premium Economy', rowStart: 6, rowEnd: 9, layout: [2,3,2], refColumns: ['A','B','AISLE','D','E','F','AISLE','H','K'], noiseBase: 64, desc: '加宽座椅、更大后仰角度。舒适与性价比的黄金分割点。' },
-          { cls: 'economy', name: '经济舱', short: 'Economy', rowStart: 10, rowEnd: totalRows, layout: acCode === 'B77W' ? [3,4,3] : (acCode === 'A333' ? [2,4,2] : [3,3,3]), refColumns: ['A','B','C','AISLE','D','E','F','G','AISLE','H','J','K'], noiseBase: 70, desc: '标准经济舱。翼根区域引擎声澎湃。' },
+          { cls: 'economy', name: '经济舱', short: 'Economy', rowStart: 10, rowEnd: totalRows, layout: econLayout, refColumns: econRefColumns, noiseBase: 70, desc: '标准经济舱。翼根区域引擎声澎湃。' },
         ]
       }]
     };
@@ -217,7 +271,7 @@ function _getAcInfo(acCode) {
     decks: [{
       name: '', short: '',
       cabins: [
-        { cls: 'business', name: '公务舱', short: 'Business', rowStart: 1, rowEnd: 3, layout: [2,2], refColumns: ['A','C','AISLE','D','F'], noiseBase: 58, desc: '前排安静包厢。窄体机 2-2 大板凳布局。' },
+        { cls: 'business', name: '公务舱', short: 'Business', rowStart: 1, rowEnd: 3, layout: [2,2], refColumns: ['A','B','AISLE','E','F'], noiseBase: 58, desc: '前排安静包厢。窄体机 2-2 大板凳布局。' },
         { cls: 'economy', name: '经济舱', short: 'Economy', rowStart: 4, rowEnd: totalRows, layout: [3,3], refColumns: ['A','B','C','AISLE','D','E','F'], noiseBase: 68, desc: '标准经济舱。中后段感受引擎韵律。' },
       ]
     }]
@@ -244,6 +298,319 @@ function _noiseColor(level) {
 }
 
 // ============================================================
+//  AIRCRAFT VISUAL SPECS — for SVG illustration generation
+// ============================================================
+
+const AIRCRAFT_VISUAL = {
+  // Wide-body — 2 engines
+  'A359': { family:'a350', fuselageLen:320, fuselageH:38, nose:'curved', engines:2, engineSize:16, tailH:70, wingSweep:28, deckRows:14 },
+  'A35K':{ family:'a350', fuselageLen:350, fuselageH:38, nose:'curved', engines:2, engineSize:17, tailH:72, wingSweep:28, deckRows:16 },
+  'A333':{ family:'a330', fuselageLen:300, fuselageH:40, nose:'blunt',  engines:2, engineSize:16, tailH:68, wingSweep:26, deckRows:12 },
+  'B789':{ family:'b787', fuselageLen:310, fuselageH:38, nose:'pointed', engines:2, engineSize:17, tailH:70, wingSweep:30, deckRows:13 },
+  'B788':{ family:'b787', fuselageLen:280, fuselageH:38, nose:'pointed', engines:2, engineSize:17, tailH:68, wingSweep:30, deckRows:11 },
+  'B77W':{ family:'b777', fuselageLen:360, fuselageH:42, nose:'blunt',  engines:2, engineSize:20, tailH:74, wingSweep:28, deckRows:17 },
+  // Wide-body — 4 engines
+  'A388':{ family:'a380', fuselageLen:370, fuselageH:52, nose:'blunt',  engines:4, engineSize:15, tailH:80, wingSweep:30, deckRows:18, doubleDecker:true },
+  'B748':{ family:'b747', fuselageLen:350, fuselageH:44, nose:'pointed', engines:4, engineSize:14, tailH:76, wingSweep:28, deckRows:16, hump:true },
+  // Narrow-body — 2 engines
+  'A320':{ family:'a320', fuselageLen:200, fuselageH:28, nose:'blunt',  engines:2, engineSize:10, tailH:48, wingSweep:20, deckRows:7 },
+  'A321':{ family:'a320', fuselageLen:230, fuselageH:28, nose:'blunt',  engines:2, engineSize:10, tailH:50, wingSweep:20, deckRows:8 },
+  'A20N':{ family:'a320', fuselageLen:200, fuselageH:28, nose:'blunt',  engines:2, engineSize:11, tailH:48, wingSweep:22, deckRows:7 },
+  'B738':{ family:'b737', fuselageLen:210, fuselageH:28, nose:'pointed', engines:2, engineSize:10, tailH:50, wingSweep:22, deckRows:7 },
+  'B739':{ family:'b737', fuselageLen:225, fuselageH:28, nose:'pointed', engines:2, engineSize:10, tailH:52, wingSweep:22, deckRows:8 },
+  'B38M':{ family:'b737', fuselageLen:210, fuselageH:28, nose:'pointed', engines:2, engineSize:11, tailH:50, wingSweep:24, deckRows:7 },
+};
+
+// Airline brand colors for livery accent
+const AIRLINE_COLORS = {
+  'CA': { primary:'#d42027', secondary:'#ffffff', tail:'#d42027' },
+  'CZ': { primary:'#00529e', secondary:'#ffffff', tail:'#00529e' },
+  'MU': { primary:'#d42027', secondary:'#ffffff', tail:'#d42027' },
+  'HU': { primary:'#e31818', secondary:'#ffd700', tail:'#e31818' },
+  '3U': { primary:'#0066b3', secondary:'#ffffff', tail:'#0066b3' },
+  'MF': { primary:'#004a99', secondary:'#ffffff', tail:'#004a99' },
+  'ZH': { primary:'#c41230', secondary:'#ffffff', tail:'#c41230' },
+  'CX': { primary:'#005a43', secondary:'#ffffff', tail:'#005a43' },
+  'SQ': { primary:'#1a1a72', secondary:'#f4b223', tail:'#1a1a72' },
+  'KE': { primary:'#00a1de', secondary:'#ffffff', tail:'#00a1de' },
+  'NH': { primary:'#00539f', secondary:'#ffffff', tail:'#00539f' },
+  'JL': { primary:'#d71921', secondary:'#ffffff', tail:'#d71921' },
+  'QF': { primary:'#e60000', secondary:'#ffffff', tail:'#e60000' },
+  'EK': { primary:'#d71921', secondary:'#ffffff', tail:'#d71921' },
+  'QR': { primary:'#731a40', secondary:'#ffffff', tail:'#731a40' },
+  'TK': { primary:'#e9302a', secondary:'#ffffff', tail:'#e9302a' },
+  'EY': { primary:'#b99855', secondary:'#ffffff', tail:'#b99855' },
+  'LH': { primary:'#05164d', secondary:'#ffad00', tail:'#05164d' },
+  'AF': { primary:'#002157', secondary:'#ffffff', tail:'#002157' },
+};
+
+// ============================================================
+//  AIRCRAFT IMAGE DATABASE — Local library by model → airline
+//  Directory: static/images/aircraft/{model}/{airline}/
+//  _generic = no specific airline (house livery, prototype, etc.)
+//  Run: python download_images.py to populate
+// ============================================================
+
+const AIRCRAFT_IMAGES = {
+  // Auto-generated from static/images/aircraft/ filesystem
+  // 201 images across 201 model×airline combos — v5.6.4 fleet image refresh
+
+  'A20N': {
+    '3U': ['20240427 Airbus A320-271N of Sichuan Airlines (B-32AH) at CGO.jpg'],
+    '5J': ['Cebu Pacific A320NEO.jpg'],
+    'AA': ['American Airlines Airbus A321neo N455AN departing Boston March 2025 2.jpg'],
+    'AD': ['A320neo Azul SBPA (31500553833).jpg'],
+    'CA': ['B-8890@PEK (20200102101041).jpg'],
+    'CZ': ['Hamburg-Finkenwerder Airport China Southern Airlines Airbus A321-251NX B-32M6 (DSC01384).jpg'],
+    'DL': ['Delta Air Lines Airbus A321neo N591DT departing Boston March 2025.jpg'],
+    'HU': ['20260328 Airbus A320-251N of Hainan Airlines (B-32H5) taxiing at CGO 01.jpg'],
+    'LH': ['Hamburg Airport Lufthansa Airbus A320-271N D-AINT (DSC04060).jpg'],
+    'MF': ['Xiamen Air Airbus A321neo B-32GA taking off from Taoyuan February 2026 2.jpg'],
+    'MU': ['B-30DJ.jpg'],
+    'NH': ['ANA JA212A A320-271N HND 17-09-2024.jpg'],
+    'NZ': ['Air New Zealand Airbus A321-271NX ZK-OYB - Star Alliance Livery.jpg'],
+    'UA': ['United Airlines A321 NEO.jpg'],
+    'VN': ['20250204 Airbus A321-272N of Vietnam Airlines (VN-A512) at CGO 01.jpg'],
+    'ZH': ['Shenzhen Airlines Airbus A321neo B-32DV at Taoyuan February 2026 2.jpg'],
+  },
+  'A320': {
+    '3U': ['B-1818@TYN (20241121132232).jpg'],
+    '5J': ['Cebu Pacific A320 in NAIA.jpg'],
+    'AA': ['American Airbus A320 N653AW planform.jpg'],
+    'AD': ['A320neo Azul SBPA (31500553833).jpg'],
+    'AT': ['Airbus A320-214 Royal Air Maroc.jpg'],
+    'CA': ['Air China Airbus A320 B-6828 at Chengdu Tianfu - 2024-05-26.jpg'],
+    'CZ': ['B-6290 Airbus A320 China Southern (7590879354).jpg'],
+    'EY': ['Etihad Airways, A6-EJA, Airbus A320-232 (26910010062).jpg'],
+    'LH': ['Lufthansa Airbus A320 D-AIZA.jpg'],
+    'MU': ['China Eastern Airlines A320 (B-2358) @ XIY, April 2009 (01).jpg'],
+    'NH': ['All Nippon Airways Airbus A320-200 KvW.jpg'],
+    'QR': ['Qatar Airways A320-232 (A7-AHB) at Berlin Tegel Airport.jpg'],
+    'SA': ['South African A320 ZS-SZC at JNB (20889208594).jpg'],
+    'TG': ['Thai Airways Airbus A320 HS-TXN departing Taoyuan February 2026 2.jpg'],
+    'TK': ['Hannover Airport Turkish Airlines Airbus A320-232(WL) TC-JTU (DSC02126).jpg'],
+    'UA': ['United Airlines A320 in the New Livery.jpg'],
+    'ZH': ['Harbin Taiping International Airport - B-6935, Airbus A320 of Shenzhen Airlines.jpg'],
+  },
+  'A321': {
+    '3U': ['20231125 Airbus A321-231 of Sichuan Airlines (B-6906) at HGH.jpg'],
+    '5J': ['RP-C4115 MNL (001) 2024-01-06.jpg'],
+    'AA': ['American Airlines Airbus A321 N907AA departing Boston August 2025.jpg'],
+    'AD': ['PR-YRW, Airbus A320neo of Azul Linhas Aéreas Brasileiras and PT-MXB, Airbus A321 of TAM Linhas Aéreas at Salgado Filho International Airport, 2019.jpg'],
+    'AF': ['F-GTAH (48074404516).jpg'],
+    'AT': ['Royal Air Maroc A321-200 CN-RNY CMN 2006-6-9.png'],
+    'BA': ['British Airways A321 G-NEOR Heathrow.png'],
+    'BR': ['EVA Air Airbus A321 B-16209 at Taipei Songshan Airport February 2026.jpg'],
+    'CA': ['Air China Airbus A321 B-6741 at Taoyuan February 2026 1.jpg'],
+    'CX': ['Hamburg-Finkenwerder Airport Cathay Pacific Airbus A321-251NX B-HPJ (DSC00251).jpg'],
+    'CZ': ['B-6912@TYN (20241121144550).jpg'],
+    'DL': ['Delta Airbus A321 N128DN on final approach to Boston March 2025.jpg'],
+    'EY': ['Etihad Airways, A6-AEJ, Airbus A321-231 (31417176205).jpg'],
+    'HU': ['20201110 B-8189 at CGO 01.jpg'],
+    'KE': ["Airbus A321-272NX 'HL8530' Korean Air.jpg"],
+    'LH': ['Lufthansa A321-231, Aussichtspunkt Ost, Frankfurt (P1033608).jpg'],
+    'MU': ['Airbus A321-211, China Eastern Airlines JP7534981.jpg'],
+    'NH': ['ANA\'s A321ceo Landing to Itami Airport.jpg'],
+    'NZ': ['Air New Zealand Airbus A321-271NX ZK-OYB - Star Alliance Livery.jpg'],
+    'OZ': ['Air Busan Airbus A321 HL7211 pushing back from Taoyuan February 2026.jpg'],
+    'PR': ['Philippine Airlines Airbus A321 RP-C9925 Manila 2025 (01).jpg'],
+    'QR': ['Qatar Airways A320-232 (A7-AHB) at Berlin Tegel Airport.jpg'],
+    'TK': ['TC-JRZ Turkish Airlines at ZRH 2018 02.jpg'],
+    'TR': ['Air Busan Airbus A321 HL7211 pushing back at Taoyuan May 2026 3.jpg'],
+    'VN': ['Vietnam Airlines Airbus A321 VN-A338 departing Taoyuan February 2026.jpg'],
+    'ZH': ['B-32DS@PEK (20240515174613).jpg'],
+  },
+  'A333': {
+    '3U': ['B-5945 - Sichuan Airlines (Summer Universiade 2021 Livery) - Airbus A330-343 - MSN 1528 - VGHS.jpg'],
+    '5J': ['9H-POP - Airbus A330-343 - US-Bangla Airlines - 1445 - VGHS.jpg'],
+    'CA': ['Air China A330-300 at Wuhan Tianhe International Airport.jpg'],
+    'CX': ['Cathay Pacific Airbus A330-300 at Chubu International Airport.jpg'],
+    'CZ': ['China Southern TPE 20260109.jpg'],
+    'EY': ['Ethihad A330-300 A6-AFA.jpg'],
+    'HU': ['Hainan Air A330-300.jpg'],
+    'KE': ['Korean Air, A330-300, HL7550 (24393129310).jpg'],
+    'LH': ['Lufthansa Airbus A330-300 (D-AIKN) at Frankfurt Airport.jpg'],
+    'MH': ['Malaysia Airlines A330-300 (9M-MTA) @ SYD, Nov 2014.jpg'],
+    'MU': ['China Eastern Airlines Airbus A330-300 B-6096 landing at Taipei Songshan April 2026.jpg'],
+    'OZ': ['Asiana Airlines Airbus A330-300 HL7792 taking off from Taoyuan February 2026.jpg'],
+    'PR': ['Davao International Airport 2019.jpg'],
+    'QF': ['VH-QPJ_Qantas_A330_Sydney.jpg'],
+    'SA': ['A330-300 SOUTH AFRICAN SBGR (32924691032).jpg'],
+    'TG': ['HS-TEO - Thai Airways - Airbus A330-343 - 1003 - VGHS.jpg'],
+    'TK': ['Turkish Airlines Airbus A330 at CDG 3.jpg'],
+  },
+  'A359': {
+    '3U': ['B-304U@PEK (20250104084640).jpg'],
+    'AF': ['Air France A350-900 F-HTYQ at Boston.jpg'],
+    'CA': ['Air China A350-900 (B-326Y) in Shanghai.jpg'],
+    'CX': ['Cathay Pacific A350-1041.jpg'],
+    'CZ': ['China Southern Airlines (B-32ED) Airbus A350-941 departing Sydney Airport (3).jpg'],
+    'EK': ['Emirates_A350-900_Bologna_Airport_-_2025.jpg'],
+    'JL': ['JAPAN AIRLINES AIRBUS A350-900＆A350-1000.jpg'],
+    'KE': ['HL8597 @ FUK, 2025-03-29.jpg'],
+    'LH': ['Lufthansa_A350_D-AIXK_MUC.jpg'],
+    'MU': ['China Eastern Airlines (B-32DJ) Airbus A350-941 taxiing at Sydney Airport.jpg'],
+    'OZ': ['Asiana_A350_HL8078.jpg'],
+    'PR': ['Philippines Airlines Airbus A350-941 RP-C3506.jpg'],
+    'QR': ['Qatar Airways A350-900 (A7-ALY) @ LHR, Feb 2020.jpg'],
+    'SQ': ['Singapore Airlines A350-941 (9V-SMO) taxiing at Manchester Airport (1).jpg'],
+    'TG': ['HS-THL_Thai_Airways_A350.jpg'],
+    'TK': ['Turkish Airlines Airbus A350-900 TC-LGA on final approach to Boston June 2024.jpg'],
+    'VN': ['VN-A896 - Vietnam Airlines - Airbus A350-941 - VGHS.jpg'],
+  },
+  'A35K': {
+    'BA': ['British Airways Airbus A350-1000 G-XWBP MD1.jpg'],
+    'CX': ['Cathay Pacific A350-1041.jpg'],
+    'EY': ['Etihad Airways, A6-XWA, Airbus A350-1041.jpg'],
+    'JL': ['JAPAN AIRLINES AIRBUS A350-900＆A350-1000.jpg'],
+    'LH': ['D-AIXB at MUC.jpg'],
+    'QR': ['Qatar Airways Airbus A350-1000.jpg'],
+    'SQ': ['9V-SJA Airbus A350-941 Singapore Airlines, Manchester.jpg'],
+  },
+  'A388': {
+    'BA': ['British Airways A380 -800 G-XLEI rolling out at SFO L1180186.jpg'],
+    'CZ': ['China Southern A380 at PEK (30451050713).jpg'],
+    'EK': ['Emirates Airbus A380-861 A6-EER MUC 2015 01.jpg'],
+    'EY': ['Airbus A380-800 - Etihad Airways.jpg'],
+    'KE': ['Korean Air Airbus A380-861 HL7612 (25402382021).jpg'],
+    'LH': ['Lufthansa Airbus A380-841; D-AIMC@FRA;06.07.2011 603bm (5912728290).jpg'],
+    'NH': ['JA381A NRT 27.12.23 (53483036983).jpg'],
+    'OZ': ['Asiana Airlines A380-841 (HL7626) taxiing at Narita International Airport.jpg'],
+    'QF': ['A380 Qantas (QF93 at LAX) landing 2010-08-08.jpg'],
+    'QR': ['Airbus A380 Qatar Airways.jpg'],
+    'SQ': ['SQ A-380 @ LAX (18863070971).jpg'],
+  },
+  'B38M': {
+    'AA': ['American Boeing 737-8 MAX N321TG BWI MD1.jpg'],
+    'AM': ['AeroMexico B737-9 MAX XA-HSB at GDL.jpg'],
+    'AT': ['(GBR-London) Royal Air Maroc Boeing 737 MAX 8 CN-MAY @ EGLL 2025-06-17.jpg'],
+    'CA': ['B-1395@PEK (20230523162210).jpg'],
+    'CM': ['Copa Airlines Boeing 737 MAX 9 HP-9903CMP taxiing at JFK Airport.jpg'],
+    'CZ': ['B-205J of China Southern Airlines at SIN T1 20250506.jpg'],
+    'ET': ['Ethiopian Airlines ET-AVJ takeoff from TLV (46461974574).jpg'],
+    'HU': ['B-207S.jpg'],
+    'MF': ['B-1117@TYN (20241121113508).jpg'],
+    'MU': ['B-1385@PKX (20250620180002).jpg'],
+    'QR': ['SP-RZA Buzz Boeing 737-8-200 MAX STN 271121 - 51709127394.jpg'],
+    'SQ': ['Singapore Airlines Boeing 737 9V-MBA Singapore 2025 (02).jpg'],
+    'ZH': ['B-20DN@TYN (20241121114204).jpg'],
+  },
+  'B738': {
+    'AA': ['American Boeing 737-800 N919NN at gate H17 at Chicago OHare June 2025.jpg'],
+    'AM': ['Hannover Airport Tailwind Airlines Boeing 737-8Z9(WL) TC-TLJ (DSC03319).jpg'],
+    'AT': ['Royal Air Maroc 737-800 at CDG - 54149232431.jpg'],
+    'CA': ['Air China B737-800 (B-5175) @ HKG, March 2019.jpg'],
+    'CM': ['B737 Copa Airlines at GDL.jpg'],
+    'CZ': ['China Southern B-5837 at ZUH 20150912.jpg'],
+    'ET': ['Airliners Kuala Lumpur 2025 (01).jpg'],
+    'HU': ['Hainan Airlines Boeing 737-800 B-1101 at DaTong YunGang Airport.jpg'],
+    'JL': ['Japan Airlines Boeing 737-800 JA312J at Taoyuan February 2026.jpg'],
+    'KE': ['Korean Air Lines 737-800 HL8247 at ICN (26066226950).jpg'],
+    'MF': ['Xiamen Air Boeing 737-800 B-5653 at Taoyuan February 2026.jpg'],
+    'MU': ['B-1790 - Boeing 737-89P - China Eastern Airlines - VGHS.jpg'],
+    'NH': ['JA82AN HND 2025-03-20.jpg'],
+    'QF': ['Qantas (VH-XZM) Boeing 737-838(WL) on display at the 2024 Canberra Airport open day.jpg'],
+    'SA': ['ZS-SJS Boeing 737 South African in Visa Card C-s (7690204478).jpg'],
+    'SQ': ['Singapore Airlines Boeing 737 9V-MGN Singapore 2025 (02).jpg'],
+    'TK': ['Turkish Airlines Boeing 737-8F2 TC-JFE MUC 2015 01.jpg'],
+    'ZH': ['Shenzhen Airlines Boeing 737-87L B-5615 at HGH 20250613.jpg'],
+  },
+  'B739': {
+    'CM': ['B737 Copa Airlines at GDL.jpg'],
+    'DL': ['Delta Boeing 737-900ER N865DN BWI MD1.jpg'],
+    'KE': ['KoreanAir 737-900 HL8248 at ICN (28166075010).jpg'],
+  },
+  'B748': {
+    'CA': ['Air China Boeing 747-8 B-2487 IAD MD1.jpg'],
+    'KE': ['Korean Air Boeing 747-8i HL7637 departing Taoyuan February 2026 2.jpg'],
+    'LH': ['Lufthansa 747-8I D-ABYA.JPG'],
+  },
+  'B77W': {
+    'AA': ['N718AN30062013LHR (9177051993).jpg'],
+    'BA': ['British Airways Boeing 777-300ER G-STBB MD1.jpg'],
+    'BR': ['EVA B-16711.jpg'],
+    'CA': ['Boeing 777-39L-ER, Air China AN2259454.jpg'],
+    'CX': ['B-KPI AIRCRAFT Boeing 777-367(ER).jpg'],
+    'CZ': ['China southern B777-300ER.jpg'],
+    'EK': ['Emirates_Boeing_777_A6-EPR_Kuala_Lumpur_2025_(01).jpg'],
+    'ET': ['ET-ASK - Ras Dashen - Ethiopian Airlines - Boeing 777-360ER - MSN 44550 - VGHS.jpg'],
+    'EY': ['Airport Munich Boeing 777-3FXER Etihad.jpg'],
+    'KE': ['Korean Air B777-3B5ER HL8209 - TPE RCTP - 21-FEB-2026 (55135012666).jpg'],
+    'MU': ['B-2025 AIRCRAFT Boeing 777-39P(ER).jpg'],
+    'NH': ['JA797A-LHR-20240410-192710.jpg'],
+    'OZ': ['STAR ALLIANCE(Asiana Airlines).jpg'],
+    'PR': ['RP-C7773 (17399944432).jpg'],
+    'QR': ['777-300ER (32551470416).jpg'],
+    'SQ': ['9V-SWH landing at HKG in May 2012.jpg'],
+    'TG': ['HS-TKZ AIRCRAFT Boeing 777-3D7(ER).jpg'],
+    'TK': ['Turkish Airlines 777.jpg'],
+    'UA': ['United Boeing 777 -300 ER N2737U departing SFO better L1170971.jpg'],
+  },
+  'B788': {
+    'AM': ['AeroMexico Boeing 787 landing in Amsterdam.jpg'],
+    'BA': ['British Airways B787-8.jpg'],
+    'CZ': ['B-1128 AIRCRAFT Boeing 787-9 Dreamliner.jpg'],
+    'ET': ['Ethiopian Airlines Boeing 787 at CDG 2.jpg'],
+    'HU': ['Hainan Airlines B787-9 (B-7880) @ MAN, Aug 2017.jpg'],
+    'MF': ['XiamenAir Boeing 787-9 Dreamliner B-1356 (United Nations special livery) taxiing at JFK Airport.jpg'],
+    'NH': ['All Nippon Airways Boeing 787-8 (JA819A) at Tokyo Haneda Airport (2).jpg'],
+    'QR': ['VIE A7-BDD 1.jpg'],
+    'TG': ['HS-TQD - Thai Airways International - Boeing 787-8 Dreamliner - MSN 35320 - VGHS.jpg'],
+    'UA': ['United Airlines Boeing 787 (29924988141).jpg'],
+  },
+  'B789': {
+    'AF': ['Air France, F-HRBI, Boeing 787-9 Dreamliner (49589490187).jpg'],
+    'AM': ['AeroMexico Boeing 787 landing in Amsterdam.jpg'],
+    'AT': ['CN-RHA.jpg'],
+    'BA': ["Boeing 787-9 'G-ZBKC' British Airways (21847775024).jpg"],
+    'BR': ['EVA Air, Boeing 787-9, B-17881 NRT (32364156397).jpg'],
+    'CA': ['B-7879@PEK (20171103145156).jpg'],
+    'CZ': ['B-1128 AIRCRAFT Boeing 787-9 Dreamliner.jpg'],
+    'ET': ['Ethiopian Airlines Boeing 787 at CDG 2.jpg'],
+    'EY': ['A6-BLH.jpg'],
+    'HU': ['Hainan Airlines B787-9 (B-7880) @ MAN, Aug 2017.jpg'],
+    'JL': ['JA878J (15 Nov 2021).jpg'],
+    'KE': ['Korean Air Boeing 787-9 Dreamliner HL7208 on takeoff roll at JFK Airport.jpg'],
+    'LH': ['Hannover Airport Lufthansa Boeing 787-9 Dreamliner D-ABPA (DSC06590).jpg'],
+    'MF': ['XiamenAir Boeing 787-9 Dreamliner B-1356 (United Nations special livery) taxiing at JFK Airport.jpg'],
+    'MU': ['B-208P@SHA (20191114103614).jpg'],
+    'NH': ['STAR ALLIANCE(All Nippon Airways1).jpg'],
+    'NZ': ['Air New Zealand Boeing 787 ZK-NZL Perth 2019 (01).jpg'],
+    'QF': ['VH-ZNJ - Qantas Airlines (100th Anniversary Livery) - Boeing 787-9 Dreamliner - MSN 66074 - VGHS.jpg'],
+    'QR': ['A7-BHF 787 Qatar ARN 01.jpg'],
+    'TG': ['HS-TQD - Thai Airways International - Boeing 787-8 Dreamliner - MSN 35320 - VGHS.jpg'],
+    'TK': ['Turkish Airlines TK45 from Cape Town to Istanbul.jpg'],
+    'TN': ['N1015X Air Tahiti Nui Boeing 787-9 Dreamliner 26.jpg'],
+    'UA': ['United Airlines B787-9 N26952 2019-09-28 Munich Airport p10.jpg'],
+    'VN': ['Vietnam Airlines – VN-A862.jpg'],
+  },
+};
+
+function _localImageUrl(model, airline, filename) {
+  return `/static/images/aircraft/${encodeURIComponent(model)}/${encodeURIComponent(airline)}/${encodeURIComponent(filename)}`;
+}
+
+// Wikimedia Commons search URL for manual lookup
+function _aircraftSearchUrl(acCode) {
+  const model = (AIRCRAFT_VISUAL[acCode] && AIRCRAFT_VISUAL[acCode].family) ? AIRCRAFT_VISUAL[acCode].family.toUpperCase() : acCode;
+  return `https://commons.wikimedia.org/w/index.php?search=${encodeURIComponent(model + ' aircraft')}&title=Special:MediaSearch`;
+}
+
+function _getAircraftImageUrls(acCode, airlineCode) {
+  const modelData = AIRCRAFT_IMAGES[acCode];
+  if (!modelData) return null;
+
+  // Priority 1: exact airline match
+  if (airlineCode && modelData[airlineCode]) {
+    const list = modelData[airlineCode];
+    const fname = list[Math.floor(Math.random() * list.length)];
+    return { local: _localImageUrl(acCode, airlineCode, fname), source: 'airline' };
+  }
+
+  return null;
+}
+
+// ============================================================
 //  MULTI-CLASS SEAT GENERATION (with deck support)
 // ============================================================
 
@@ -263,7 +630,7 @@ function generateSeatMap(acCode) {
 
     for (const cabin of deck.cabins) {
       const layout = cabin.layout;
-      const colLetters = _getColLetters(layout);
+      const colLetters = cabin.refColumns.filter(ref => ref !== 'AISLE');
       const activeCols = _getActiveCols(cabin.refColumns, layout);
       const windowCols = new Set([colLetters[0], colLetters[colLetters.length - 1]]);
       const seats = [];
@@ -336,17 +703,6 @@ function generateSeatMap(acCode) {
   return { decks, allSeats, totalRows, acInfo };
 }
 
-function _getColLetters(layout) {
-  const totalCols = layout.reduce((a, b) => a + b, 0);
-  if (totalCols <= 4) return ['A', 'B', 'D', 'K'];
-  if (totalCols <= 6) return ['A', 'B', 'C', 'D', 'E', 'F'];
-  if (totalCols === 7) return ['A', 'B', 'D', 'E', 'F', 'H', 'K'];
-  if (totalCols === 8) return ['A', 'B', 'D', 'E', 'F', 'G', 'H', 'K'];
-  if (totalCols === 9) return ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J'];
-  if (totalCols === 10) return ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K'];
-  return Array.from({ length: totalCols }, (_, i) => String.fromCharCode(65 + i));
-}
-
 function _getActiveCols(refColumns, layout) {
   const groups = [];
   let current = [];
@@ -373,30 +729,96 @@ function buildProfileHTML(flight) {
   const g = flight.geek || {};
   const acCode = flight.aircraft_code || 'B789';
   const seatMap = generateSeatMap(acCode);
+  const segs = flight.segments || [];
+  const hasMultiSeg = segs.length > 1;
+
+  // Per-segment aircraft codes for segment tabs
+  const segAcCodes = hasMultiSeg ? segs.map(s => s.aircraft || acCode) : [acCode];
+
+  // Segment sub-tab bar + panels (only for multi-segment)
+  let segTabBar = '';
+  let segIdPanels = '';
+  if (hasMultiSeg) {
+    segTabBar = `
+      <div class="fp-seg-tab-bar" id="fpSegTabBar">
+        ${segAcCodes.map((code, i) => `
+          <button class="fp-seg-tab-btn ${i === 0 ? 'active' : ''}" data-seg="${i}">
+            第${i + 1}程 · ${escapeHtml(code)}
+          </button>
+        `).join('')}
+      </div>`;
+    segIdPanels = segAcCodes.map((code, i) => `
+      <div class="fp-seg-id-panel ${i === 0 ? 'active' : ''}" data-seg-panel="${i}">
+        ${_buildAircraftIdBlock(flight, i)}
+      </div>
+    `).join('');
+  }
+
+  const aircraftIdSection = hasMultiSeg
+    ? `<div class="fp-section">
+        <div class="fp-section-title">
+          <span class="fp-section-icon">P</span> 航空器识别
+          <span class="fp-section-hint">— 分段实拍影像</span>
+        </div>
+        ${segTabBar}
+        <div class="fp-seg-id-area">
+          ${segIdPanels}
+        </div>
+      </div>`
+    : `<div class="fp-section">
+        <div class="fp-section-title">
+          <span class="fp-section-icon">P</span> 航空器识别
+        </div>
+        ${_buildAircraftIdBlock(flight)}
+      </div>`;
 
   return `
     <div class="fp-overlay" id="fpOverlay">
       <div class="fp-panel" id="fpPanel">
         <button class="fp-close" id="fpClose">&times;</button>
-        ${_buildHeader(flight, g, acCode)}
-        ${_buildSpecsRow(g)}
-        ${_buildSeatExplorer(seatMap)}
-        ${_buildTelemetry(g.telemetry)}
-        ${_buildLogs(g.recentLogs)}
-        ${_buildGlobe(flight)}
+
+        <!-- Fixed header area (shared across tabs) -->
+        <div class="fp-top-area">
+          ${_buildHeader(flight, g, acCode)}
+          ${_buildSpecsRow(g)}
+        </div>
+
+        <!-- Tab bar -->
+        <div class="fp-tab-bar" id="fpTabBar">
+          <button class="fp-tab-btn active" data-tab="0">飞行数据</button>
+          <button class="fp-tab-btn" data-tab="1">座舱图</button>
+          <button class="fp-tab-btn" data-tab="2">航线轨迹</button>
+        </div>
+
+        <!-- Tab content -->
+        <div class="fp-tab-content" id="fpTabContent">
+          <div class="fp-tab-panel active" data-tab-panel="0">
+            ${aircraftIdSection}
+            ${_buildDistanceSection(flight, acCode)}
+            ${_buildTelemetry(g.telemetry)}
+            ${_buildLogs(g.recentLogs)}
+          </div>
+          <div class="fp-tab-panel" data-tab-panel="1">
+            ${_buildSeatExplorer(seatMap)}
+          </div>
+          <div class="fp-tab-panel" data-tab-panel="2" id="fpGlobePanel">
+            ${_buildGlobe(flight)}
+          </div>
+        </div>
+
         <div class="fp-footer">航空爱好者社区与公开飞行数据 | 仅供极客探索，不提供购票/值机服务</div>
       </div>
     </div>`;
 }
 
 function _buildHeader(flight, g, acCode) {
+  const segs = flight.segments || [];
   return `
     <div class="fp-header">
-      <div class="fp-registration">${escapeHtml(g.registration || 'B-0000')}</div>
-      <div class="fp-model">${escapeHtml(g.exactModel || acCode)}</div>
       <div class="fp-airline-badge">
         <span class="fp-airline-name">${escapeHtml(flight.airline_name || flight.airline)}</span>
         <span class="fp-airline-code">${escapeHtml(flight.airline)}</span>
+        ${_allianceBadge(flight.airline)}
       </div>
       ${g.liveryType === 'special' ? `<div class="fp-livery-badge special">${escapeHtml(g.liveryName)}</div>` : ''}
     </div>`;
@@ -424,6 +846,116 @@ function _buildSpecsRow(g) {
         <span class="fp-spec-value fp-livery-text ${g.liveryType === 'special' ? 'special' : ''}">${escapeHtml(g.liveryName || '标准涂装')}</span>
       </div>
     </div>`;
+}
+
+// ——— Aircraft identification block (v5.7: 3-row layout) ———
+// Row 1: "第X程 航班号"  |  Row 2: photo (centered, rounded)  |  Row 3: model + registration
+function _buildAircraftIdBlock(flight, segIdx) {
+  const g = flight.geek || {};
+  const segs = flight.segments || [];
+  const isMultiSeg = segs.length > 1;
+
+  const seg = (segIdx !== undefined && segs[segIdx]) ? segs[segIdx] : (segs[0] || {});
+  const acCode = seg.aircraft || flight.aircraft_code || 'B789';
+  const flightNo = seg.flight_no || '--';
+  const fullModel = AIRCRAFT_VISUAL[acCode]?.family?.toUpperCase() || g.exactModel || acCode;
+  const airlineCode = flight.airline || '';
+  const urls = _getAircraftImageUrls(acCode, airlineCode);
+
+  // Row 1: segment label + flight number
+  let flightNoLabel;
+  if (isMultiSeg) {
+    flightNoLabel = `第${segIdx + 1}程 ${escapeHtml(flightNo)}`;
+  } else {
+    flightNoLabel = escapeHtml(flightNo);
+  }
+
+  // Row 3: model name + registration
+  const registration = g.registration || 'B-0000';
+  const modelAndReg = `${escapeHtml(fullModel)} · ${escapeHtml(registration)}`;
+
+  const panelId = segIdx !== undefined ? segIdx : '';
+
+  return `
+    <div class="fp-ac-id-block">
+      <div class="fp-ac-id-flightno">${flightNoLabel}</div>
+      <div class="fp-ac-id-photo" id="fpAircraftPhoto${panelId}">
+        ${urls ? `
+          <img class="fp-aircraft-img" id="fpAircraftImg${panelId}"
+               src="${escapeHtml(urls.local)}"
+               alt="${escapeHtml(fullModel)}"
+               loading="lazy"
+               onerror="this.style.display='none';this.parentElement.querySelector('.fp-aircraft-fallback').style.display='flex';">
+          <div class="fp-aircraft-fallback" style="display:none;">
+            <div class="fp-fallback-icon">&#9992;</div>
+            <span>图片加载失败<br><small>请检查本地素材库</small></span>
+          </div>` : `
+          <div class="fp-aircraft-fallback" style="display:flex;">
+            <div class="fp-fallback-icon">&#9992;</div>
+            <span>暂无实拍影像<br><small>${escapeHtml(airlineCode)} · ${escapeHtml(fullModel)}</small></span>
+          </div>`}
+      </div>
+      <div class="fp-ac-id-details">${modelAndReg}</div>
+    </div>`;
+}
+
+function _buildDistanceSection(flight, acCode) {
+  const segs = flight.segments || [];
+  if (segs.length === 0) return '';
+
+  let totalDist = 0;
+  const rows = segs.map((s, i) => {
+    const dist = s.distance_km || 0;
+    totalDist += dist;
+    const distStr = dist > 0 ? `${dist.toLocaleString()} km` : '—';
+    const originName = s.origin || '?';
+    const destName = s.destination || '?';
+    const ac = s.aircraft || '?';
+    const rangePct = s.range_pct;
+    let rangeBar = '';
+    if (rangePct !== undefined && rangePct > 0) {
+      const color = rangePct > 80 ? 'var(--red)' : rangePct > 60 ? 'var(--orange)' : 'var(--aero-accent)';
+      rangeBar = `<div class="fp-range-bar-wrap"><div class="fp-range-bar" style="width:${Math.min(rangePct, 100)}%;background:${color};"></div></div>`;
+    }
+    const segLabel = segs.length > 1 ? `第${i + 1}程` : '直飞航段';
+    return `
+      <div class="fp-dist-seg">
+        <div class="fp-dist-seg-header">
+          <span class="fp-dist-label">${segLabel}</span>
+          <span class="fp-dist-route">${escapeHtml(originName)} → ${escapeHtml(destName)}</span>
+        </div>
+        <div class="fp-dist-detail">
+          <span class="fp-dist-value">${distStr}</span>
+          <span class="fp-dist-ac">机型 ${escapeHtml(ac)}</span>
+          ${rangePct !== undefined ? `<span class="fp-dist-range-pct">航程利用率 ${rangePct}%</span>` : ''}
+        </div>
+        ${rangeBar}
+      </div>`;
+  }).join('');
+
+  const totalStr = totalDist > 0 ? `${totalDist.toLocaleString()} km` : '—';
+  const totalMi = totalDist > 0 ? ` (${Math.round(totalDist * 0.6214).toLocaleString()} mi)` : '';
+
+  return `
+    <div class="fp-section">
+      <div class="fp-section-title">
+        <span class="fp-section-icon">D</span> 飞行里程
+        <span class="fp-section-hint">— Great-circle distance</span>
+      </div>
+      <div class="fp-dist-list">
+        ${rows}
+      </div>
+      <div class="fp-dist-total">
+        <span class="fp-dist-total-label">总飞行距离</span>
+        <span class="fp-dist-total-value">${totalStr}</span>
+        <span class="fp-dist-total-mi">${totalMi}</span>
+      </div>
+    </div>`;
+}
+
+function _initAircraft3DAsync(container, flight) {
+  // Real-photo mode: no WebGL needed. Image loads natively.
+  // Kept as no-op stub for API compatibility with openFlightProfile.
 }
 
 function _buildSeatExplorer(seatMap) {
@@ -598,7 +1130,7 @@ function _buildGlobe(flight) {
     <div class="fp-section">
       <div class="fp-section-title"><span class="fp-section-icon">G</span> 3D 互动地球 — 大圆航线轨迹${stopsBadge}</div>
       <div class="fp-globe-wrap">
-        <div id="fpGlobe3D" class="fp-globe-3d" style="display:flex;align-items:center;justify-content:center;color:#64748b;font-size:0.8rem;">🌍 3D 地球加载中...</div>
+        <div id="fpGlobe3D" class="fp-globe-3d skeleton-globe" style="display:flex;align-items:center;justify-content:center;color:#64748b;font-size:0.8rem;">🌍 3D 地球加载中...</div>
         <div class="fp-globe-overlay">
           <span class="fp-globe-label">${routeLabel}</span>
           <span class="fp-globe-label">ETOPS 180min 安全圈</span>
@@ -688,8 +1220,18 @@ function _initGlobe3D(el, originIATA, originLat, originLng, destIATA, destLat, d
   }
 }
 
-function _showGlobeFallback(el, msg) {
-  el.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;min-height:300px;color:#94a3b8;font-size:0.85rem;text-align:center;padding:40px;">${msg}</div>`;
+function _showGlobeFallback(el, msg, flight) {
+  el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;min-height:300px;color:#94a3b8;font-size:0.85rem;text-align:center;padding:40px;gap:12px;">
+    <span>${msg}</span>
+    <button class="btn" id="retryGlobeBtn" style="font-size:0.8rem;padding:6px 16px;">重试加载</button>
+  </div>`;
+  if (flight) {
+    el.querySelector('#retryGlobeBtn')?.addEventListener('click', () => {
+      el.style.cssText = 'display:flex;align-items:center;justify-content:center;color:#64748b;font-size:0.8rem;';
+      el.textContent = '🌍 3D 地球加载中...';
+      _initGlobeAsync(activePanel, flight);
+    });
+  }
 }
 
 // —— Multi-segment globe for connecting flights ——
@@ -802,12 +1344,12 @@ async function _initGlobeAsync(container, flight) {
     // Wait for container dimensions
     const ready = await _waitForDim(el, 20);
     if (!ready) {
-      _showGlobeFallback(el, '3D 地球容器未就绪，请关闭面板重试');
+      _showGlobeFallback(el, '3D 地球容器未就绪，请关闭面板重试', flight);
       return;
     }
 
     if (!window.Globe) {
-      _showGlobeFallback(el, 'Globe.gl 库加载超时，请刷新页面重试');
+      _showGlobeFallback(el, 'Globe.gl 库加载超时，请重试', flight);
       return;
     }
 
@@ -822,7 +1364,7 @@ async function _initGlobeAsync(container, flight) {
     }
   } catch (err) {
     console.error('[FlightProfile] Async globe init failed:', err);
-    if (el.isConnected) _showGlobeFallback(el, '3D 地球加载失败，请重试');
+    if (el.isConnected) _showGlobeFallback(el, '3D 地球加载失败，请重试', flight);
   }
 }
 
@@ -942,6 +1484,22 @@ function _buildSeatProfileHTML(profile) {
 
 let activePanel = null;
 
+// H5: Focus trap — keep Tab within the profile panel
+function _trapFocus(e) {
+  if (e.key !== 'Tab' || !activePanel) return;
+  const focusable = activePanel.querySelectorAll(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  );
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey) {
+    if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+  } else {
+    if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+}
+
 export function initFlightProfile() {
   document.addEventListener('click', (e) => {
     const btn = e.target.closest('.geek-profile-btn');
@@ -963,9 +1521,13 @@ export function initFlightProfile() {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && activePanel) closeFlightProfile();
   });
+
+  document.addEventListener('keydown', _trapFocus);
 }
 
 function openFlightProfile(flight) {
+  if (!flight || !flight.aircraft_code) return;
+  Analytics.trackProfileOpen(flight.airline, flight.aircraft_code);
   closeFlightProfile();
 
   const container = document.createElement('div');
@@ -974,7 +1536,8 @@ function openFlightProfile(flight) {
   document.body.appendChild(container);
   document.body.style.overflow = 'hidden';
 
-  document.getElementById('fpClose').addEventListener('click', closeFlightProfile);
+  const closeBtn = document.getElementById('fpClose');
+  if (closeBtn) closeBtn.addEventListener('click', closeFlightProfile);
 
   // Bind deck tab clicks
   container.querySelectorAll('.fp-deck-tab').forEach(tab => {
@@ -987,56 +1550,104 @@ function openFlightProfile(flight) {
 
   // Bind seat clicks — Seat Inspector Modal
   const inspectorEl = document.getElementById('fpSeatInspector');
-  const acCode = flight.aircraft_code || 'B789';
-  container.querySelectorAll('.fp-seat').forEach(seatBtn => {
-    seatBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const row = seatBtn.dataset.row;
-      const col = seatBtn.dataset.col;
-      const quality = seatBtn.dataset.quality;
-      const cabinClass = seatBtn.dataset.cabinClass;
-      container.querySelectorAll('.fp-seat.selected').forEach(s => s.classList.remove('selected'));
-      seatBtn.classList.add('selected');
+  if (inspectorEl) {
+    const acCode = flight.aircraft_code || 'B789';
+    container.querySelectorAll('.fp-seat').forEach(seatBtn => {
+      seatBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const row = seatBtn.dataset.row;
+        const col = seatBtn.dataset.col;
+        const quality = seatBtn.dataset.quality;
+        const cabinClass = seatBtn.dataset.cabinClass;
+        container.querySelectorAll('.fp-seat.selected').forEach(s => s.classList.remove('selected'));
+        seatBtn.classList.add('selected');
 
-      // Seat identity
-      document.getElementById('fpDetailSeat').textContent = `${row}${col}`;
-      document.getElementById('fpDetailQuality').textContent = seatBtn.dataset.label;
+        const seatEl = document.getElementById('fpDetailSeat');
+        if (seatEl) seatEl.textContent = `${row}${col}`;
+        const qualEl = document.getElementById('fpDetailQuality');
+        if (qualEl) qualEl.textContent = seatBtn.dataset.label;
 
-      // Avgeek commentary
-      document.getElementById('fpAvgeekCommentary').innerHTML = _getAvgeekCommentary(quality, cabinClass);
+        const commentaryEl = document.getElementById('fpAvgeekCommentary');
+        if (commentaryEl) commentaryEl.innerHTML = _getAvgeekCommentary(quality, cabinClass);
 
-      // Hardware micro-museum
-      _populateHardwareSection(cabinClass, acCode);
+        _populateHardwareSection(cabinClass, acCode);
 
-      // Noise radar
-      const db = parseInt(seatBtn.dataset.noiseDb) || 70;
-      const bar = document.getElementById('fpNoiseBar');
-      bar.style.width = Math.min(100, ((db - 50) / 40) * 100) + '%';
-      bar.style.background = _noiseColor(db);
-      document.getElementById('fpNoiseDb').textContent = `${db}dB`;
-      document.getElementById('fpNoiseDesc').textContent = seatBtn.dataset.noiseDesc;
-      document.getElementById('fpNoiseRec').textContent = seatBtn.dataset.noiseRec;
+        const db = parseInt(seatBtn.dataset.noiseDb) || 70;
+        const bar = document.getElementById('fpNoiseBar');
+        if (bar) {
+          bar.style.width = Math.min(100, ((db - 50) / 40) * 100) + '%';
+          bar.style.background = _noiseColor(db);
+        }
+        const noiseDbEl = document.getElementById('fpNoiseDb');
+        if (noiseDbEl) noiseDbEl.textContent = `${db}dB`;
+        const noiseDescEl = document.getElementById('fpNoiseDesc');
+        if (noiseDescEl) noiseDescEl.textContent = seatBtn.dataset.noiseDesc;
+        const noiseRecEl = document.getElementById('fpNoiseRec');
+        if (noiseRecEl) noiseRecEl.textContent = seatBtn.dataset.noiseRec;
 
-      inspectorEl.classList.add('active');
+        inspectorEl.classList.add('active');
+      });
+    });
+
+    container.querySelectorAll('.fp-seat-grid').forEach(grid => {
+      grid.addEventListener('click', (e) => {
+        if (!e.target.closest('.fp-seat')) inspectorEl.classList.remove('active');
+      });
+    });
+  }
+
+  // ——— Tab switching ———
+  let _globeInitialized = false;
+  container.querySelectorAll('.fp-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = btn.dataset.tab;
+      // Toggle tab button active states
+      container.querySelectorAll('.fp-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+      // Toggle panel visibility
+      container.querySelectorAll('.fp-tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tabPanel === idx));
+      // Lazy-init globe when switching to routes tab
+      if (idx === '2' && !_globeInitialized) {
+        _globeInitialized = true;
+        _initGlobeAsync(container, flight);
+      }
     });
   });
 
-  // Dismiss inspector on grid background click
-  container.querySelectorAll('.fp-seat-grid').forEach(grid => {
-    grid.addEventListener('click', (e) => {
-      if (!e.target.closest('.fp-seat')) inspectorEl.classList.remove('active');
+  // ——— Segment sub-tab switching (multi-segment flights) ———
+  container.querySelectorAll('.fp-seg-tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const segIdx = btn.dataset.seg;
+      container.querySelectorAll('.fp-seg-tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+      container.querySelectorAll('.fp-seg-id-panel').forEach(p => p.classList.toggle('active', p.dataset.segPanel === segIdx));
     });
   });
 
   requestAnimationFrame(() => {
-    document.getElementById('fpOverlay').classList.add('active');
-    document.getElementById('fpPanel').classList.add('active');
+    const overlay = document.getElementById('fpOverlay');
+    const panel = document.getElementById('fpPanel');
+    if (overlay) overlay.classList.add('active');
+    if (panel) panel.classList.add('active');
+    const closeBtn = document.getElementById('fpClose');
+    if (closeBtn) closeBtn.focus();
+    _bindSwipeToClose(panel);
   });
-
-  // Fire-and-forget: globe loads asynchronously (CDN coords + dimension polling)
-  _initGlobeAsync(container, flight);
   activePanel = container;
 }
+
+// L2: Swipe-right-to-close gesture on mobile panels
+function _bindSwipeToClose(panel) {
+  if (!panel) return;
+  let startX = 0;
+  panel.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+  }, { passive: true });
+  panel.addEventListener('touchend', (e) => {
+    const endX = e.changedTouches[0].clientX;
+    const dx = endX - startX;
+    if (dx > 80 && Math.abs(e.changedTouches[0].clientY - (e.changedTouches[0].clientY || startX)) < dx) {
+      closeFlightProfile();
+    }
+  });
 }
 
 function closeFlightProfile() {

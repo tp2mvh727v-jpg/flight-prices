@@ -3,50 +3,104 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flight Price Explorer — 机票价格查询</title>
-<link rel="stylesheet" href="/static/css/style.css">
+<title>Aero-Hub — Explore the Sky, Decipher the Craft</title>
+<meta name="description" content="Aero-Hub — Global flight price search, aircraft profiles, and aviation geek data.">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="/static/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/static/icon.svg">
+<link rel="apple-touch-icon" href="/static/icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="/static/css/style.css?v=5.6.4">
+<script>
+// One-time SW cleanup on version bump — clears stale cached JS
+(function() {
+  var KEY = 'aerohub-sw-cleared';
+  var VERSION = '5.6.4b';
+  if (sessionStorage.getItem(KEY) === VERSION) return;
+  if (!('serviceWorker' in navigator)) { sessionStorage.setItem(KEY, VERSION); return; }
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    return Promise.all(regs.map(function(r) { return r.unregister(); }));
+  }).then(function() {
+    if (window.caches) {
+      return caches.keys().then(function(names) {
+        return Promise.all(names.map(function(n) { return caches.delete(n); }));
+      });
+    }
+  }).then(function() {
+    sessionStorage.setItem(KEY, VERSION);
+    location.reload();
+  });
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 	<script src="//unpkg.com/globe.gl"></script>
 </head>
 <body>
 
 <!-- ============================================================
-     View 1: Search Homepage
+     View 1: Search Homepage (direct entry — splash removed v5.6.4)
      ============================================================ -->
 <div class="app-view active" id="view-search">
+  <canvas id="aeroBgCanvas"></canvas>
   <div class="search-page">
 
     <!-- Hero -->
     <div class="search-hero">
-      <span class="hero-icon">&#9992;&#65039;</span>
-      <h1>探索全球机票价格</h1>
-      <p class="hero-subtitle">实时查询 · 免费使用 · 智能比价</p>
+      <h1>Aero-Hub Flight Console</h1>
+      <p class="hero-subtitle">Global Route Matrix &middot; Radar Search &middot; Secure Link</p>
     </div>
 
     <!-- Search Card -->
     <div class="search-card-wrap">
       <div class="search-card">
-        <h2>&#128269; 搜索航班</h2>
+        <h2>FMC Flight Deck &mdash; Route Query Console</h2>
 
         <form id="searchForm" novalidate>
           <!-- Trip type -->
           <div class="trip-type-group">
-            <button type="button" class="trip-type-btn active" data-type="oneway">单程</button>
-            <button type="button" class="trip-type-btn" data-type="roundtrip">往返</button>
+            <button type="button" class="trip-type-btn active" data-type="oneway" aria-pressed="true">单程</button>
+            <button type="button" class="trip-type-btn" data-type="roundtrip" aria-pressed="false">往返</button>
           </div>
 
           <!-- Cities with smart autocomplete -->
           <div class="city-row">
             <div class="city-group">
               <label for="originInput">出发地</label>
-              <input type="text" id="originInput">
+              <input type="text" id="originInput" autocorrect="off" autocapitalize="off" spellcheck="false">
             </div>
 
             <button type="button" class="swap-btn" id="swapBtn" title="对调出发地与目的地">&#8644;</button>
 
             <div class="city-group">
               <label for="destInput">目的地</label>
-              <input type="text" id="destInput">
+              <input type="text" id="destInput" autocorrect="off" autocapitalize="off" spellcheck="false">
+            </div>
+          </div>
+
+          <!-- Passengers + Cabin -->
+          <div class="pax-cabin-row">
+            <div class="pax-group">
+              <label for="passengersSelect">乘客</label>
+              <select id="passengersSelect">
+                <option value="1">1 成人</option>
+                <option value="2">2 成人</option>
+                <option value="3">3 成人</option>
+                <option value="4">4 成人</option>
+                <option value="5">5 成人</option>
+                <option value="6">6 成人</option>
+                <option value="7">7 成人</option>
+                <option value="8">8 成人</option>
+                <option value="9">9 成人</option>
+              </select>
+            </div>
+            <div class="cabin-group">
+              <label for="cabinSelect">舱位</label>
+              <select id="cabinSelect">
+                <option value="economy">经济舱</option>
+                <option value="premium">超值经济舱</option>
+                <option value="business">商务舱</option>
+                <option value="first">头等舱</option>
+              </select>
             </div>
           </div>
 
@@ -64,18 +118,21 @@
 
           <!-- Submit -->
           <div class="search-submit-wrap">
-            <button type="submit" class="btn-search">&#128270; 搜索航班</button>
+            <button type="submit" class="btn-search">ENGAGE RADAR SEARCH</button>
           </div>
         </form>
       </div>
     </div>
 
+    <!-- Recent searches (M5) -->
+    <div class="search-card-wrap" id="recentSearches" style="margin-top:12px;"></div>
+
     <!-- Features strip -->
     <div class="features-strip">
-      <div class="feature-item"><span class="feat-icon">&#128225;</span> Google Flights 实时数据</div>
-      <div class="feature-item"><span class="feat-icon">&#127758;</span> 覆盖全球主要城市</div>
-      <div class="feature-item"><span class="feat-icon">&#128200;</span> 30 天价格趋势</div>
-      <div class="feature-item"><span class="feat-icon">&#128176;</span> 免费 · 无需注册</div>
+      <div class="feature-item"><span class="feat-dot"></span> SYS_STATUS: ACTIVE</div>
+      <div class="feature-item"><span class="feat-dot"></span> GLOBAL_AIRPORTS_DATA: CACHED</div>
+      <div class="feature-item"><span class="feat-dot"></span> GRID_RADAR: ONLINE</div>
+      <div class="feature-item"><span class="feat-dot"></span> HUD_SYSTEM: STABLE</div>
     </div>
   </div>
 </div>
@@ -89,10 +146,11 @@
     <!-- Results header with search summary -->
     <div class="results-header">
       <div class="results-header-inner">
-        <button class="back-btn" id="backToSearch">&#8592; 修改搜索</button>
+        <button class="back-btn" id="backToSearch">&#8592; 返回搜索</button>
         <div class="search-summary">
           <span class="route-text"></span>
           <span class="trip-badge date-info"></span>
+          <span class="trip-badge pax-info"></span>
         </div>
       </div>
     </div>
@@ -112,12 +170,13 @@
       数据来源: <span id="sourceInfo">Google Flights</span> &nbsp;|&nbsp;
       免费 · 无需注册 &nbsp;|&nbsp;
       <a href="http://flightprice88:5088">flightprice88:5088</a>
+      <span class="footer-version">v5.6.4</span>
     </footer>
   </div>
 </div>
 
 <!-- App entry point -->
-<script type="module" src="/static/js/app.js"></script>
+<script type="module" src="/static/js/app.js?v=5.6.4"></script>
 
 </body>
 </html>

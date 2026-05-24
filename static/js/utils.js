@@ -3,6 +3,18 @@
 // ============================================================
 
 export function aircraftBadge(ac) {
+  // Multi-segment: show all unique aircraft from segments
+  const segs = ac.segments || [];
+  if (segs.length > 1) {
+    const codes = [...new Set(segs.map(s => s.aircraft).filter(Boolean))];
+    if (codes.length > 1) {
+      return codes.map(code => {
+        const isWide = /^(A3[3-9]|A35|A38|B7[4-9]|B78|330|340|350|380|747|767|777|787)/i.test(code);
+        const cls = isWide ? 'ac-wide' : 'ac-narrow';
+        return `<span class="ac-badge ${cls}" title="${code}">${code}</span>`;
+      }).join('<span class="ac-sep">+</span>');
+    }
+  }
   const code = ac.aircraft_code || '?';
   const type = ac.aircraft_type || '未知';
   let cls = 'ac-unknown';

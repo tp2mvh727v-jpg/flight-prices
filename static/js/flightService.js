@@ -34,8 +34,56 @@ const MOCK_CARRIERS = [
   { code: 'ZH', name: '深圳航空', id: -32335 },
 ];
 
-const WIDE_BODY = ['B789', 'B788', 'A359', 'A333', 'B77W', 'A388', 'A35K', 'B748'];
-const NARROW_BODY = ['A320', 'A321', 'B738', 'B739', 'A20N', 'B38M'];
+// —— Per-carrier fleet maps (source: planespotters.net 2025–2026) ——
+const AIRLINE_WIDEBODY = {
+  'CA': ['A359','A333','A332','B789','B77W','B748'], 'CZ': ['A359','A333','B789','B788','B77W'],
+  'MU': ['A359','A332','A333','B789','B77W'],          'HU': ['A359','A333','B789','B788'],
+  '3U': ['A359','A332'],                                'MF': ['B789','B788'],
+  'ZH': [],  'EK': ['A388','B77W','A359'],              'QR': ['A359','A35K','A388','B77W','B789','B788'],
+  'EY': ['A35K','A388','B77W','B789','A333'],           'SQ': ['A359','A35K','A388','B77W'],
+  'CX': ['A359','A35K','A333','B77W'],                  'QF': ['A388','B789','A333'],
+  'JL': ['A359','A35K','B789','B788','B77W'],           'NH': ['A388','B789','B788','B77W'],
+  'KE': ['A359','A388','A333','B789','B77W','B748'],    'OZ': ['A359','A388','A333','B77W'],
+  'LH': ['A359','A35K','A388','A333','B748','B789'],    'AF': ['A359','B77W','B789'],
+  'BA': ['A35K','A388','B788','B789','B77W'],           'TK': ['A359','A35K','A333','B789','B77W'],
+  'TR': ['B788','B789'], 'PR': ['A359','A333','B77W'],  'MH': ['A359','A333'],
+  '5J': ['A333'],        'TN': ['B789'],                'NZ': ['B789','B77W'],
+  'VN': ['A359','B789'], 'TG': ['A359','A333','B789','B788','B77W'],
+  'BR': ['B789','B788','B77W','A333'],  'CI': ['A359','A333','B77W'],
+  'GA': ['A333','B77W'],                'ET': ['A359','A35K','B789','B788','B77W'],
+  'SA': ['A333'], 'KQ': ['B788'],       'MS': ['A333','B789'],
+  'AT': ['B788','B789'],                'DL': ['A359','A333'],
+  'UA': ['B789','B788','B77W'],         'AA': ['B789','B788','B77W'],
+  'AC': ['B789','B788','B77W','A333'],  'LA': ['B789','B788'],
+  'AD': ['A333'], 'CM': [],             'AM': ['B789','B788'],
+  'AK': [], 'D7': ['A333'],             'FJ': ['A333'],
+  'HA': ['A333','B789'],                'KL': ['B77W','B789','B78X','A333'],
+  'VA': [], 'JQ': ['B788'],             'FM': [],
+};
+const AIRLINE_NARROWBODY = {
+  'CA': ['A320','A321','A20N','B738','B38M'], 'CZ': ['A320','A321','A20N','B738','B38M'],
+  'MU': ['A320','A321','A20N','B738','B38M'], 'HU': ['A20N','A321','B738','B38M'],
+  '3U': ['A320','A321','A20N'],               'MF': ['B738','B38M','A20N'],
+  'ZH': ['A320','A321','A20N','B738','B38M'], 'EK': [], 'QR': ['A320','A321','B38M'],
+  'EY': ['A320','A321'], 'SQ': ['B38M','B738'], 'CX': ['A321'], 'QF': ['B738'],
+  'JL': ['B738','B38M'], 'NH': ['A320','A321','A20N','B738'],
+  'KE': ['A321','B738','B739'], 'OZ': ['A321'], 'LH': ['A320','A321','A20N'],
+  'AF': ['A320','A321'],     'BA': ['A320','A321'],  'TK': ['A320','A321','B738','B38M'],
+  'TR': ['A320','A20N'], 'PR': ['A320','A321'], 'MH': ['B738'], '5J': ['A320','A20N'],
+  'TN': [], 'NZ': ['A320','A321'], 'VN': ['A320','A321','A20N'],
+  'TG': ['A320'], 'BR': ['A321','A333'], 'CI': ['A321','B738'],
+  'GA': ['B738'], 'ET': ['B738','B38M'], 'SA': ['A320'], 'KQ': ['B738'],
+  'MS': ['B738','A320'], 'AT': ['B738'], 'DL': ['A320','A321','B738','B739'],
+  'UA': ['A320','A321','B738','B739','B38M'], 'AA': ['A320','A321','B738','B38M'],
+  'AC': ['A320','A321','B738','B38M'], 'LA': ['A320','A321'], 'AD': ['A320','A20N'],
+  'CM': ['B738','B38M'], 'AM': ['B738','B38M'], 'AK': ['A320','A20N'],
+  'D7': ['A333'], 'FJ': ['B738','B38M'], 'HA': ['A321','A20N'],
+  'KL': ['B738','B739'], 'VA': ['B738','B38M'], 'JQ': ['A320','A321','A20N'],
+  'FM': ['B738','B38M'],
+};
+// Legacy global pools (kept for backward compatibility with carrier-agnostic code)
+const WIDE_BODY = ['B789','B788','A359','A333','B77W','A388','A35K','B748'];
+const NARROW_BODY = ['A320','A321','B738','B739','A20N','B38M'];
 
 // ============================================================
 //  AVIATION GEEK DATA — Aircraft Registry, Engines, Livery
@@ -43,28 +91,32 @@ const NARROW_BODY = ['A320', 'A321', 'B738', 'B739', 'A20N', 'B38M'];
 
 const AIRCRAFT_DB = {
   // Wide-body
-  'A359': { manufacturer: '空客', model: 'A350-941', fullName: '空客 A350-900', seats: 300, layout: [3,3,3], rows: 34, cruiseAlt: 41000, cruiseMach: 0.85 },
-  'A35K': { manufacturer: '空客', model: 'A350-1041', fullName: '空客 A350-1000', seats: 334, layout: [3,3,3], rows: 38, cruiseAlt: 41000, cruiseMach: 0.85 },
-  'A333': { manufacturer: '空客', model: 'A330-343', fullName: '空客 A330-300', seats: 277, layout: [2,4,2], rows: 36, cruiseAlt: 39000, cruiseMach: 0.82 },
-  'A388': { manufacturer: '空客', model: 'A380-841', fullName: '空客 A380-800', seats: 525, layout: [3,4,3], rows: 44, cruiseAlt: 43000, cruiseMach: 0.85 },
-  'B789': { manufacturer: '波音', model: '787-9', fullName: '波音 787-9', seats: 290, layout: [3,3,3], rows: 33, cruiseAlt: 41000, cruiseMach: 0.85 },
-  'B788': { manufacturer: '波音', model: '787-8', fullName: '波音 787-8', seats: 242, layout: [3,3,3], rows: 28, cruiseAlt: 41000, cruiseMach: 0.85 },
-  'B77W': { manufacturer: '波音', model: '777-300ER', fullName: '波音 777-300ER', seats: 396, layout: [3,4,3], rows: 40, cruiseAlt: 39000, cruiseMach: 0.84 },
-  'B748': { manufacturer: '波音', model: '747-8', fullName: '波音 747-8', seats: 467, layout: [3,4,3], rows: 40, cruiseAlt: 41000, cruiseMach: 0.855 },
+  'A359': { manufacturer: '空客', model: 'A350-941', fullName: '空客 A350-900', seats: 300, layout: [3,3,3], rows: 34, cruiseAlt: 41000, cruiseMach: 0.85, rangeKm: 15000 },
+  'A35K': { manufacturer: '空客', model: 'A350-1041', fullName: '空客 A350-1000', seats: 334, layout: [3,3,3], rows: 38, cruiseAlt: 41000, cruiseMach: 0.85, rangeKm: 16100 },
+  'A332': { manufacturer: '空客', model: 'A330-243', fullName: '空客 A330-200', seats: 246, layout: [2,4,2], rows: 32, cruiseAlt: 39000, cruiseMach: 0.82, rangeKm: 13450 },
+  'A333': { manufacturer: '空客', model: 'A330-343', fullName: '空客 A330-300', seats: 277, layout: [2,4,2], rows: 36, cruiseAlt: 39000, cruiseMach: 0.82, rangeKm: 11750 },
+  'A388': { manufacturer: '空客', model: 'A380-841', fullName: '空客 A380-800', seats: 525, layout: [3,4,3], rows: 44, cruiseAlt: 43000, cruiseMach: 0.85, rangeKm: 14800 },
+  'B78X': { manufacturer: '波音', model: '787-10', fullName: '波音 787-10', seats: 318, layout: [3,3,3], rows: 36, cruiseAlt: 40000, cruiseMach: 0.85, rangeKm: 11910 },
+  'B789': { manufacturer: '波音', model: '787-9', fullName: '波音 787-9', seats: 290, layout: [3,3,3], rows: 33, cruiseAlt: 41000, cruiseMach: 0.85, rangeKm: 14140 },
+  'B788': { manufacturer: '波音', model: '787-8', fullName: '波音 787-8', seats: 242, layout: [3,3,3], rows: 28, cruiseAlt: 41000, cruiseMach: 0.85, rangeKm: 13620 },
+  'B77W': { manufacturer: '波音', model: '777-300ER', fullName: '波音 777-300ER', seats: 396, layout: [3,4,3], rows: 40, cruiseAlt: 39000, cruiseMach: 0.84, rangeKm: 13650 },
+  'B748': { manufacturer: '波音', model: '747-8', fullName: '波音 747-8', seats: 467, layout: [3,4,3], rows: 40, cruiseAlt: 41000, cruiseMach: 0.855, rangeKm: 14320 },
   // Narrow-body
-  'A320': { manufacturer: '空客', model: 'A320-214', fullName: '空客 A320-200', seats: 168, layout: [3,3], rows: 29, cruiseAlt: 36000, cruiseMach: 0.78 },
-  'A321': { manufacturer: '空客', model: 'A321-231', fullName: '空客 A321-200', seats: 195, layout: [3,3], rows: 34, cruiseAlt: 36000, cruiseMach: 0.78 },
-  'A20N': { manufacturer: '空客', model: 'A320-271N', fullName: '空客 A320neo', seats: 174, layout: [3,3], rows: 30, cruiseAlt: 38000, cruiseMach: 0.78 },
-  'B738': { manufacturer: '波音', model: '737-800', fullName: '波音 737-800', seats: 172, layout: [3,3], rows: 30, cruiseAlt: 37000, cruiseMach: 0.785 },
-  'B739': { manufacturer: '波音', model: '737-900ER', fullName: '波音 737-900ER', seats: 189, layout: [3,3], rows: 33, cruiseAlt: 37000, cruiseMach: 0.785 },
-  'B38M': { manufacturer: '波音', model: '737 MAX 8', fullName: '波音 737 MAX 8', seats: 178, layout: [3,3], rows: 31, cruiseAlt: 38000, cruiseMach: 0.79 },
+  'A320': { manufacturer: '空客', model: 'A320-214', fullName: '空客 A320-200', seats: 168, layout: [3,3], rows: 29, cruiseAlt: 36000, cruiseMach: 0.78, rangeKm: 6150 },
+  'A321': { manufacturer: '空客', model: 'A321-231', fullName: '空客 A321-200', seats: 195, layout: [3,3], rows: 34, cruiseAlt: 36000, cruiseMach: 0.78, rangeKm: 5950 },
+  'A20N': { manufacturer: '空客', model: 'A320-271N', fullName: '空客 A320neo', seats: 174, layout: [3,3], rows: 30, cruiseAlt: 38000, cruiseMach: 0.78, rangeKm: 6300 },
+  'B738': { manufacturer: '波音', model: '737-800', fullName: '波音 737-800', seats: 172, layout: [3,3], rows: 30, cruiseAlt: 37000, cruiseMach: 0.785, rangeKm: 5765 },
+  'B739': { manufacturer: '波音', model: '737-900ER', fullName: '波音 737-900ER', seats: 189, layout: [3,3], rows: 33, cruiseAlt: 37000, cruiseMach: 0.785, rangeKm: 5925 },
+  'B38M': { manufacturer: '波音', model: '737 MAX 8', fullName: '波音 737 MAX 8', seats: 178, layout: [3,3], rows: 31, cruiseAlt: 38000, cruiseMach: 0.79, rangeKm: 6570 },
 };
 
 const ENGINE_DB = {
   'A359': '2x Rolls-Royce Trent XWB-84',
   'A35K': '2x Rolls-Royce Trent XWB-97',
+  'A332': '2x Rolls-Royce Trent 772B-60',
   'A333': '2x Rolls-Royce Trent 772B-60',
   'A388': '4x Engine Alliance GP7270',
+  'B78X': '2x GE GEnx-1B76',
   'B789': '2x GE GEnx-1B74',
   'B788': '2x GE GEnx-1B70',
   'B77W': '2x GE90-115B',
@@ -229,24 +281,74 @@ function _generateTelemetry(acCode, routeDistance) {
   };
 }
 
-function _generateRecentLogs(origin, dest, dateStr) {
-  const routes = [
-    { from: 'CDG', to: 'PEK', fromName: '巴黎戴高乐', toName: '北京首都' },
-    { from: 'LHR', to: 'PVG', fromName: '伦敦希思罗', toName: '上海浦东' },
-    { from: 'NRT', to: 'CAN', fromName: '东京成田', toName: '广州白云' },
-    { from: 'HKG', to: 'SIN', fromName: '香港国际', toName: '新加坡樟宜' },
-    { from: 'DXB', to: 'ICN', fromName: '迪拜国际', toName: '首尔仁川' },
-    { from: 'LAX', to: 'HND', fromName: '洛杉矶国际', toName: '东京羽田' },
-    { from: 'FRA', to: 'BKK', fromName: '法兰克福', toName: '曼谷素万那普' },
-    { from: 'SFO', to: 'SYD', fromName: '旧金山国际', toName: '悉尼金斯福德' },
-  ];
+function _generateRecentLogs(origin, dest, dateStr, carrierCode) {
+  // Build a pool of realistic routes for this specific carrier based on its hub
+  const hub = AIRLINE_HUBS[carrierCode];
+  const secHub = AIRLINE_SECONDARY_HUBS[carrierCode];
   const targetDate = new Date(dateStr + 'T00:00:00');
-  const recent = [];
-  const usedRoutes = new Set();
 
-  for (let i = 0; i < 3; i++) {
-    const route = _pickRandom(routes.filter(r => !usedRoutes.has(r.from + r.to)));
-    usedRoutes.add(route.from + route.to);
+  // Routes that make sense for this carrier (involve its hub)
+  let carrierRoutes;
+  if (hub) {
+    const majorDestinations = [
+      { code: 'LHR', name: '伦敦希思罗' }, { code: 'CDG', name: '巴黎戴高乐' },
+      { code: 'FRA', name: '法兰克福' }, { code: 'JFK', name: '纽约肯尼迪' },
+      { code: 'LAX', name: '洛杉矶国际' }, { code: 'SYD', name: '悉尼金斯福德' },
+      { code: 'SIN', name: '新加坡樟宜' }, { code: 'BKK', name: '曼谷素万那普' },
+      { code: 'NRT', name: '东京成田' }, { code: 'HND', name: '东京羽田' },
+      { code: 'ICN', name: '首尔仁川' }, { code: 'DXB', name: '迪拜国际' },
+      { code: 'DOH', name: '多哈哈马德' }, { code: 'IST', name: '伊斯坦布尔' },
+      { code: 'HKG', name: '香港国际' }, { code: 'PEK', name: '北京首都' },
+      { code: 'PVG', name: '上海浦东' }, { code: 'CAN', name: '广州白云' },
+      { code: 'CTU', name: '成都天府' }, { code: 'XMN', name: '厦门高崎' },
+      { code: 'SZX', name: '深圳宝安' },
+    ];
+    // Generate routes radiating from the hub
+    carrierRoutes = majorDestinations
+      .filter(d => d.code !== hub)
+      .map(d => ({
+        from: hub,
+        to: d.code,
+        fromName: getAirport(hub)?.name || hub,
+        toName: d.name,
+      }));
+    // Add some routes radiating from secondary hub
+    if (secHub) {
+      const secRoutes = majorDestinations
+        .filter(d => d.code !== secHub && d.code !== hub)
+        .slice(0, 5)
+        .map(d => ({
+          from: secHub,
+          to: d.code,
+          fromName: getAirport(secHub)?.name || secHub,
+          toName: d.name,
+        }));
+      carrierRoutes.push(...secRoutes);
+    }
+  } else {
+    // Fallback generic routes
+    carrierRoutes = [
+      { from: 'CDG', to: 'PEK', fromName: '巴黎戴高乐', toName: '北京首都' },
+      { from: 'LHR', to: 'PVG', fromName: '伦敦希思罗', toName: '上海浦东' },
+      { from: 'NRT', to: 'CAN', fromName: '东京成田', toName: '广州白云' },
+      { from: 'HKG', to: 'SIN', fromName: '香港国际', toName: '新加坡樟宜' },
+      { from: 'DXB', to: 'ICN', fromName: '迪拜国际', toName: '首尔仁川' },
+      { from: 'LAX', to: 'HND', fromName: '洛杉矶国际', toName: '东京羽田' },
+      { from: 'FRA', to: 'BKK', fromName: '法兰克福', toName: '曼谷素万那普' },
+      { from: 'SFO', to: 'SYD', fromName: '旧金山国际', toName: '悉尼金斯福德' },
+    ];
+  }
+
+  const recent = [];
+  const usedKeys = new Set();
+  const shuffled = _shuffle(carrierRoutes);
+
+  for (let i = 0; i < 3 && i < shuffled.length; i++) {
+    const route = shuffled[i];
+    const key = route.from + '-' + route.to;
+    if (usedKeys.has(key)) continue;
+    usedKeys.add(key);
+
     const logDate = new Date(targetDate);
     logDate.setDate(logDate.getDate() - (i + 1) * Math.round(1 + Math.random() * 3));
     recent.push({
@@ -255,15 +357,101 @@ function _generateRecentLogs(origin, dest, dateStr) {
       fromName: route.fromName,
       to: route.to,
       toName: route.toName,
-      flightNo: _pickRandom(['CA', 'MU', 'CZ', 'CX', 'JL', 'NH', 'SQ']) + (100 + Math.floor(Math.random() * 900)),
+      flightNo: carrierCode + _genFlightNumber(route.from, route.to),
       duration: `${Math.round(6 + Math.random() * 12)}h${String(Math.floor(Math.random() * 60)).padStart(2,'0')}m`,
     });
   }
+
+  // If we don't have 3 logs yet, add a couple of return trips
+  while (recent.length < 3) {
+    const route = shuffled[recent.length + 3] || shuffled[0];
+    const swapped = {
+      from: route.to, to: route.from,
+      fromName: route.toName, toName: route.fromName,
+    };
+    const logDate = new Date(targetDate);
+    logDate.setDate(logDate.getDate() - (recent.length + 1) * 3);
+    recent.push({
+      date: _fmtDate(logDate),
+      from: swapped.from,
+      fromName: swapped.fromName,
+      to: swapped.to,
+      toName: swapped.toName,
+      flightNo: carrierCode + _genFlightNumber(swapped.from, swapped.to),
+      duration: `${Math.round(6 + Math.random() * 12)}h${String(Math.floor(Math.random() * 60)).padStart(2,'0')}m`,
+    });
+  }
+
   return recent;
 }
 
-// Hub airports used for layovers when generating connecting flights
-const HUB_AIRPORTS = ['HKG', 'ICN', 'NRT', 'SIN', 'PVG', 'CAN', 'BKK', 'DXB', 'DOH', 'HND'];
+// ——— Airline primary hubs — each carrier's home base for international connections ———
+const AIRLINE_HUBS = {
+  // Foreign carriers — connections route through their home country base
+  'EK': 'DXB',   // Emirates → Dubai
+  'SQ': 'SIN',   // Singapore Airlines → Singapore Changi
+  'QR': 'DOH',   // Qatar Airways → Doha
+  'CX': 'HKG',   // Cathay Pacific → Hong Kong
+  'TK': 'IST',   // Turkish Airlines → Istanbul
+  'EY': 'AUH',   // Etihad → Abu Dhabi
+  'QF': 'SYD',   // Qantas → Sydney
+  'JL': 'HND',   // Japan Airlines → Tokyo Haneda
+  'NH': 'NRT',   // ANA → Tokyo Narita
+  'KE': 'ICN',   // Korean Air → Seoul Incheon
+  'LH': 'FRA',   // Lufthansa → Frankfurt
+  'AF': 'CDG',   // Air France → Paris CDG
+  // Chinese carriers — international connections route through home base
+  'CA': 'PEK',   // Air China → Beijing Capital
+  'CZ': 'CAN',   // China Southern → Guangzhou
+  'MU': 'PVG',   // China Eastern → Shanghai Pudong
+  'HU': 'PEK',   // Hainan Airlines → Beijing Capital (primary hub)
+  '3U': 'CTU',   // Sichuan Airlines → Chengdu
+  'MF': 'XMN',   // Xiamen Airlines → Xiamen
+  'ZH': 'SZX',   // Shenzhen Airlines → Shenzhen
+};
+
+// Secondary hubs — used when primary hub == origin or dest
+const AIRLINE_SECONDARY_HUBS = {
+  'CA': 'CTU',   // Air China also hubs at Chengdu
+  'CZ': 'PKX',   // China Southern also hubs at Beijing Daxing
+  'MU': 'XIY',   // China Eastern also hubs at Xi'an
+  'HU': 'HAK',   // Hainan Airlines also hubs at Haikou
+  'QF': 'MEL',   // Qantas also hubs at Melbourne
+  'JL': 'NRT',   // JL secondary at Narita
+  'NH': 'HND',   // NH secondary at Haneda
+  'LH': 'MUC',   // Lufthansa secondary at Munich
+  'KE': 'PUS',   // Korean Air secondary at Busan
+};
+
+// Mainland China airports (for domestic vs international detection)
+const CHINA_AIRPORTS = new Set([
+  'PEK','PKX','PVG','SHA','CAN','SZX','TFU','CTU','CKG','HGH',
+  'XIY','WUH','NKG','KMG','CSX','XMN','TAO','DLC','TSN','CGO',
+  'SYX','HAK','HRB','SHE','FOC','KWE','NNG','URC','LHW','TYN',
+  'HET','SJW','TNA','CGQ','KHN','HFE','KWL','WNZ','NGB','WEH',
+  'YNT','WUX','LYI','LJG','JHG','DYG','DOY',
+]);
+
+function _isInternationalRoute(origin, dest) {
+  // Route crosses country borders if both endpoints aren't in mainland China
+  return !(CHINA_AIRPORTS.has(origin) && CHINA_AIRPORTS.has(dest));
+}
+
+// Flight number convention: domestic = 4-digit, international = 1–3 digit
+function _genFlightNumber(origin, dest) {
+  const isDomestic = CHINA_AIRPORTS.has(origin) && CHINA_AIRPORTS.has(dest);
+  if (isDomestic) {
+    return String(1000 + Math.floor(Math.random() * 9000));
+  }
+  // International: 1–3 digits, weighted toward 2-3 digits
+  const len = Math.random();
+  if (len < 0.15) return String(Math.floor(Math.random() * 9) + 1);       // 1-digit: 1–9
+  if (len < 0.35) return String(Math.floor(Math.random() * 90) + 10);     // 2-digit: 10–99
+  return String(Math.floor(Math.random() * 900) + 100);                    // 3-digit: 100–999
+}
+
+// Fallback hubs for carriers not in AIRLINE_HUBS
+const FALLBACK_HUBS = ['HKG', 'ICN', 'NRT', 'SIN', 'PVG', 'CAN', 'BKK', 'DXB', 'DOH', 'HND'];
 
 function _pickRandom(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
@@ -306,9 +494,20 @@ function generateMockFlightAPIResponse(origin, dest, dateStr) {
   const priceFactors = _simulateBasePrice(dateStr);
   const routeDistance = _estimateDistance(origin, dest);
 
-  // Determine how many airlines to use (8-12)
-  const shuffled = _shuffle(MOCK_CARRIERS);
-  const usedCarriers = shuffled.slice(0, 8 + Math.floor(Math.random() * 5));
+  // Filter carriers by route type
+  const isIntl = _isInternationalRoute(origin, dest);
+  let availableCarriers;
+  if (isIntl) {
+    // International routes: only carriers with widebody fleet can operate long-haul
+    availableCarriers = _shuffle(MOCK_CARRIERS.filter(c =>
+      (AIRLINE_WIDEBODY[c.code] || []).length > 0
+    ));
+  } else {
+    // Domestic routes: only Chinese carriers
+    const chineseCodes = new Set(['CA','CZ','MU','HU','3U','MF','ZH']);
+    availableCarriers = _shuffle(MOCK_CARRIERS.filter(c => chineseCodes.has(c.code)));
+  }
+  const usedCarriers = availableCarriers.slice(0, 8 + Math.floor(Math.random() * 5));
 
   // Build places, carriers, agents maps
   const placesMap = new Map();
@@ -326,9 +525,6 @@ function generateMockFlightAPIResponse(origin, dest, dateStr) {
   _addPlace(origin, originAirport?.name || origin);
   _addPlace(dest, destAirport?.name || dest);
 
-  // Add hub places
-  HUB_AIRPORTS.forEach(h => _addPlace(h, h));
-
   // Add carriers
   usedCarriers.forEach(c => carriersMap.set(c.code, { id: c.id, code: c.code, name: c.name }));
 
@@ -345,15 +541,55 @@ function generateMockFlightAPIResponse(origin, dest, dateStr) {
     const mult = priceFactors.urgency * priceFactors.weekend * (0.78 + Math.random() * 0.44);
     const price = Math.round((priceFactors.base * mult) / 10) * 10; // round to 10
 
-    // 40% chance direct, 60% one stop
-    const stops = Math.random() < 0.4 ? 0 : 1;
-
-    // Pick layover if has stop
+    // Determine stops based on airline hub geography
+    let stops = 0;
     let layoverCode = null;
-    if (stops > 0) {
-      const candidateHubs = _shuffle(HUB_AIRPORTS).filter(h => h !== origin && h !== dest);
-      layoverCode = candidateHubs[0] || 'HKG';
-      _addPlace(layoverCode, layoverCode);
+    const hub = AIRLINE_HUBS[carrier.code];
+    const secHub = AIRLINE_SECONDARY_HUBS[carrier.code];
+
+    if (isIntl && hub) {
+      // International route: respect airline hub-and-spoke logic
+      if (hub === origin || hub === dest) {
+        // Airline's home base is already on the route — direct flight
+        stops = 0;
+      } else if (secHub && (secHub === origin || secHub === dest)) {
+        // Secondary hub is on the route — direct flight
+        stops = 0;
+      } else {
+        // Route doesn't touch airline's hub — 80% connect through primary hub
+        if (Math.random() < 0.8) {
+          stops = 1;
+          layoverCode = hub;
+        } else {
+          // 20% direct (fifth-freedom, codeshare, or secondary hub)
+          stops = 0;
+        }
+      }
+    } else if (!isIntl && hub) {
+      // Domestic route — 30% chance of one-stop through a Chinese hub
+      if (Math.random() < 0.3) {
+        const domesticHubs = ['PEK','PVG','CAN','CTU','XMN','SZX','CKG','XIY'];
+        const candidates = domesticHubs.filter(h => h !== origin && h !== dest);
+        if (candidates.length > 0) {
+          stops = 1;
+          layoverCode = _pickRandom(candidates);
+        }
+      }
+    } else {
+      // No hub data — fallback random hub selection
+      if (Math.random() < 0.4) {
+        const candidateHubs = _shuffle(FALLBACK_HUBS).filter(h => h !== origin && h !== dest);
+        if (candidateHubs.length > 0) {
+          stops = 1;
+          layoverCode = candidateHubs[0];
+        }
+      }
+    }
+
+    // Register layover airport as a place (use proper name from database)
+    if (layoverCode) {
+      const layoverAirport = getAirport(layoverCode);
+      _addPlace(layoverCode, layoverAirport?.name || layoverCode);
     }
 
     // Assign aircraft code
@@ -387,7 +623,7 @@ function generateMockFlightAPIResponse(origin, dest, dateStr) {
         departure: _iso(depDateTime),
         arrival: _iso(arrDateTime),
         duration: totalMinutes,
-        marketing_flight_number: String(100 + Math.floor(Math.random() * 900)),
+        marketing_flight_number: _genFlightNumber(origin, dest),
         marketing_carrier_id: carrier.id,
         operating_carrier_id: carrier.id,
         mode: 'flight',
@@ -427,7 +663,7 @@ function generateMockFlightAPIResponse(origin, dest, dateStr) {
         departure: _iso(depDateTime),
         arrival: _iso(seg1Arr),
         duration: seg1Minutes,
-        marketing_flight_number: String(100 + Math.floor(Math.random() * 900)),
+        marketing_flight_number: _genFlightNumber(origin, layoverCode),
         marketing_carrier_id: carrier.id,
         operating_carrier_id: carrier.id,
         mode: 'flight',
@@ -444,7 +680,7 @@ function generateMockFlightAPIResponse(origin, dest, dateStr) {
         departure: _iso(seg2Dep),
         arrival: _iso(seg2Arr),
         duration: seg2Minutes,
-        marketing_flight_number: String(100 + Math.floor(Math.random() * 900)),
+        marketing_flight_number: _genFlightNumber(layoverCode, dest),
         marketing_carrier_id: carrier.id,
         operating_carrier_id: carrier.id,
         mode: 'flight',
@@ -591,18 +827,28 @@ function adaptFlightAPIResponse(apiData, origin, dest, dateStr) {
     const mainCarrier = carrierById.get(mainCarrierId);
 
     // Build segment objects in our internal format
+    const totalLegDuration = legSegments.reduce((sum, s) => sum + (s.duration || 0), 0) || 1;
     const segObjs = legSegments.map(seg => {
       const segOrigin = placeById.get(seg.origin_place_id);
       const segDest = placeById.get(seg.destination_place_id);
       const segCarrier = carrierById.get(seg.marketing_carrier_id);
+      const acCode = seg._aircraft_code || _guessAircraft(segCarrier?.code || '', primaryLeg.stop_count);
+      // Per-segment distance: proportional to segment duration share of total leg
+      const segDist = legSegments.length === 1
+        ? routeDistance
+        : Math.round(routeDistance * ((seg.duration || 0) / totalLegDuration));
+      const acRange = (AIRCRAFT_DB[acCode] || {}).rangeKm || 8000;
+      const rangePct = acRange > 0 ? Math.round(segDist / acRange * 100) : 0;
       return {
-        aircraft: seg._aircraft_code || _guessAircraft(segCarrier?.code || '', primaryLeg.stop_count),
+        aircraft: acCode,
         flight_no: seg.marketing_flight_number || '',
         airline: segCarrier?.code || '',
         departure: _fmtTimeOnly(seg.departure),
         arrival: _fmtTimeOnly(seg.arrival),
         origin: segOrigin?.code || '',
         destination: segDest?.code || '',
+        distance_km: segDist,
+        range_pct: rangePct,
       };
     });
 
@@ -642,7 +888,7 @@ function adaptFlightAPIResponse(apiData, origin, dest, dateStr) {
     const livery = _generateLivery(mainCarrier?.code || 'CA');
     const engines = ENGINE_DB[acCode] || '2x 涡扇发动机';
     const telemetry = _generateTelemetry(acCode, routeDistance);
-    const recentLogs = _generateRecentLogs(origin, dest, dateStr);
+    const recentLogs = _generateRecentLogs(origin, dest, dateStr, mainCarrier?.code || '');
 
     prices.push({
       price: firstPricing.price?.amount ?? firstItem?.price?.amount ?? 0,
@@ -769,22 +1015,25 @@ export async function getFlights(origin, dest, date) {
  */
 export async function getDateRange(origin, dest, startDate, days) {
   const start = new Date(startDate + 'T00:00:00');
-  const dailyResults = [];
+  const dateTasks = [];
 
   for (let i = 0; i < days; i++) {
     const d = new Date(start);
     d.setDate(d.getDate() + i);
     const dateStr = _fmtDate(d);
 
-    let apiData;
     if (ENABLE_REAL_API) {
-      apiData = await fetchRealFlightAPI(origin, dest, dateStr);
+      dateTasks.push(
+        fetchRealFlightAPI(origin, dest, dateStr).then(apiData => ({ date: dateStr, apiData }))
+      );
     } else {
-      apiData = generateMockFlightAPIResponse(origin, dest, dateStr);
+      dateTasks.push(
+        Promise.resolve({ date: dateStr, apiData: generateMockFlightAPIResponse(origin, dest, dateStr) })
+      );
     }
-    dailyResults.push({ date: dateStr, apiData });
   }
 
+  const dailyResults = await Promise.all(dateTasks);
   return adaptDateRangeResults(dailyResults, origin, dest);
 }
 
@@ -868,9 +1117,20 @@ function _estimateDistance(from, to) {
 }
 
 function _guessAircraft(carrierCode, stops) {
-  // Wide-body for long-haul, narrow-body for short-haul with stop
-  if (stops > 0) return _pickRandom([...WIDE_BODY, ...NARROW_BODY]);
-  return _pickRandom(WIDE_BODY);
+  const wideList = AIRLINE_WIDEBODY[carrierCode] || [];
+  const narrowList = AIRLINE_NARROWBODY[carrierCode] || [];
+
+  if (stops > 0) {
+    // Multi-stop: can be either wide or narrow, prefer carrier's own fleet
+    const pool = [...(wideList.length ? wideList : Object.values(AIRLINE_WIDEBODY).flat()),
+                  ...(narrowList.length ? narrowList : Object.values(AIRLINE_NARROWBODY).flat())];
+    return _pickRandom(pool);
+  }
+  // Non-stop: prefer widebody from carrier's own fleet
+  if (wideList.length) return _pickRandom(wideList);
+  // Fallback: any widebody
+  const allWide = Object.values(AIRLINE_WIDEBODY).flat();
+  return _pickRandom(allWide.length ? allWide : WIDE_BODY);
 }
 
 function _classifyAircraftType(code) {

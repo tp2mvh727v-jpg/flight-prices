@@ -17,18 +17,37 @@ export function createAutocomplete(inputEl, { onSelect, placeholder } = {}) {
   inputEl.parentNode.insertBefore(wrapper, inputEl);
   wrapper.appendChild(inputEl);
 
+  // M6: Clear button
+  const clearBtn = document.createElement('button');
+  clearBtn.type = 'button';
+  clearBtn.className = 'ac-clear-btn';
+  clearBtn.innerHTML = '&times;';
+  clearBtn.title = '清除选择';
+  clearBtn.style.display = 'none';
+  clearBtn.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    selectedCode = '';
+    inputEl.value = '';
+    hiddenInput.value = '';
+    clearBtn.style.display = 'none';
+    inputEl.focus();
+    if (onSelect) onSelect({ code: '', city: '', name: '' });
+  });
+  wrapper.appendChild(clearBtn);
+
   // Hidden input to hold the actual airport code
   const hiddenInput = document.createElement('input');
   hiddenInput.type = 'hidden';
   hiddenInput.className = 'ac-hidden';
   wrapper.appendChild(hiddenInput);
 
-  // Dropdown
+  // Dropdown — appended to body to escape any ancestor overflow/backdrop-filter clipping
   const dropdown = document.createElement('ul');
   dropdown.className = 'ac-dropdown';
   dropdown.setAttribute('role', 'listbox');
   dropdown.setAttribute('aria-label', '搜索建议');
-  wrapper.appendChild(dropdown);
+  document.body.appendChild(dropdown);
 
   // Apply autocomplete styling to input
   inputEl.classList.add('ac-input');
@@ -166,6 +185,7 @@ export function createAutocomplete(inputEl, { onSelect, placeholder } = {}) {
     selectedCode = apt.code;
     inputEl.value = `${apt.city} (${apt.code})`;
     hiddenInput.value = apt.code;
+    clearBtn.style.display = '';
     closeDropdown();
 
     if (onSelect) onSelect(apt);
@@ -190,8 +210,8 @@ export function createAutocomplete(inputEl, { onSelect, placeholder } = {}) {
 
   function updateDropdownPosition() {
     const rect = inputEl.getBoundingClientRect();
-    dropdown.style.top = `${rect.bottom + window.scrollY + 4}px`;
-    dropdown.style.left = `${rect.left + window.scrollX}px`;
+    dropdown.style.top = `${rect.bottom + 4}px`;
+    dropdown.style.left = `${rect.left}px`;
     dropdown.style.width = `${rect.width}px`;
   }
 
@@ -292,7 +312,7 @@ export function createAutocomplete(inputEl, { onSelect, placeholder } = {}) {
   }
 
   function onClickOutside(e) {
-    if (!wrapper.contains(e.target)) {
+    if (!wrapper.contains(e.target) && !dropdown.contains(e.target)) {
       closeDropdown();
       if (selectedCode) {
         const apt = CODE_MAP[selectedCode];
@@ -330,12 +350,14 @@ export function createAutocomplete(inputEl, { onSelect, placeholder } = {}) {
         selectedCode = code;
         inputEl.value = `${apt.city} (${apt.code})`;
         hiddenInput.value = code;
+        clearBtn.style.display = '';
       }
     },
     clear() {
       selectedCode = '';
       inputEl.value = '';
       hiddenInput.value = '';
+      clearBtn.style.display = 'none';
     },
     getInput() { return inputEl; },
     destroy() {
@@ -346,7 +368,7 @@ export function createAutocomplete(inputEl, { onSelect, placeholder } = {}) {
       inputEl.removeEventListener('focus', onFocus);
       inputEl.removeEventListener('keydown', onKeyDown);
       inputEl.removeEventListener('blur', onBlur);
-      dropdown.remove();
+      if (dropdown.parentNode) dropdown.remove();
       wrapper.parentNode.insertBefore(inputEl, wrapper);
       wrapper.remove();
     }
