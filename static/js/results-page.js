@@ -3,7 +3,7 @@
 // ============================================================
 
 import AppState from './state.js';
-import { fetchPrices, fetchDateRange, createAbortController, abortPending } from './api.js';
+import { fetchPrices, fetchDateRange, createAbortController } from './api.js';
 import { renderFlightRow, renderFlightCard, renderRoundtripSummary } from './flight-card.js';
 import {
   sourceLabel, modeBadge, formatDate, formatPrice,
@@ -429,6 +429,29 @@ function updateSingleDayContent(data, summary) {
     cardList.innerHTML = sorted.length
       ? sorted.map((p) => renderFlightCard({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
       : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>';
+  }
+
+  // Re-bind filter bar with the new date's data (prevents stale closure)
+  const filterContainer = document.getElementById('singleDaySection');
+  if (filterContainer) {
+    filterContainer._filterBound = false;
+    _bindFilterBar(filterContainer,
+      () => prices,
+      (filtered) => {
+        const list = document.getElementById('singlePriceList');
+        if (list) {
+          list.innerHTML = filtered.length
+            ? filtered.map((p) => renderFlightRow({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, 7, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
+            : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>';
+        }
+        const cardList = document.getElementById('outboundCardList');
+        if (cardList) {
+          cardList.innerHTML = filtered.length
+            ? filtered.map((p) => renderFlightCard({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
+            : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>';
+        }
+      }
+    );
   }
 
   document.getElementById('sourceInfo').textContent = sourceLabel(data);

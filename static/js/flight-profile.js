@@ -5,6 +5,9 @@
 //   - Globe.gl WebGL 3D interactive Earth (replaces 2D Canvas)
 //   - Airline alliance badges (Star Alliance / oneworld / SkyTeam)
 
+// Module-level reference for WebGL context cleanup (prevent context leak)
+let _activeGlobeInstance = null;
+
 // ============================================================
 //  AIRLINE ALLIANCES — Star Alliance / oneworld / SkyTeam
 // ============================================================
@@ -889,8 +892,7 @@ function _buildAircraftIdBlock(flight, segIdx) {
           <img class="fp-aircraft-img" id="fpAircraftImg${panelId}"
                src="${escapeHtml(urls.local)}"
                alt="${escapeHtml(fullModel)}"
-               loading="lazy"
-               onerror="this.style.display='none';this.parentElement.querySelector('.fp-aircraft-fallback').style.display='flex';">
+               loading="lazy">
           <div class="fp-aircraft-fallback" style="display:none;">
             <div class="fp-fallback-icon">&#9992;</div>
             <span>图片加载失败<br><small>请检查本地素材库</small></span>
@@ -956,11 +958,6 @@ function _buildDistanceSection(flight, acCode) {
         <span class="fp-dist-total-mi">${totalMi}</span>
       </div>
     </div>`;
-}
-
-function _initAircraft3DAsync(container, flight) {
-  // Real-photo mode: no WebGL needed. Image loads natively.
-  // Kept as no-op stub for API compatibility with openFlightProfile.
 }
 
 function _buildSeatExplorer(seatMap) {
@@ -1160,12 +1157,14 @@ function _initGlobe3D(el, originIATA, originLat, originLng, destIATA, destLat, d
 
   try {
     const globe = Globe()
-      .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-      .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
-      .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
+      .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+      .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+      .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
       .atmosphereColor('rgba(56,189,248,0.25)')
       .atmosphereAltitude(0.25)
       (el);
+
+    _activeGlobeInstance = globe;
 
     globe.controls().autoRotate = true;
     globe.controls().autoRotateSpeed = 0.5;
@@ -1284,12 +1283,14 @@ function _initMultiSegmentGlobe3D(el, flight, allCoords) {
 
   try {
     const globe = Globe()
-      .globeImageUrl('//unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
-      .bumpImageUrl('//unpkg.com/three-globe/example/img/earth-topology.png')
-      .backgroundImageUrl('//unpkg.com/three-globe/example/img/night-sky.png')
+      .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+      .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+      .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
       .atmosphereColor('rgba(56,189,248,0.25)')
       .atmosphereAltitude(0.25)
       (el);
+
+    _activeGlobeInstance = globe;
 
     globe.controls().autoRotate = true;
     globe.controls().autoRotateSpeed = 0.5;
@@ -1541,6 +1542,15 @@ function openFlightProfile(flight) {
   document.body.appendChild(container);
   document.body.style.overflow = 'hidden';
 
+  // Attach image error fallback (replaces unsafe inline onerror)
+  container.querySelectorAll('.fp-aircraft-img').forEach(img => {
+    img.addEventListener('error', function() {
+      this.style.display = 'none';
+      const fallback = this.parentElement.querySelector('.fp-aircraft-fallback');
+      if (fallback) fallback.style.display = 'flex';
+    });
+  });
+
   const closeBtn = document.getElementById('fpClose');
   if (closeBtn) closeBtn.addEventListener('click', closeFlightProfile);
 
@@ -1656,6 +1666,16 @@ function _bindSwipeToClose(panel) {
 }
 
 function closeFlightProfile() {
+  // Dispose active Globe/WebGL context before removing DOM
+  if (_activeGlobeInstance) {
+    try {
+      if (_activeGlobeInstance._renderer) {
+        _activeGlobeInstance._renderer.dispose();
+        _activeGlobeInstance._renderer.forceContextLoss();
+      }
+    } catch (_) { /* ignore disposal errors */ }
+    _activeGlobeInstance = null;
+  }
   if (!activePanel) return;
   const overlay = document.getElementById('fpOverlay');
   const panel = document.getElementById('fpPanel');
