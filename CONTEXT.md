@@ -1,6 +1,6 @@
 # CONTEXT.md — Aero-Hub 项目状态
 
-> 最后更新: 2026-05-25 (v5.8.5 航班号双重前缀修复 + 航空器识别面板补齐)
+> 最后更新: 2026-05-25 (v5.8.6 飞行时间显示格式修复 + PM/美术/技术三视角审查)
 
 ---
 
@@ -37,6 +37,7 @@
 | v5.8.3 | 2026-05-24 | 浅色主题FMC搜索页对比度修复(面板/标签/输入框) + 航空器识别航班号自适应主题色 + 飞行里程Haversine大圆距离(70+机场,中转分段计算) |
 | v5.8.4 | 2026-05-24 | 模拟航线精细化 — FIXED_AIRCRAFT_ROUTES(~70条标志性航线固定航司/航班/机型) + _DIRECT_PAIRS(中国出发国际直飞机场对约束) + 非直飞航线强制中转 + 智能中转枢纽选择 |
 | v5.8.5 | 2026-05-25 | 航班号双重航司前缀修复(utils.js segLabel防CACA981/SQSQ24) + 航空器识别面板补齐(981→CA981) |
+| v5.8.6 | 2026-05-25 | 飞行时间显示格式修复 — _generateTelemetry小数小时(10.5h)→小时+分钟(10h30m) + PM/美术/技术三视角审查 |
 
 ---
 
@@ -828,3 +829,44 @@ python tests/e2e_test.py
 | 8 | `app.js` `_bootstrap()` | 添加 `_initSplashParticles()` + `_setupSplashTransition()` 调用(仅无hash时) |
 | 9 | `app.js` `_restoreFromHash()` | `#search` hash 时调用 `showView('search')` 显式切换视图 |
 | 10 | `tests/e2e_test.py` | Test 1 更新为 Splash → ENTER CONSOLE → search 流程 |
+
+---
+
+## 19. v5.8.6 飞行时间格式修复 + 三视角审查 (2026-05-25)
+
+### 修复
+- `_generateTelemetry`: `estFlightTime` 从 `"10.5h"` 改为 `"10h30m"` (含 `padStart(2,'0')`)
+
+### PM/美术/技术 三视角审查结果
+
+#### 🔴 Bug修复建议 (3项)
+1. **日期切换后筛选栏数据过期** — `updateSingleDayContent()` 替换航班列表但不重绑筛选栏，导致"仅直飞"/排序操作在过期数据上运行。→ `results-page.js` 263-296, 504-526
+2. **WebGL context 泄漏** — `closeFlightProfile()` 移除 DOM 但不销毁 Globe 实例，反复开闭面板耗尽浏览器 WebGL context。→ `flight-profile.js` 1658-1674
+3. **内联 onerror JS** — `_buildAircraftIdBlock()` 在 HTML 字符串中嵌入 `onerror="..."` 会触发 CSP 违规。→ `flight-profile.js` 893
+
+#### 🟡 UX增强 (5项)
+1. **Globe 3D 无加载骨架屏** — 当前仅显示纯文字"3D 地球加载中..."，需骨架屏或渐变占位
+2. **搜索缺少航司偏好** — 无航司/联盟多选过滤，飞友无法提前缩小范围
+3. **无价格追踪/关注** — 缺少"关注此航线"功能，用户需手动重新搜索比价
+4. **趋势面板默认折叠** — 需点击才展开，多数用户会忽略。建议首屏自动展开或预览条
+5. **下滑关闭无视觉提示** — 移动端 swipe-to-close 手势零提示，建议面板顶部加拖拽小横条
+
+#### 🟠 视觉打磨 (4项)
+1. **暗色模式飞行里程卡片低对比度** — `.fp-dist-seg` 边框与背景仅 2.6:1 对比度，段卡片几乎融入面板
+2. **筛选栏平板端溢出** — 700-1024px 视口下筛选 chips + 排序下拉无 flex-wrap，可能遮挡排序
+3. **日期卡片无键盘焦点环** — `.date-strip-card` 无 `:focus-visible` 样式，键盘导航无视觉反馈
+4. **移动端搜索结果头信息层级不清** — 航线/日期/人数三行字号/字重相同，难以快速扫读
+
+#### 🔵 技术债务 (5项)
+1. **未使用的 import** — `results-page.js:6` 导入 `abortPending` 从未使用
+2. **死代码** — `_initAircraft3DAsync()` 无操作存根从未被调用 → `flight-profile.js` 961-964
+3. **协议相对 URL** — Globe.gl CDN 用 `//unpkg.com` 在 file:///CSP 环境可能失败，应统一为 `https://`
+4. **重复骨架屏 HTML** — 单日结果骨架屏在 `loadSingleDay()` 和 `renderSingleDaySection()` 中冗余定义
+5. **图片选取缺少显式边界检查** — `_getAircraftImageUrls()` 随机索引可能针对空数组产生 NaN
+
+#### 🟢 功能路线图 (5项, 按价值排序)
+1. **多城/缺口程搜索** — A→B→C 多段查询，利用现有多段 Globe 可视化，拉开与基础搜索引擎差距
+2. **价格追踪/关注列表** — localStorage 持久化，"关注此航线"按钮，再访时显示价格变动
+3. **真实 API 接入** — `ENABLE_REAL_API` 切换和 `FLIGHT_API_KEY` 占位符已有，补齐即可启用实时数据
+4. **飞机对比视图** — 复用现有座舱图/遥测/里程渲染，选两个航班并排对比
+5. **可分享飞行卡片** — URL 含航班索引+档案Tab状态，支持深度链接直达特定飞机档案
