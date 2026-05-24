@@ -271,13 +271,15 @@ function _generateTelemetry(acCode, routeDistance) {
   const altitude = ac.cruiseAlt + altVariation;
   const mach = (ac.cruiseMach + (Math.random() - 0.5) * 0.04).toFixed(2);
   const headwind = Math.round(Math.random() * 80 - 20);
-  const flightHours = (routeDistance / (parseFloat(mach) * 1065)).toFixed(1);
+  const totalMinutes = Math.round(routeDistance / (parseFloat(mach) * 1065) * 60);
+  const flightH = Math.floor(totalMinutes / 60);
+  const flightM = totalMinutes % 60;
   return {
     altitude: `${altitude.toLocaleString()} ft`,
     mach: `Mach ${mach}`,
     groundSpeed: `${Math.round(parseFloat(mach) * 661)} kts`,
     headwind: headwind > 0 ? `逆风 ${headwind} kts` : `顺风 ${Math.abs(headwind)} kts`,
-    estFlightTime: `${flightHours}h`,
+    estFlightTime: `${flightH}h${String(flightM).padStart(2, '0')}m`,
   };
 }
 
