@@ -44,7 +44,7 @@ function _allianceBadge(airlineCode) {
 // ============================================================
 
 const AIRPORT_COORDS = {
-  PEK: [39.9042, 116.4074],   // 北京首都
+  PEK: [40.08, 116.58],     // 北京首都
   PKX: [39.5098, 116.4105],   // 北京大兴
   SYD: [-33.8688, 151.2093],  // 悉尼
   LHR: [51.4700, -0.4543],    // 伦敦希思罗
@@ -208,6 +208,7 @@ function _getAcInfo(acCode) {
         name: '一楼客舱', short: 'Lower',
         cabins: [
           { cls: 'first', name: '头等套房', short: 'First', rowStart: 1, rowEnd: 4, layout: [1,2,1], refColumns: ['A','AISLE','D','G','AISLE','K'], noiseBase: 55, desc: '空中宫殿，极致私密。仅 4 排 16 座。' },
+          { cls: 'business', name: '公务舱', short: 'Business', rowStart: 5, rowEnd: 9, layout: [1,2,1], refColumns: ['A','AISLE','D','G','AISLE','K'], noiseBase: 58, desc: '一楼前段公务舱，1-2-1 交错平躺包厢。距引擎最远，一楼最安静区域。' },
           { cls: 'economy', name: '经济舱', short: 'Economy', rowStart: 10, rowEnd: 38, layout: [3,4,3], refColumns: ['A','B','C','AISLE','D','E','F','G','AISLE','H','J','K'], noiseBase: 70, desc: 'A380 独有静谧宽体经济舱。3-4-3 布局。' },
         ]
       }, {
@@ -228,6 +229,7 @@ function _getAcInfo(acCode) {
         name: '一楼客舱', short: 'Lower',
         cabins: [
           { cls: 'first', name: '头等套房', short: 'First', rowStart: 1, rowEnd: 3, layout: [1,2,1], refColumns: ['A','AISLE','D','G','AISLE','K'], noiseBase: 55, desc: '747 机头鼻舱尊位，女王级空中体验。' },
+          { cls: 'premium', name: '超级经济舱', short: 'Premium Economy', rowStart: 4, rowEnd: 6, layout: [2,3,2], refColumns: ['A','B','AISLE','D','E','F','AISLE','H','K'], noiseBase: 64, desc: '一楼隔板后超经，加宽座椅+更大后仰。距引擎远，巡航安静。' },
           { cls: 'economy', name: '经济舱', short: 'Economy', rowStart: 7, rowEnd: 33, layout: [3,4,3], refColumns: ['A','B','C','AISLE','D','E','F','G','AISLE','H','J','K'], noiseBase: 70, desc: '标准经济舱。翼根区域引擎声澎湃。' },
         ]
       }, {

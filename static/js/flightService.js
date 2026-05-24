@@ -95,8 +95,8 @@ const AIRCRAFT_DB = {
   'A35K': { manufacturer: '空客', model: 'A350-1041', fullName: '空客 A350-1000', seats: 334, layout: [3,3,3], rows: 38, cruiseAlt: 41000, cruiseMach: 0.85, rangeKm: 16100 },
   'A332': { manufacturer: '空客', model: 'A330-243', fullName: '空客 A330-200', seats: 246, layout: [2,4,2], rows: 32, cruiseAlt: 39000, cruiseMach: 0.82, rangeKm: 13450 },
   'A333': { manufacturer: '空客', model: 'A330-343', fullName: '空客 A330-300', seats: 277, layout: [2,4,2], rows: 36, cruiseAlt: 39000, cruiseMach: 0.82, rangeKm: 11750 },
-  'A388': { manufacturer: '空客', model: 'A380-841', fullName: '空客 A380-800', seats: 525, layout: [3,4,3], rows: 44, cruiseAlt: 43000, cruiseMach: 0.85, rangeKm: 14800 },
-  'B78X': { manufacturer: '波音', model: '787-10', fullName: '波音 787-10', seats: 318, layout: [3,3,3], rows: 36, cruiseAlt: 40000, cruiseMach: 0.85, rangeKm: 11910 },
+  'A388': { manufacturer: '空客', model: 'A380-841', fullName: '空客 A380-800', seats: 525, layout: [3,4,3], rows: 44, cruiseAlt: 43000, cruiseMach: 0.85, rangeKm: 15200 },
+  'B78X': { manufacturer: '波音', model: '787-10', fullName: '波音 787-10', seats: 318, layout: [3,3,3], rows: 36, cruiseAlt: 40000, cruiseMach: 0.85, rangeKm: 11730 },
   'B789': { manufacturer: '波音', model: '787-9', fullName: '波音 787-9', seats: 290, layout: [3,3,3], rows: 33, cruiseAlt: 41000, cruiseMach: 0.85, rangeKm: 14140 },
   'B788': { manufacturer: '波音', model: '787-8', fullName: '波音 787-8', seats: 242, layout: [3,3,3], rows: 28, cruiseAlt: 41000, cruiseMach: 0.85, rangeKm: 13620 },
   'B77W': { manufacturer: '波音', model: '777-300ER', fullName: '波音 777-300ER', seats: 396, layout: [3,4,3], rows: 40, cruiseAlt: 39000, cruiseMach: 0.84, rangeKm: 13650 },
@@ -104,7 +104,7 @@ const AIRCRAFT_DB = {
   // Narrow-body
   'A320': { manufacturer: '空客', model: 'A320-214', fullName: '空客 A320-200', seats: 168, layout: [3,3], rows: 29, cruiseAlt: 36000, cruiseMach: 0.78, rangeKm: 6150 },
   'A321': { manufacturer: '空客', model: 'A321-231', fullName: '空客 A321-200', seats: 195, layout: [3,3], rows: 34, cruiseAlt: 36000, cruiseMach: 0.78, rangeKm: 5950 },
-  'A20N': { manufacturer: '空客', model: 'A320-271N', fullName: '空客 A320neo', seats: 174, layout: [3,3], rows: 30, cruiseAlt: 38000, cruiseMach: 0.78, rangeKm: 6300 },
+  'A20N': { manufacturer: '空客', model: 'A320-271N', fullName: '空客 A320neo', seats: 174, layout: [3,3], rows: 30, cruiseAlt: 38000, cruiseMach: 0.78, rangeKm: 6500 },
   'B738': { manufacturer: '波音', model: '737-800', fullName: '波音 737-800', seats: 172, layout: [3,3], rows: 30, cruiseAlt: 37000, cruiseMach: 0.785, rangeKm: 5765 },
   'B739': { manufacturer: '波音', model: '737-900ER', fullName: '波音 737-900ER', seats: 189, layout: [3,3], rows: 33, cruiseAlt: 37000, cruiseMach: 0.785, rangeKm: 5925 },
   'B38M': { manufacturer: '波音', model: '737 MAX 8', fullName: '波音 737 MAX 8', seats: 178, layout: [3,3], rows: 31, cruiseAlt: 38000, cruiseMach: 0.79, rangeKm: 6570 },
@@ -1106,7 +1106,7 @@ function _estimateDistance(from, to) {
   // Coarse distance estimates for major city pairs (km)
   const key = [from, to].sort().join('-');
   const estimates = {
-    'PEK-SYD': 8950, 'PVG-SYD': 7850, 'CAN-SYD': 7500,
+    'PEK-SYD': 8970, 'PVG-SYD': 7850, 'CAN-SYD': 7500,
     'PEK-HND': 2100, 'PEK-NRT': 2100, 'PVG-HND': 1800,
     'PEK-HKG': 2000, 'PVG-HKG': 1250, 'PEK-SIN': 4500,
     'PEK-LHR': 8150, 'PEK-LAX': 10000, 'PEK-JFK': 11000,

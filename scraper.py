@@ -156,11 +156,11 @@ AIRPORT_COORDS = {
 AIRCRAFT_MAX_RANGE = {
     # 窄体机 (Narrowbody)
     "A320": 6200, "A20N": 6500, "A321": 5950,
-    "B738": 5765, "B38M": 6584, "B739": 4587,
+    "B738": 5765, "B38M": 6584, "B739": 5925,
     # 宽体机 (Widebody) — Airbus
     "A388": 15200,   # A380-800
     "A359": 15000,   # A350-900
-    "A35K": 14750,   # A350-1000
+    "A35K": 16100,   # A350-1000
     "A346": 14450,   # A340-600
     "A343": 13700,   # A340-300
     "A345": 16670,   # A340-500 (ultra-long range)
@@ -169,7 +169,7 @@ AIRCRAFT_MAX_RANGE = {
     "A339": 13334,   # A330-900neo
     "A338": 15094,   # A330-800neo
     # 宽体机 (Widebody) — Boeing
-    "B788": 14140,   # 787-8
+    "B788": 13620,   # 787-8
     "B789": 14140,   # 787-9
     "B78X": 11730,   # 787-10
     "B748": 14320,   # 747-8
@@ -180,7 +180,7 @@ AIRCRAFT_MAX_RANGE = {
     # 宽体机 (Widebody) — others
     "MD11": 12670,   # McDonnell Douglas MD-11
 }
-NARROWBODY_SAFE_RANGE = 5200  # 80% of best narrowbody (6500×0.8)
+NARROWBODY_SAFE_RANGE = 5260  # 80% of best narrowbody (6584×0.8, B38M)
 NARROWBODY_CODES = {"A320", "A20N", "A321", "B738", "B38M", "B739"}
 
 # Ultra-long-range aircraft that can handle virtually any commercial route
