@@ -1141,6 +1141,16 @@ function _buildGlobe(flight) {
     </div>`;
 }
 
+function _midLng(lng1, lng2) {
+  let delta = lng2 - lng1;
+  if (delta > 180) delta -= 360;
+  if (delta < -180) delta += 360;
+  let mid = lng1 + delta / 2;
+  if (mid > 180) mid -= 360;
+  if (mid < -180) mid += 360;
+  return mid;
+}
+
 function _initGlobe3D(el, originIATA, originLat, originLng, destIATA, destLat, destLng) {
   if (!window.Globe) {
     console.warn('[FlightProfile] window.Globe not available — CDN may not have loaded');
@@ -1156,6 +1166,7 @@ function _initGlobe3D(el, originIATA, originLat, originLng, destIATA, destLat, d
   }
 
   try {
+    el.innerHTML = '';  // clear skeleton before Globe appends canvas
     const globe = Globe()
       .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
       .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
@@ -1205,9 +1216,9 @@ function _initGlobe3D(el, originIATA, originLat, originLng, destIATA, destLat, d
     .ringPropagationSpeed(2.5)
     .ringRepeatPeriod(1600);
 
-    // Smoothly animate POV to frame both endpoints
+    // POV: midpoint with date-line correction
     const midLat = (originLat + destLat) / 2;
-    const midLng = (originLng + destLng) / 2;
+    const midLng = _midLng(originLng, destLng);
     const latDiff = Math.abs(originLat - destLat);
     const lngDiff = Math.abs(originLng - destLng);
     const alt = Math.max(1.5, Math.min(3.5, Math.max(latDiff, lngDiff) * 0.025));
@@ -1285,6 +1296,7 @@ function _initMultiSegmentGlobe3D(el, flight, allCoords) {
   }
 
   try {
+    el.innerHTML = '';  // clear skeleton before Globe appends canvas
     const globe = Globe()
       .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
       .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
@@ -1321,14 +1333,14 @@ function _initMultiSegmentGlobe3D(el, flight, allCoords) {
       .ringPropagationSpeed(2.5)
       .ringRepeatPeriod(1600);
 
-    // POV: bounding-box center of all coords
+    // POV: bounding-box center of all coords, date-line aware
     const lats = labelData.map(d => d.lat);
     const lngs = labelData.map(d => d.lng);
     const midLat = (Math.min(...lats) + Math.max(...lats)) / 2;
-    const midLng = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+    const midLng = _midLng(Math.min(...lngs), Math.max(...lngs));
     const latSpan = Math.max(...lats) - Math.min(...lats);
-    const lngSpan = Math.max(...lngs) - Math.min(...lngs);
-    const alt = Math.max(1.5, Math.min(4.0, Math.max(latSpan, lngSpan) * 0.022));
+    const lngSpan = Math.abs(Math.max(...lngs) - Math.min(...lngs));
+    const alt = Math.max(1.5, Math.min(4.0, Math.max(latSpan, lngSpan > 180 ? 360 - lngSpan : lngSpan) * 0.022));
     globe.pointOfView({ lat: midLat, lng: midLng, altitude: alt }, 1200);
 
     console.log('[FlightProfile] Multi-segment Globe initialized —', allIATAs.join(' → '));

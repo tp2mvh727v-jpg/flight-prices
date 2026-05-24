@@ -8,9 +8,23 @@
 import AppState from './state.js';
 import { createAutocomplete } from './autocomplete.js';
 import { AIRPORT_DB, CODE_MAP } from './airports.js';
+import { getWatchlist, removeFromWatchlist, getTrend, getPriceChange } from './watchlist.js';
 
 // Autocomplete instance registry — keyed by 'origin' | 'dest'
 const _ac = { origin: null, dest: null };
+
+// Carrier preference — airlines available in the filter
+const CARRIER_LIST = [
+  { code: 'CA', name: '国航' }, { code: 'CZ', name: '南航' }, { code: 'MU', name: '东航' },
+  { code: 'HU', name: '海航' }, { code: '3U', name: '川航' }, { code: 'MF', name: '厦航' },
+  { code: 'ZH', name: '深航' }, { code: 'CX', name: '国泰' }, { code: 'SQ', name: '新航' },
+  { code: 'NH', name: '全日空' }, { code: 'JL', name: '日航' }, { code: 'KE', name: '大韩' },
+  { code: 'OZ', name: '韩亚' }, { code: 'BR', name: '长荣' }, { code: 'QF', name: '澳航' },
+  { code: 'EK', name: '阿联酋' }, { code: 'QR', name: '卡塔尔' }, { code: 'EY', name: '阿提哈德' },
+  { code: 'TK', name: '土耳其' }, { code: 'LH', name: '汉莎' }, { code: 'AF', name: '法航' },
+  { code: 'BA', name: '英航' }, { code: 'UA', name: '美联航' }, { code: 'DL', name: '达美' },
+  { code: 'AA', name: '美航' },
+];
 
 // ——— Public init ———
 
@@ -18,8 +32,10 @@ export function initSearchPage() {
   try {
     setDefaultDates();
     initAutocompletes();
+    initCarrierChips();
     bindEvents();
     renderRecentSearches();
+    renderWatchlistPanel();
     console.log('[SearchPage] v4.0 State-driven — autocomplete ready, form bound. Defaults:',
       AppState.origin, '→', AppState.dest);
   } catch (e) {
@@ -28,6 +44,53 @@ export function initSearchPage() {
 }
 
 // ——— Autocomplete initialization ———
+
+function getSelectedCarriers() {
+  const active = document.querySelectorAll('.carrier-chip.active');
+  if (active.length === 0 || active.length === CARRIER_LIST.length) return [];
+  return [...active].map(c => c.dataset.carrier);
+}
+
+function initCarrierChips() {
+  const container = document.getElementById('carrierChips');
+  const toggleBtn = document.getElementById('carrierToggleAll');
+  if (!container) return;
+
+  // Restore from AppState if set, otherwise all active
+  const saved = AppState.preferredCarriers || [];
+  const allOn = saved.length === 0;
+
+  container.innerHTML = CARRIER_LIST.map(c => {
+    const active = allOn || saved.includes(c.code);
+    return `<button type="button" class="carrier-chip${active ? ' active' : ''}" data-carrier="${c.code}" title="${c.name} (${c.code})" aria-pressed="${active}">${c.code}</button>`;
+  }).join('');
+
+  if (toggleBtn) {
+    toggleBtn.textContent = allOn ? '全部航司' : `已选 ${saved.length}`;
+    toggleBtn.addEventListener('click', () => {
+      const chips = container.querySelectorAll('.carrier-chip');
+      const anyOff = container.querySelector('.carrier-chip:not(.active)');
+      if (anyOff) {
+        chips.forEach(c => { c.classList.add('active'); c.setAttribute('aria-pressed', 'true'); });
+        toggleBtn.textContent = '全部航司';
+      } else {
+        chips.forEach(c => { c.classList.remove('active'); c.setAttribute('aria-pressed', 'false'); });
+        toggleBtn.textContent = '全部取消';
+      }
+    });
+  }
+
+  container.addEventListener('click', (e) => {
+    const chip = e.target.closest('.carrier-chip');
+    if (!chip) return;
+    chip.classList.toggle('active');
+    chip.setAttribute('aria-pressed', chip.classList.contains('active') ? 'true' : 'false');
+    const active = container.querySelectorAll('.carrier-chip.active');
+    if (toggleBtn) {
+      toggleBtn.textContent = active.length === CARRIER_LIST.length ? '全部航司' : `已选 ${active.length}`;
+    }
+  });
+}
 
 function initAutocompletes() {
   const originInput = document.getElementById('originInput');
@@ -271,6 +334,9 @@ function onSubmit(e) {
   AppState.passengers = passengers;
   AppState.cabinClass = cabinClass;
 
+  // Read carrier preferences
+  AppState.preferredCarriers = getSelectedCarriers();
+
   // Persist search params to global state
   AppState.setSearchParams({ origin, dest, departDate, returnDate, tripType });
   AppState.clearResults();
@@ -415,6 +481,61 @@ function renderRecentSearches() {
       });
     });
   } catch { /* ignore */ }
+}
+
+export function renderWatchlistPanel() {
+  const panel = document.getElementById('watchlistPanel');
+  const content = document.getElementById('watchlistContent');
+  if (!panel || !content) return;
+  const items = getWatchlist();
+  if (!items.length) {
+    panel.style.display = 'none';
+    return;
+  }
+  panel.style.display = '';
+
+  const cabinLabels = { economy: '经济舱', premium: '超值经济舱', business: '商务舱', first: '头等舱' };
+  content.innerHTML = items.map(item => {
+    const last = item.history[item.history.length - 1];
+    const change = getPriceChange(item.key);
+    const trend = getTrend(item.key);
+    const changeHtml = change !== 0
+      ? `<span class="watchlist-change ${trend}">${change > 0 ? '+' : ''}¥${Math.abs(change).toLocaleString()}</span>`
+      : '';
+    return `
+      <div class="watchlist-item" data-watch-key="${item.key}">
+        <div>
+          <div class="watchlist-route">${item.origin} → ${item.dest}</div>
+          <div class="watchlist-cabin">${cabinLabels[item.cabin] || item.cabin}</div>
+        </div>
+        <div class="watchlist-prices">
+          <span class="watchlist-current">¥${(last?.price || 0).toLocaleString()}</span>
+          ${changeHtml}
+        </div>
+        <button class="watchlist-remove" data-remove-key="${item.key}">✕</button>
+      </div>`;
+  }).join('');
+
+  content.querySelectorAll('.watchlist-remove').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      removeFromWatchlist(btn.dataset.removeKey);
+      renderWatchlistPanel();
+    });
+  });
+
+  content.querySelectorAll('.watchlist-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const key = item.dataset.watchKey;
+      const [origin, dest] = key.split('-');
+      if (_ac.origin && _ac.dest) {
+        AppState.origin = origin;
+        AppState.dest = dest;
+        _ac.origin.setCode(origin);
+        _ac.dest.setCode(dest);
+      }
+    });
+  });
 }
 
 

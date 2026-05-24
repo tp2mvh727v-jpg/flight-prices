@@ -29,6 +29,7 @@ export function renderFlightRow(flight, dateVal, columns = 7, opts = {}) {
   const selIndicator = selectable
     ? `<div class="flight-sel-radio ${selected ? 'checked' : ''}" data-leg="${leg}" data-idx="${flight._index ?? ''}"></div>`
     : '';
+  const trackBtn = `<button class="track-btn" data-track-origin="${flight.origin || ''}" data-track-dest="${flight.dest || ''}" data-track-cabin="${flight._cabin || 'economy'}" data-track-price="${flight.price || 0}" data-track-airline="${flight.airline || ''}" data-track-airline-name="${escapeHtml(flight.airline_name || '')}" data-track-key="${flight.origin || ''}-${flight.dest || ''}-${flight._cabin || 'economy'}" title="追踪此航线价格">☆</button>`;
 
   if (columns === 8) {
     const dateCell = `<div class="date-cell">${dateVal.slice(5)}</div>`;
@@ -41,7 +42,7 @@ export function renderFlightRow(flight, dateVal, columns = 7, opts = {}) {
         ${layoverCell}
         <div class="ac-badge-placeholder">${acCell}</div>
         ${priceCell}
-        <div>${selIndicator}${profileBtn}</div>
+        <div>${trackBtn}${selIndicator}${profileBtn}</div>
       </div>`;
   }
 
@@ -53,7 +54,7 @@ export function renderFlightRow(flight, dateVal, columns = 7, opts = {}) {
       ${layoverCell}
       ${acCell}
       ${priceCell}
-      <div>${selIndicator}${profileBtn}</div>
+      <div>${trackBtn}${selIndicator}${profileBtn}</div>
     </div>`;
 }
 
@@ -88,6 +89,7 @@ export function renderFlightCard(flight, dateVal, opts = {}) {
         <span class="fpc-tag">${layoverInfo(flight)}</span>
         <span class="fpc-tag">${aircraftBadge(flight)}</span>
         ${selDot}
+        <button class="track-btn" data-track-origin="${flight.origin || ''}" data-track-dest="${flight.dest || ''}" data-track-cabin="${flight._cabin || 'economy'}" data-track-price="${flight.price || 0}" data-track-airline="${flight.airline || ''}" data-track-airline-name="${escapeHtml(flight.airline_name || '')}" data-track-key="${flight.origin || ''}-${flight.dest || ''}-${flight._cabin || 'economy'}" title="追踪此航线价格">☆</button>
         <button class="geek-profile-btn" data-flight-index="${flight._index ?? ''}">飞行器深度档案</button>
       </div>
     </div>`;

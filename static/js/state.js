@@ -40,6 +40,7 @@ const AppState = {
   // Search options
   passengers: 1,
   cabinClass: 'economy',
+  preferredCarriers: [],  // empty = show all
 
   // ——— Methods ———
 

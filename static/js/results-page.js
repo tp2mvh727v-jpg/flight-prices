@@ -9,6 +9,7 @@ import {
   sourceLabel, modeBadge, formatDate, formatPrice,
   getTripTypeLabel, escapeHtml
 } from './utils.js';
+import { addToWatchlist, removeFromWatchlist, isTracked, refreshWatchlistFromResults } from './watchlist.js';
 
 let trendChart = null;
 let trendPanelOpen = false;
@@ -231,14 +232,14 @@ function renderReturnSection(data, summary) {
         </div>
         <div id="returnPriceList">
           ${sorted.length
-            ? sorted.map((p, i) => renderFlightRow({ ...p, _index: prices.indexOf(p) }, data.date || summary.returnDate, 7, { selectable: true, selected: AppState.selectedReturn === prices.indexOf(p), leg: 'return' })).join('')
+            ? sorted.map((p, i) => renderFlightRow({ ...p, _index: prices.indexOf(p), _cabin: AppState.cabinClass }, data.date || summary.returnDate, 7, { selectable: true, selected: AppState.selectedReturn === prices.indexOf(p), leg: 'return' })).join('')
             : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到返程航班</h3><p>请尝试更换返程日期</p></div>'
           }
         </div>
         <!-- Mobile card list for return -->
         <div class="flight-card-list" id="returnCardList">
           ${sorted.length
-            ? sorted.map((p, i) => renderFlightCard({ ...p, _index: prices.indexOf(p) }, data.date || summary.returnDate, { selectable: true, selected: AppState.selectedReturn === prices.indexOf(p), leg: 'return' })).join('')
+            ? sorted.map((p, i) => renderFlightCard({ ...p, _index: prices.indexOf(p), _cabin: AppState.cabinClass }, data.date || summary.returnDate, { selectable: true, selected: AppState.selectedReturn === prices.indexOf(p), leg: 'return' })).join('')
             : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到返程航班</h3><p>请尝试更换返程日期</p></div>'}
         </div>
       </div>
@@ -260,10 +261,50 @@ function renderRoundtripBar() {
 
 let _filterState = { mode: 'all', sort: 'price' };
 
+function _handleTrackBtn(btn) {
+  const { trackOrigin, trackDest, trackCabin, trackPrice, trackAirline, trackAirlineName, trackKey } = btn.dataset;
+  if (!trackOrigin || !trackDest) return;
+  const price = parseInt(trackPrice) || 0;
+  if (isTracked(trackKey)) {
+    removeFromWatchlist(trackKey);
+    btn.classList.remove('tracked');
+    btn.textContent = '☆';
+  } else {
+    addToWatchlist({
+      origin: trackOrigin, dest: trackDest, cabin: trackCabin,
+      originName: trackOrigin, destName: trackDest,
+      price, airline: trackAirline, airlineName: trackAirlineName,
+    });
+    btn.classList.add('tracked');
+    btn.textContent = '★';
+  }
+}
+
+function _updateTrackBtns() {
+  document.querySelectorAll('.track-btn').forEach(btn => {
+    const key = btn.dataset.trackKey;
+    if (isTracked(key)) {
+      btn.classList.add('tracked');
+      btn.textContent = '★';
+    } else {
+      btn.classList.remove('tracked');
+      btn.textContent = '☆';
+    }
+  });
+}
+
 function _applyFilterSort(prices) {
   let filtered = [...prices];
   if (_filterState.mode === 'direct') {
     filtered = filtered.filter(p => p.stops === 0);
+  }
+  // Carrier preference filter
+  if (AppState.preferredCarriers && AppState.preferredCarriers.length > 0) {
+    const allowed = new Set(AppState.preferredCarriers);
+    filtered = filtered.filter(p => {
+      const code = p.airline || (p.segments && p.segments[0] && p.segments[0].airline) || '';
+      return allowed.has(code);
+    });
   }
   filtered.sort((a, b) => {
     if (_filterState.sort === 'duration') return (a.duration_minutes || 999) - (b.duration_minutes || 999);
@@ -304,6 +345,13 @@ function bindRoundtripSelection() {
   section._rtBound = true;
 
   section.addEventListener('click', (e) => {
+    // Track button handler
+    const trackBtn = e.target.closest('.track-btn');
+    if (trackBtn) {
+      e.stopPropagation();
+      _handleTrackBtn(trackBtn);
+      return;
+    }
     // Check for selection radio clicks
     const radio = e.target.closest('.flight-sel-radio');
     if (!radio) {
@@ -311,7 +359,7 @@ function bindRoundtripSelection() {
       const row = e.target.closest('[data-leg][data-idx]');
       if (!row) return;
       // Don't intercept profile button clicks
-      if (e.target.closest('.geek-profile-btn')) return;
+      if (e.target.closest('.geek-profile-btn') || e.target.closest('.track-btn')) return;
       const leg = row.dataset.leg;
       const idx = parseInt(row.dataset.idx);
       if (isNaN(idx)) return;
@@ -419,7 +467,7 @@ function updateSingleDayContent(data, summary) {
   const list = document.getElementById('singlePriceList');
   if (list) {
     list.innerHTML = sorted.length
-      ? sorted.map((p) => renderFlightRow({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, 7, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
+      ? sorted.map((p) => renderFlightRow({ ...p, _index: prices.indexOf(p), _cabin: AppState.cabinClass }, data.date || summary.departDate, 7, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
       : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>';
   }
 
@@ -427,9 +475,13 @@ function updateSingleDayContent(data, summary) {
   const cardList = document.getElementById('outboundCardList');
   if (cardList) {
     cardList.innerHTML = sorted.length
-      ? sorted.map((p) => renderFlightCard({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
+      ? sorted.map((p) => renderFlightCard({ ...p, _index: prices.indexOf(p), _cabin: AppState.cabinClass }, data.date || summary.departDate, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
       : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>';
   }
+
+  // Refresh watchlist with current prices
+  refreshWatchlistFromResults(summary.from?.code || summary.from, summary.to?.code || summary.to, AppState.cabinClass, prices);
+  _updateTrackBtns();
 
   // Re-bind filter bar with the new date's data (prevents stale closure)
   const filterContainer = document.getElementById('singleDaySection');
@@ -441,13 +493,13 @@ function updateSingleDayContent(data, summary) {
         const list = document.getElementById('singlePriceList');
         if (list) {
           list.innerHTML = filtered.length
-            ? filtered.map((p) => renderFlightRow({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, 7, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
+            ? filtered.map((p) => renderFlightRow({ ...p, _index: prices.indexOf(p), _cabin: AppState.cabinClass }, data.date || summary.departDate, 7, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
             : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>';
         }
         const cardList = document.getElementById('outboundCardList');
         if (cardList) {
           cardList.innerHTML = filtered.length
-            ? filtered.map((p) => renderFlightCard({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
+            ? filtered.map((p) => renderFlightCard({ ...p, _index: prices.indexOf(p), _cabin: AppState.cabinClass }, data.date || summary.departDate, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
             : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>';
         }
       }
@@ -500,14 +552,14 @@ function renderSingleDaySection(data, summary) {
         </div>
         <div id="singlePriceList">
           ${sorted.length
-            ? sorted.map((p) => renderFlightRow({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, 7, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
+            ? sorted.map((p) => renderFlightRow({ ...p, _index: prices.indexOf(p), _cabin: AppState.cabinClass }, data.date || summary.departDate, 7, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
             : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>'
           }
         </div>
         <!-- Mobile card list for outbound -->
         <div class="flight-card-list" id="outboundCardList">
           ${sorted.length
-            ? sorted.map((p) => renderFlightCard({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
+            ? sorted.map((p) => renderFlightCard({ ...p, _index: prices.indexOf(p), _cabin: AppState.cabinClass }, data.date || summary.departDate, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
             : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>'}
         </div>
         <!-- Return section placeholder (populated by loadReturnDay) -->
@@ -535,13 +587,13 @@ function renderSingleDaySection(data, summary) {
         const list = document.getElementById('singlePriceList');
         if (list) {
           list.innerHTML = filtered.length
-            ? filtered.map((p) => renderFlightRow({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, 7, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
+            ? filtered.map((p) => renderFlightRow({ ...p, _index: prices.indexOf(p), _cabin: AppState.cabinClass }, data.date || summary.departDate, 7, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
             : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>';
         }
         const cardList = document.getElementById('outboundCardList');
         if (cardList) {
           cardList.innerHTML = filtered.length
-            ? filtered.map((p) => renderFlightCard({ ...p, _index: prices.indexOf(p) }, data.date || summary.departDate, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
+            ? filtered.map((p) => renderFlightCard({ ...p, _index: prices.indexOf(p), _cabin: AppState.cabinClass }, data.date || summary.departDate, { selectable: isRT, selected: outIdx === prices.indexOf(p), leg: 'outbound' })).join('')
             : '<div class="empty-state"><div class="empty-icon">🔍</div><h3>未找到相关航班</h3><p>请尝试更换日期或城市</p></div>';
         }
       }

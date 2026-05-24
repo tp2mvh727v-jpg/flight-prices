@@ -4,7 +4,7 @@
 // ============================================================
 
 import AppState from './state.js';
-import { initSearchPage } from './search-page.js';
+import { initSearchPage, renderWatchlistPanel } from './search-page.js';
 import { initResultsPage, renderResults } from './results-page.js';
 import { initFlightProfile } from './flight-profile.js';
 import { fetchApiStatus, abortPending } from './api.js';
@@ -318,6 +318,7 @@ function showView(viewName, params = {}) {
     if (viewName === 'search') {
       const originInput = document.getElementById('originInput');
       if (originInput) originInput.focus();
+      renderWatchlistPanel();
     } else if (viewName === 'results') {
       const backBtn = document.getElementById('backToSearch');
       if (backBtn) backBtn.focus();
