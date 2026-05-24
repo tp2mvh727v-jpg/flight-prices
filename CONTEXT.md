@@ -1,6 +1,6 @@
 # CONTEXT.md — Aero-Hub 项目状态
 
-> 最后更新: 2026-05-24 (v5.7 机队数据库修正 + 航空器识别排版重构)
+> 最后更新: 2026-05-24 (v5.8 里程模块修复 + 座舱图对齐修复 + Playwright E2E测试套件)
 
 ---
 
@@ -29,6 +29,9 @@
 | v5.6.5 | 2026-05-24 | flight-profile.js智能引号瘫痪+autocomplete.js双重Bug修复 — 搜索页完全恢复可交互 |
 | v5.6.6 | 2026-05-24 | 机队数据库修正 — scraper.py 9项修复 + server.py国际航线过滤 + flightService.js 8项修复 |
 | v5.7 | 2026-05-24 | 航空器识别模块排版重构 — 三行布局(航班号/实拍图/机型+注册号) + 多段独立Tab面板 |
+| v5.7.1 | 2026-05-24 | 飞行里程模块修复 — CSS变量统一 + AIRCRAFT_DB添加rangeKm + 段级distance_km数据填充 |
+| v5.7.2 | 2026-05-24 | 座舱图布局修复 — refColumns对齐 + colLetters推导修正 + 列轨道统一 |
+| v5.8 | 2026-05-24 | Playwright E2E测试套件 — 7项测试全通过，零JS报错 |
 
 ---
 
@@ -689,3 +692,104 @@ if (url.pathname.endsWith('.js')) {
 ### CSS 新增
 
 `.fp-ac-id-flightno`, `.fp-ac-id-photo`, `.fp-ac-id-details`, `.fp-ac-id-block`, `.fp-seg-id-area`, `.fp-seg-id-panel`
+
+---
+
+## 14. v5.7.1 飞行里程模块修复 (2026-05-24)
+
+### CSS 颜色统一
+
+| 选择器 | 变更 |
+|--------|------|
+| `.fp-dist-seg` | `background: #fff` → `var(--card)`, `border` → `var(--border)` |
+| `.fp-dist-route` | `color: #0f172a` → `var(--text)` |
+
+### 里程数据渲染修复
+
+**根因**: `buildMockResults()` 中段对象缺少 `distance_km` 和 `range_pct` 字段, 导致 `_buildDistanceSection()` 无法渲染真实历程数据。
+
+**修复**:
+1. AIRCRAFT_DB 添加 `rangeKm` 字段 (所有14个机型)
+2. 新增 A332, B78X 到 AIRCRAFT_DB + ENGINE_DB
+3. 段对象添加 `distance_km` (单段=全距, 多段=按时长分摊) 和 `range_pct` (distance/range*100)
+
+---
+
+## 15. v5.7.2 座舱图布局修复 (2026-05-24)
+
+### 核心修复: colLetters 推导
+
+`_getColLetters(layout)` 全局函数无法区分 1-2-1 (需 A/D/G/K) 和 2-2 (需 A/B/E/F) 的列字母。改为从 `cabin.refColumns` 直接推导:
+
+```javascript
+const colLetters = cabin.refColumns.filter(ref => ref !== 'AISLE');
+```
+
+删除了不再使用的 `_getColLetters()` 函数。
+
+### 经济舱 refColumns 按机型分离
+
+| 机型 | 布局 | refColumns |
+|------|------|-----------|
+| B77W | 3-4-3 | A,B,C\|AISLE\|D,E,F,G\|AISLE\|H,J,K |
+| A333/A332 | 2-4-2 | A,B\|AISLE\|D,E,F,G\|AISLE\|H,K |
+| 其他宽体 | 3-3-3 | A,B,C\|AISLE\|D,E,F\|AISLE\|H,J,K |
+
+### 窄体机公务舱 2-2
+
+`refColumns`: `['A','C','AISLE','D','F']` → `['A','B','AISLE','E','F']` (AB/EF 对齐经济舱 A/B/E/F 轨道)
+
+### B748 上层公务舱 2-2
+
+同样改为 `['A','B','AISLE','E','F']`
+
+### 宽体机列表补全
+
+添加 A332, B78X 到 `isWide` 检测数组。
+
+---
+
+## 16. v5.8 Playwright E2E 测试套件 (2026-05-24)
+
+**文件**: `tests/e2e_test.py`
+
+### 测试流程 (7项)
+
+1. 搜索页加载 → `#view-search.active` + `#originInput` / `#destInput` 就绪
+2. 自动补全 PEK → 键入 → 下拉出现 → 点击 → 验证选中值含"PEK"
+3. 自动补全 SYD → 同上
+4. 提交搜索 → `#view-results.active` → `.table-row` / `.flight-card` 渲染 (16行)
+5. 点击 `.geek-profile-btn` → `#fpOverlay.active` 面板弹出
+6. Tab切换: 飞行数据(默认) → 座舱图(`.fp-seat-grid`已渲染) → 航线轨迹 → 返回飞行数据
+7. 关闭面板 + `#backToSearch` 返回搜索页
+
+### 全局 pageerror 监听
+
+全程收集 JS 错误，任何 `pageerror` 事件计入失败报告。
+
+### 测试结果
+
+```
+7/7 PASS — Zero JavaScript errors
+```
+
+### 运行方式
+
+```bash
+pip install playwright && playwright install chromium
+python tests/e2e_test.py
+```
+
+---
+
+## 17. 改动文件清单 (v5.6.6 → v5.8)
+
+| 文件 | 变更说明 |
+|------|---------|
+| `scraper.py` | 9项机队映射修复 + fallback多样化 |
+| `server.py` | 国际航线仅宽体机航司 + 导入 AIRLINE_WIDEBODY |
+| `flightService.js` | 机队映射(~60航司) + `_guessAircraft()`重写 + 国际航线过滤 + AIRCRAFT_DB添加rangeKm + 段级distance_km/range_pct + A332/B78X新增 |
+| `flight-profile.js` | `_buildAircraftPhoto()`→`_buildAircraftIdBlock()` 三行布局 + `_buildHeader()`简化 + colLetters推导修正 + 经济舱refColumns按机型分离 + 窄体公务AB/EF对齐 + 删除`_getColLetters()` |
+| `style.css` | `.fp-seg-photo-*`→`.fp-seg-id-*` + 新增`.fp-ac-id-*`样式 + 里程颜色变量统一 |
+| `tests/e2e_test.py` | Playwright自动化测试 (7项 + pageerror监听) |
+| `CONTEXT.md` | 版本记录 + 详细修复文档 |

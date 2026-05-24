@@ -219,10 +219,11 @@ def main():
             # TEST 7: Close panel + navigate back to search
             # ============================================================
             print("\n[TEST 7] Close flight profile + return to search...")
-            close_btn = page.locator("#fpClose, .fp-close")
+            # Close the profile panel
+            close_btn = page.locator("#fpClose")
             if close_btn.count() > 0:
                 close_btn.first.click()
-                page.wait_for_timeout(300)
+                page.wait_for_timeout(500)
 
             # Click "Modify Search" / back button
             back_btn = page.locator("#backToSearch")

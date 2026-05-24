@@ -1,0 +1,16 @@
+Aero-Hub E2E Test Report
+========================
+Timestamp: 2026-05-24 15:38:53
+
+Tests executed:
+  1. Search page load + autocomplete ready  — PASS
+  2. Autocomplete input PEK                 — PASS
+  3. Autocomplete input SYD                 — PASS
+  4. Submit search → results page           — PASS
+  5. Open flight profile panel              — PASS
+  6. Tab switching (数据/座舱/航线)         — PASS
+  7. Close panel + return to search         — PASS
+
+JS Errors: 0
+
+OVERALL: PASS — All tests passed, zero JS errors
