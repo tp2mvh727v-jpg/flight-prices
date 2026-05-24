@@ -10,12 +10,12 @@
 <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
 <link rel="apple-touch-icon" href="/static/icon.svg">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" href="/static/css/style.css?v=5.6.4">
+<link rel="stylesheet" href="/static/css/style.css?v=5.8">
 <script>
 // One-time SW cleanup on version bump — clears stale cached JS
 (function() {
   var KEY = 'aerohub-sw-cleared';
-  var VERSION = '5.6.4b';
+  var VERSION = '5.8';
   if (sessionStorage.getItem(KEY) === VERSION) return;
   if (!('serviceWorker' in navigator)) { sessionStorage.setItem(KEY, VERSION); return; }
   navigator.serviceWorker.getRegistrations().then(function(regs) {
@@ -38,9 +38,39 @@
 <body>
 
 <!-- ============================================================
-     View 1: Search Homepage (direct entry — splash removed v5.6.4)
+     View 0: Splash Screen (first-visit cinematic welcome)
      ============================================================ -->
-<div class="app-view active" id="view-search">
+<div class="app-view active" id="view-splash">
+  <div class="splash-screen">
+    <div class="splash-bg"></div>
+    <div class="splash-bg-overlay"></div>
+    <canvas id="splashParticles"></canvas>
+    <div class="splash-content">
+      <div class="splash-brand">
+        <div class="splash-logo">
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="32" cy="32" r="30" stroke="white" stroke-width="1.5" opacity="0.6"/>
+            <path d="M32 8 L38 28 L58 28 L42 40 L48 58 L32 48 L16 58 L22 40 L6 28 L26 28 Z" fill="white" opacity="0.9"/>
+          </svg>
+        </div>
+        <h1 class="splash-title">AERO-HUB</h1>
+        <p class="splash-tagline">Explore the Sky &middot; Decipher the Craft</p>
+        <p class="splash-subtitle">AVIATION GEEK CONSOLE</p>
+      </div>
+    </div>
+    <div class="splash-enter-wrap">
+      <button class="splash-enter-btn" id="splashEnterBtn">
+        <span style="font-size:1.1rem;font-weight:700;letter-spacing:3px;">ENTER CONSOLE</span>
+        <small style="font-size:0.7rem;color:rgba(148,163,184,0.7);">进入飞友控制台</small>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     View 1: Search Homepage
+     ============================================================ -->
+<div class="app-view" id="view-search">
   <canvas id="aeroBgCanvas"></canvas>
   <div class="search-page">
 
@@ -170,13 +200,13 @@
       数据来源: <span id="sourceInfo">Google Flights</span> &nbsp;|&nbsp;
       免费 · 无需注册 &nbsp;|&nbsp;
       <a href="http://flightprice88:5088">flightprice88:5088</a>
-      <span class="footer-version">v5.6.4</span>
+      <span class="footer-version">v5.8</span>
     </footer>
   </div>
 </div>
 
 <!-- App entry point -->
-<script type="module" src="/static/js/app.js?v=5.6.4"></script>
+<script type="module" src="/static/js/app.js?v=5.8"></script>
 
 </body>
 </html>

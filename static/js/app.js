@@ -380,7 +380,8 @@ function _restoreFromHash() {
     // Go straight to results
     showView('results', { from: params.from, to: params.to, date: params.date, returnDate: params.return, trip: params.trip });
   } else if (hash === '#search') {
-    // Already on search — just focus input
+    // Deactivate splash, show search view
+    showView('search');
     const originInput = document.getElementById('originInput');
     if (originInput) originInput.focus();
   }
@@ -443,6 +444,12 @@ function _bootstrap() {
       if (sp.get('from')) AppState.origin = sp.get('from');
       if (sp.get('to')) AppState.dest = sp.get('to');
     }
+  }
+
+  // Splash: init particles + enter button transition (only when no hash nav)
+  if (!window.location.hash) {
+    try { _initSplashParticles(); } catch (e) { console.error('[App] splash particles failed:', e); }
+    try { _setupSplashTransition(); } catch (e) { console.error('[App] splash transition failed:', e); }
   }
 
   // Phase 3: Initialize all subsystems (idle until views activate)

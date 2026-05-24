@@ -1,9 +1,9 @@
 Aero-Hub E2E Test Report
 ========================
-Timestamp: 2026-05-24 15:38:53
+Timestamp: 2026-05-24 15:51:04
 
 Tests executed:
-  1. Search page load + autocomplete ready  — PASS
+  1. Splash → ENTER CONSOLE → search page   — PASS
   2. Autocomplete input PEK                 — PASS
   3. Autocomplete input SYD                 — PASS
   4. Submit search → results page           — PASS

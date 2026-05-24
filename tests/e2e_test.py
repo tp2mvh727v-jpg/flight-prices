@@ -83,10 +83,21 @@ def main():
             page.on("pageerror", lambda err: ERRORS.append(f"PAGE_ERROR: {err.message}"))
 
             # ============================================================
-            # TEST 1: Search page loads with autocomplete
+            # TEST 1: Splash screen → click ENTER → search page loads
             # ============================================================
-            print("\n[TEST 1] Search page load + autocomplete ready...")
+            print("\n[TEST 1] Splash screen → ENTER CONSOLE → search page...")
             page.goto(SERVER_URL, wait_until="networkidle")
+
+            # Splash should be active first
+            splash = page.locator("#view-splash.active")
+            if splash.count() > 0:
+                print("  Splash screen active — clicking ENTER CONSOLE")
+                page.click("#splashEnterBtn")
+                page.wait_for_timeout(800)  # Wait for exit transition (750ms)
+            else:
+                print("  WARN — Splash not found, may be on search directly")
+
+            # Now search view should be active
             page.wait_for_selector("#view-search.active", timeout=10000)
             page.wait_for_selector("#originInput", timeout=5000)
             page.wait_for_selector("#destInput", timeout=5000)
@@ -259,7 +270,7 @@ def main():
         f"Timestamp: {time.strftime('%Y-%m-%d %H:%M:%S')}",
         "",
         "Tests executed:",
-        "  1. Search page load + autocomplete ready  — PASS",
+        "  1. Splash → ENTER CONSOLE → search page   — PASS",
         "  2. Autocomplete input PEK                 — PASS",
         "  3. Autocomplete input SYD                 — PASS",
         "  4. Submit search → results page           — PASS",

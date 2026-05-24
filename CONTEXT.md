@@ -1,6 +1,6 @@
 # CONTEXT.md — Aero-Hub 项目状态
 
-> 最后更新: 2026-05-24 (v5.8 里程模块修复 + 座舱图对齐修复 + Playwright E2E测试套件)
+> 最后更新: 2026-05-24 (v5.8.1 Splash恢复 + SW缓存策略修复 + 版本号统一)
 
 ---
 
@@ -32,6 +32,7 @@
 | v5.7.1 | 2026-05-24 | 飞行里程模块修复 — CSS变量统一 + AIRCRAFT_DB添加rangeKm + 段级distance_km数据填充 |
 | v5.7.2 | 2026-05-24 | 座舱图布局修复 — refColumns对齐 + colLetters推导修正 + 列轨道统一 |
 | v5.8 | 2026-05-24 | Playwright E2E测试套件 — 7项测试全通过，零JS报错 |
+| v5.8.1 | 2026-05-24 | Splash欢迎页恢复 + SW缓存策略修复(cacheFirst→networkFirst for CSS) + 版本号统一v5.8 |
 
 ---
 
@@ -793,3 +794,33 @@ python tests/e2e_test.py
 | `style.css` | `.fp-seg-photo-*`→`.fp-seg-id-*` + 新增`.fp-ac-id-*`样式 + 里程颜色变量统一 |
 | `tests/e2e_test.py` | Playwright自动化测试 (7项 + pageerror监听) |
 | `CONTEXT.md` | 版本记录 + 详细修复文档 |
+
+---
+
+## 18. v5.8.1 Splash恢复 + SW缓存修复 + 版本号统一 (2026-05-24)
+
+### 问题
+
+页面样式全部丢失、Splash欢迎页消失、版本号显示v5.6.4。
+
+### 根因分析
+
+1. **SW CSS缓存策略缺陷**: `sw.js` 对 CSS 使用 `cacheFirst` → 浏览器始终返回旧的缓存CSS, 新样式永不生效
+2. **版本号未更新**: HTML/CSS/JS 版本字符串全部停滞在 `v5.6.4`, SW CACHE_NAME 也是 `aerohub-v5.6.4b` — 版本从未引入变更, SW 无理由更新
+3. **Splash HTML被移除**: `view-splash` div 完整删除, 但 `_initSplashParticles()` / `_setupSplashTransition()` / CSS 全都保留 — 孤岛代码
+4. **`_bootstrap()` 未初始化 Splash**: splash 初始化调用被移除
+
+### 修复
+
+| # | 修复项 | 变更 |
+|---|--------|------|
+| 1 | `sw.js` CSS策略 | `cacheFirst` → `networkFirst` (与JS相同) |
+| 2 | `sw.js` CACHE_NAME | `aerohub-v5.6.4b` → `aerohub-v5.8` |
+| 3 | `index.html` CSS版本 | `?v=5.6.4` → `?v=5.8` |
+| 4 | `index.html` JS版本 | `?v=5.6.4` → `?v=5.8` |
+| 5 | `index.html` SW清理版本 | `5.6.4b` → `5.8` |
+| 6 | `index.html` Footer版本 | `v5.6.4` → `v5.8` |
+| 7 | `index.html` Splash HTML | 完整恢复 `#view-splash` (含Ken Burns背景/粒子Canvas/star logo/ENTER CONSOLE按钮) |
+| 8 | `app.js` `_bootstrap()` | 添加 `_initSplashParticles()` + `_setupSplashTransition()` 调用(仅无hash时) |
+| 9 | `app.js` `_restoreFromHash()` | `#search` hash 时调用 `showView('search')` 显式切换视图 |
+| 10 | `tests/e2e_test.py` | Test 1 更新为 Splash → ENTER CONSOLE → search 流程 |
