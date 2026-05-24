@@ -827,16 +827,13 @@ function adaptFlightAPIResponse(apiData, origin, dest, dateStr) {
     const mainCarrier = carrierById.get(mainCarrierId);
 
     // Build segment objects in our internal format
-    const totalLegDuration = legSegments.reduce((sum, s) => sum + (s.duration || 0), 0) || 1;
     const segObjs = legSegments.map(seg => {
       const segOrigin = placeById.get(seg.origin_place_id);
       const segDest = placeById.get(seg.destination_place_id);
       const segCarrier = carrierById.get(seg.marketing_carrier_id);
       const acCode = seg._aircraft_code || _guessAircraft(segCarrier?.code || '', primaryLeg.stop_count);
-      // Per-segment distance: proportional to segment duration share of total leg
-      const segDist = legSegments.length === 1
-        ? routeDistance
-        : Math.round(routeDistance * ((seg.duration || 0) / totalLegDuration));
+      // Per-segment distance: real great-circle distance for each leg
+      const segDist = _estimateDistance(segOrigin?.code || '', segDest?.code || '');
       const acRange = (AIRCRAFT_DB[acCode] || {}).rangeKm || 8000;
       const rangePct = acRange > 0 ? Math.round(segDist / acRange * 100) : 0;
       return {
@@ -1102,18 +1099,63 @@ function _randomFareBasis() {
   return first + rest;
 }
 
+// —— Airport coordinate dictionary for accurate great-circle distances ——
+const _AIRPORT_COORDS = {
+  // East Asia — China
+  PEK: [ 40.08, 116.58], PKX: [ 39.51, 116.41], PVG: [ 31.14, 121.81],
+  SHA: [ 31.20, 121.34], CAN: [ 23.39, 113.30], SZX: [ 22.64, 113.81],
+  CTU: [ 30.58, 103.95], CKG: [ 29.72, 106.64], HGH: [ 30.23, 120.43],
+  XIY: [ 34.44, 108.75], WUH: [ 30.78, 114.21], NKG: [ 31.74, 118.86],
+  KMG: [ 25.10, 102.94], HAK: [ 19.93, 110.46], XMN: [ 24.54, 118.13],
+  TAO: [ 36.27, 120.37], DLC: [ 38.97, 121.54], TSN: [ 39.12, 117.35],
+  CGO: [ 34.52, 113.84], SYX: [ 18.30, 109.41], SHE: [ 41.64, 123.48],
+  URC: [ 43.91,  87.47], TNA: [ 36.86, 117.22], FOC: [ 25.93, 119.66],
+  // East Asia — Japan / Korea / Taiwan
+  HND: [ 35.55, 139.78], NRT: [ 35.76, 140.39], KIX: [ 34.43, 135.23],
+  CTS: [ 42.78, 141.69], FUK: [ 33.59, 130.45], ICN: [ 37.46, 126.44],
+  TPE: [ 25.08, 121.23], KHH: [ 22.58, 120.35],
+  // Southeast Asia
+  SIN: [  1.36, 103.99], BKK: [ 13.68, 100.75], DMK: [ 13.91, 100.61],
+  HKG: [ 22.31, 113.91], KUL: [  2.75, 101.71], SGN: [ 10.82, 106.65],
+  HAN: [ 21.22, 105.81], MNL: [ 14.51, 121.02], CGK: [ -6.13, 106.66],
+  DPS: [ -8.75, 115.17],
+  // South Asia / Middle East
+  DEL: [ 28.57,  77.10], BOM: [ 19.09,  72.87], DXB: [ 25.25,  55.36],
+  DOH: [ 25.27,  51.61], AUH: [ 24.43,  54.65], IST: [ 41.26,  28.74],
+  // Europe
+  LHR: [ 51.47,  -0.46], CDG: [ 49.01,   2.55], FRA: [ 50.03,   8.57],
+  MUC: [ 48.35,  11.79], AMS: [ 52.31,   4.77], MAD: [ 40.47,  -3.56],
+  FCO: [ 41.80,  12.25], ZRH: [ 47.46,   8.55], SVO: [ 55.97,  37.41],
+  // North America
+  LAX: [ 33.94,-118.41], SFO: [ 37.62,-122.38], JFK: [ 40.64, -73.78],
+  EWR: [ 40.69, -74.17], ORD: [ 41.98, -87.91], YVR: [ 49.19,-123.18],
+  YYZ: [ 43.68, -79.63], IAH: [ 29.99, -95.34], MIA: [ 25.80, -80.29],
+  ATL: [ 33.64, -84.43], BOS: [ 42.36, -71.01], SEA: [ 47.45,-122.31],
+  // Oceania
+  SYD: [-33.95, 151.18], MEL: [-37.67, 144.84], AKL: [-37.01, 174.79],
+  BNE: [-27.38, 153.12],
+  // South America / Africa
+  GRU: [-23.44, -46.47], CPT: [-33.97,  18.60], JNB: [-26.14,  28.24],
+  ADD: [  8.98,  38.80], NBO: [ -1.32,  36.93], CAI: [ 30.12,  31.41],
+};
+
+function _haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 function _estimateDistance(from, to) {
-  // Coarse distance estimates for major city pairs (km)
-  const key = [from, to].sort().join('-');
-  const estimates = {
-    'PEK-SYD': 8970, 'PVG-SYD': 7850, 'CAN-SYD': 7500,
-    'PEK-HND': 2100, 'PEK-NRT': 2100, 'PVG-HND': 1800,
-    'PEK-HKG': 2000, 'PVG-HKG': 1250, 'PEK-SIN': 4500,
-    'PEK-LHR': 8150, 'PEK-LAX': 10000, 'PEK-JFK': 11000,
-    'PEK-BKK': 3300, 'PVG-BKK': 2900, 'PEK-DXB': 5900,
-    'PEK-ICN': 950, 'PVG-ICN': 850,
-  };
-  return estimates[key] || 5000 + Math.abs(_hashCode(from + to)) % 5000;
+  // Real great-circle distance between two airport codes
+  const c1 = _AIRPORT_COORDS[from];
+  const c2 = _AIRPORT_COORDS[to];
+  if (c1 && c2) return Math.round(_haversineKm(c1[0], c1[1], c2[0], c2[1]));
+  // Fallback: conservative estimate for unknown airport pairs
+  return 4000 + Math.abs(_hashCode(from + to)) % 6000;
 }
 
 function _guessAircraft(carrierCode, stops) {
