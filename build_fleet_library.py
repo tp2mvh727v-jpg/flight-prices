@@ -23,217 +23,80 @@ import ssl
 
 FLEET = {
     # ═══ 中国航司 ═══
-    'CA': {  # Air China 国航
-        'name': 'Air China',
-        'models': ['A359', 'A333', 'A320', 'A321', 'A20N',
-                   'B789', 'B77W', 'B748', 'B738', 'B38M'],
-    },
-    'CZ': {  # China Southern 南航
-        'name': 'China Southern',
-        'models': ['A359', 'A333', 'A388', 'A320', 'A321', 'A20N',
-                   'B789', 'B788', 'B77W', 'B738', 'B38M'],
-    },
-    'MU': {  # China Eastern 东航
-        'name': 'China Eastern',
-        'models': ['A359', 'A333', 'A320', 'A321', 'A20N',
-                   'B789', 'B77W', 'B738', 'B38M'],
-    },
-    'HU': {  # Hainan Airlines 海航
-        'name': 'Hainan Airlines',
-        'models': ['A333', 'A20N', 'A321',
-                   'B789', 'B788', 'B738', 'B38M'],
-    },
-    '3U': {  # Sichuan Airlines 川航 (全空客)
-        'name': 'Sichuan Airlines',
-        'models': ['A359', 'A333', 'A320', 'A321', 'A20N'],
-    },
-    'MF': {  # Xiamen Airlines 厦航
-        'name': 'Xiamen Airlines',
-        'models': ['B789', 'B788', 'B738', 'B38M', 'A20N'],
-    },
-    'ZH': {  # Shenzhen Airlines 深航
-        'name': 'Shenzhen Airlines',
-        'models': ['A320', 'A321', 'A20N', 'B738', 'B38M'],
-    },
+    'CA': { 'name': 'Air China', 'models': ['A359', 'A333', 'A332', 'A320', 'A321', 'A20N',
+                   'B789', 'B77W', 'B748', 'B738', 'B38M'] },
+    'CZ': { 'name': 'China Southern', 'models': ['A359', 'A333', 'A320', 'A321', 'A20N',
+                   'B789', 'B788', 'B77W', 'B738', 'B38M'] },
+    'MU': { 'name': 'China Eastern', 'models': ['A359', 'A333', 'A332', 'A320', 'A321', 'A20N',
+                   'B789', 'B77W', 'B738', 'B38M'] },
+    'HU': { 'name': 'Hainan Airlines', 'models': ['A333', 'A20N', 'A321',
+                   'B789', 'B788', 'B738', 'B38M'] },
+    '3U': { 'name': 'Sichuan Airlines', 'models': ['A359', 'A333', 'A332', 'A320', 'A321', 'A20N'] },
+    'MF': { 'name': 'Xiamen Airlines', 'models': ['B789', 'B788', 'B738', 'B38M', 'A20N'] },
+    'ZH': { 'name': 'Shenzhen Airlines', 'models': ['A320', 'A321', 'A20N', 'B738', 'B38M'] },
 
     # ═══ 中东航司 ═══
-    'EK': {  # Emirates 阿联酋航空
-        'name': 'Emirates',
-        'models': ['A388', 'B77W', 'A359'],
-    },
-    'QR': {  # Qatar Airways 卡塔尔航空
-        'name': 'Qatar Airways',
-        'models': ['A359', 'A35K', 'A388', 'B77W', 'B789', 'B788',
-                   'A320', 'A321', 'B38M'],
-    },
-    'EY': {  # Etihad 阿提哈德航空
-        'name': 'Etihad Airways',
-        'models': ['A35K', 'A388', 'B77W', 'B789',
-                   'A320', 'A321', 'A333'],
-    },
+    'EK': { 'name': 'Emirates', 'models': ['A388', 'B77W', 'A359'] },
+    'QR': { 'name': 'Qatar Airways', 'models': ['A359', 'A35K', 'A388', 'B77W', 'B789', 'B788',
+                   'A320', 'A321', 'B38M'] },
+    'EY': { 'name': 'Etihad Airways', 'models': ['A35K', 'A388', 'B77W', 'B789', 'B78X',
+                   'A320', 'A321'] },
 
     # ═══ 亚太航司 ═══
-    'SQ': {  # Singapore Airlines 新航
-        'name': 'Singapore Airlines',
-        'models': ['A359', 'A35K', 'A388', 'B77W', 'B38M', 'B738'],
-    },
-    'CX': {  # Cathay Pacific 国泰
-        'name': 'Cathay Pacific',
-        'models': ['A359', 'A35K', 'A333', 'B77W', 'A321'],
-    },
-    'QF': {  # Qantas 澳航
-        'name': 'Qantas',
-        'models': ['A388', 'B789', 'A333', 'B738'],
-    },
-    'JL': {  # Japan Airlines 日航
-        'name': 'Japan Airlines',
-        'models': ['A359', 'A35K', 'B789', 'B788', 'B77W', 'B738', 'B38M'],
-    },
-    'NH': {  # ANA 全日空
-        'name': 'All Nippon Airways',
-        'models': ['A388', 'B789', 'B788', 'B77W', 'B738',
-                   'A320', 'A321', 'A20N'],
-    },
-    'KE': {  # Korean Air 大韩航空
-        'name': 'Korean Air',
-        'models': ['A359', 'A388', 'A333', 'A321',
-                   'B789', 'B77W', 'B748', 'B738', 'B739'],
-    },
-    'OZ': {  # Asiana Airlines 韩亚航空
-        'name': 'Asiana Airlines',
-        'models': ['A359', 'A388', 'A333', 'A321', 'B77W'],
-    },
+    'SQ': { 'name': 'Singapore Airlines', 'models': ['A359', 'A388', 'B77W', 'B78X', 'B38M', 'B738'] },
+    'CX': { 'name': 'Cathay Pacific', 'models': ['A359', 'A35K', 'A333', 'B77W', 'A321'] },
+    'QF': { 'name': 'Qantas', 'models': ['A388', 'B789', 'A333', 'A332', 'B738'] },
+    'JL': { 'name': 'Japan Airlines', 'models': ['A359', 'A35K', 'B789', 'B788', 'B77W', 'B738', 'B38M'] },
+    'NH': { 'name': 'All Nippon Airways', 'models': ['A388', 'B789', 'B788', 'B77W', 'B78X', 'B738',
+                   'A320', 'A321', 'A20N'] },
+    'KE': { 'name': 'Korean Air', 'models': ['A359', 'A388', 'A333', 'A321',
+                   'B789', 'B77W', 'B748', 'B738', 'B739'] },
+    'OZ': { 'name': 'Asiana Airlines', 'models': ['A359', 'A388', 'A333', 'A321', 'B77W'] },
 
     # ═══ 欧洲航司 ═══
-    'LH': {  # Lufthansa 汉莎
-        'name': 'Lufthansa',
-        'models': ['A359', 'A35K', 'A388', 'A333', 'A320', 'A321', 'A20N',
-                   'B748', 'B789'],
-    },
-    'AF': {  # Air France 法航
-        'name': 'Air France',
-        'models': ['A359', 'B77W', 'B789',
-                   'A320', 'A321'],
-    },
-    'BA': {  # British Airways 英航
-        'name': 'British Airways',
-        'models': ['A35K', 'A388', 'B788', 'B789', 'B77W',
-                   'A320', 'A321'],
-    },
-    'TK': {  # Turkish Airlines 土耳其航空
-        'name': 'Turkish Airlines',
-        'models': ['A359', 'A35K', 'A333', 'B789', 'B77W',
-                   'A320', 'A321', 'B738', 'B38M'],
-    },
+    'LH': { 'name': 'Lufthansa', 'models': ['A359', 'A388', 'A333', 'A320', 'A321', 'A20N',
+                   'B748', 'B789'] },
+    'AF': { 'name': 'Air France', 'models': ['A359', 'B77W', 'B789', 'A332', 'A320', 'A321'] },
+    'BA': { 'name': 'British Airways', 'models': ['A35K', 'A388', 'B788', 'B789', 'B77W', 'B78X',
+                   'A320', 'A321'] },
+    'TK': { 'name': 'Turkish Airlines', 'models': ['A359', 'A333', 'A332', 'B789', 'B77W',
+                   'A320', 'A321', 'B738', 'B38M'] },
+    'KL': { 'name': 'KLM', 'models': ['B77W', 'B789', 'B78X', 'A333', 'A332', 'B738', 'B739'] },
+    'VS': { 'name': 'Virgin Atlantic', 'models': ['A35K', 'A339', 'B789', 'A333'] },
+    'OS': { 'name': 'Austrian Airlines', 'models': ['B789', 'B763', 'A320', 'A20N', 'A321'] },
 
     # ═══ 亚太 — 非主要航司 ═══
-    'TR': {  # Scoot 酷航 (新加坡航空旗下廉航)
-        'name': 'Scoot',
-        'models': ['B788', 'B789', 'A320', 'A20N', 'A321'],
-    },
-    'PR': {  # Philippine Airlines 菲律宾航空
-        'name': 'Philippine Airlines',
-        'models': ['A359', 'A333', 'B77W', 'A321', 'A320', 'A20N'],
-    },
-    'MH': {  # Malaysia Airlines 马航
-        'name': 'Malaysia Airlines',
-        'models': ['A359', 'A333', 'B738', 'B38M'],
-    },
-    '5J': {  # Cebu Pacific 宿务航空
-        'name': 'Cebu Pacific',
-        'models': ['A320', 'A20N', 'A321', 'A333'],
-    },
-    'TN': {  # Air Tahiti Nui 大溪地航空
-        'name': 'Air Tahiti Nui',
-        'models': ['B789'],
-    },
-    'NZ': {  # Air New Zealand 新西兰航空
-        'name': 'Air New Zealand',
-        'models': ['B789', 'B77W', 'A320', 'A20N', 'A321'],
-    },
-    'VN': {  # Vietnam Airlines 越南航空
-        'name': 'Vietnam Airlines',
-        'models': ['A359', 'B789', 'A321', 'A20N'],
-    },
-    'TG': {  # Thai Airways 泰国航空
-        'name': 'Thai Airways',
-        'models': ['A359', 'A333', 'B789', 'B788', 'B77W', 'A320'],
-    },
-    'BR': {  # EVA Air 长荣航空
-        'name': 'EVA Air',
-        'models': ['B789', 'B788', 'B77W', 'A321', 'A333'],
-    },
-    'CI': {  # China Airlines 中华航空
-        'name': 'China Airlines',
-        'models': ['A359', 'A333', 'B77W', 'B738', 'A321', 'A20N'],
-    },
-    'GA': {  # Garuda Indonesia 印尼鹰航
-        'name': 'Garuda Indonesia',
-        'models': ['A333', 'B77W', 'B738'],
-    },
+    'TR': { 'name': 'Scoot', 'models': ['B788', 'B789', 'A320', 'A20N', 'A321'] },
+    'PR': { 'name': 'Philippine Airlines', 'models': ['A359', 'A333', 'B77W', 'A35K', 'A321', 'A320'] },
+    'MH': { 'name': 'Malaysia Airlines', 'models': ['A359', 'A333', 'A332', 'A339', 'B738', 'B38M'] },
+    '5J': { 'name': 'Cebu Pacific', 'models': ['A320', 'A20N', 'A321', 'A333'] },
+    'TN': { 'name': 'Air Tahiti Nui', 'models': ['B789'] },
+    'NZ': { 'name': 'Air New Zealand', 'models': ['B789', 'B77W', 'A320', 'A20N', 'A321'] },
+    'VN': { 'name': 'Vietnam Airlines', 'models': ['A359', 'B789', 'B78X', 'A321', 'A20N'] },
+    'TG': { 'name': 'Thai Airways', 'models': ['A359', 'A333', 'B789', 'B788', 'B77W', 'A320'] },
+    'BR': { 'name': 'EVA Air', 'models': ['B789', 'B78X', 'B77W', 'A321', 'A333'] },
+    'CI': { 'name': 'China Airlines', 'models': ['A359', 'A333', 'B77W', 'B738', 'A321'] },
+    'GA': { 'name': 'Garuda Indonesia', 'models': ['A333', 'B77W', 'A332', 'A339', 'B738'] },
+    'AI': { 'name': 'Air India', 'models': ['B77W', 'B788', 'B789', 'A359', 'A320', 'A321', 'A20N', 'B738'] },
+    'LO': { 'name': 'LOT Polish Airlines', 'models': ['B789', 'B788', 'A339', 'B738', 'B38M'] },
 
     # ═══ 非洲航司 ═══
-    'ET': {  # Ethiopian Airlines 埃塞俄比亚航空
-        'name': 'Ethiopian Airlines',
-        'models': ['A359', 'A35K', 'B789', 'B788', 'B77W', 'B738', 'B38M'],
-    },
-    'SA': {  # South African Airways 南非航空
-        'name': 'South African Airways',
-        'models': ['A333', 'A320', 'A20N', 'B738'],
-    },
-    'KQ': {  # Kenya Airways 肯尼亚航空
-        'name': 'Kenya Airways',
-        'models': ['B788', 'B738'],
-    },
-    'MS': {  # EgyptAir 埃及航空
-        'name': 'EgyptAir',
-        'models': ['A333', 'B789', 'B738', 'A320', 'A321', 'A20N'],
-    },
-    'AT': {  # Royal Air Maroc 摩洛哥皇家航空
-        'name': 'Royal Air Maroc',
-        'models': ['B788', 'B789', 'B738', 'B38M', 'A320', 'A321'],
-    },
+    'ET': { 'name': 'Ethiopian Airlines', 'models': ['A359', 'A35K', 'B789', 'B788', 'B77W', 'B738', 'B38M'] },
+    'SA': { 'name': 'South African Airways', 'models': ['A333', 'A320', 'A20N', 'B738'] },
+    'KQ': { 'name': 'Kenya Airways', 'models': ['B788', 'B738'] },
+    'MS': { 'name': 'EgyptAir', 'models': ['A333', 'B789', 'B738', 'A320', 'A321', 'A20N'] },
+    'AT': { 'name': 'Royal Air Maroc', 'models': ['B788', 'B789', 'B738', 'B38M', 'A320', 'A321'] },
 
     # ═══ 美洲航司 ═══
-    'DL': {  # Delta Air Lines 达美航空
-        'name': 'Delta Air Lines',
-        'models': ['A359', 'A333', 'A20N', 'A321',
-                   'B739', 'B738'],
-    },
-    'UA': {  # United Airlines 联合航空
-        'name': 'United Airlines',
-        'models': ['B789', 'B788', 'B77W',
-                   'A320', 'A321', 'A20N',
-                   'B738', 'B739', 'B38M'],
-    },
-    'AA': {  # American Airlines 美国航空
-        'name': 'American Airlines',
-        'models': ['B789', 'B788', 'B77W',
-                   'A321', 'A320', 'A20N',
-                   'B738', 'B38M'],
-    },
-    'AC': {  # Air Canada 加拿大航空
-        'name': 'Air Canada',
-        'models': ['B789', 'B788', 'B77W', 'A333',
-                   'A321', 'A320', 'B738', 'B38M'],
-    },
-    'LA': {  # LATAM Airlines 拉美航空
-        'name': 'LATAM Airlines',
-        'models': ['B789', 'B788',
-                   'A320', 'A20N', 'A321'],
-    },
-    'AD': {  # Azul Linhas Aereas 蓝色航空
-        'name': 'Azul Linhas Aereas',
-        'models': ['A333', 'A20N', 'A321', 'A320'],
-    },
-    'CM': {  # Copa Airlines 巴拿马航空
-        'name': 'Copa Airlines',
-        'models': ['B738', 'B38M', 'B739'],
-    },
-    'AM': {  # Aeromexico 墨西哥航空
-        'name': 'Aeromexico',
-        'models': ['B789', 'B788', 'B738', 'B38M'],
-    },
+    'DL': { 'name': 'Delta Air Lines', 'models': ['A359', 'A333', 'A332', 'A339', 'A20N', 'A321', 'B739', 'B738'] },
+    'UA': { 'name': 'United Airlines', 'models': ['B789', 'B788', 'B77W', 'B78X', 'B763',
+                   'A320', 'A321', 'A20N', 'B738', 'B739', 'B38M'] },
+    'AA': { 'name': 'American Airlines', 'models': ['B789', 'B788', 'B77W', 'A321', 'A320', 'A20N', 'B738', 'B38M'] },
+    'AC': { 'name': 'Air Canada', 'models': ['B789', 'B788', 'B77W', 'A333', 'A321', 'A320', 'B738', 'B38M'] },
+    'LA': { 'name': 'LATAM Airlines', 'models': ['B789', 'B788', 'A320', 'A20N', 'A321'] },
+    'AD': { 'name': 'Azul Linhas Aereas', 'models': ['A333', 'A20N', 'A321', 'A320'] },
+    'CM': { 'name': 'Copa Airlines', 'models': ['B738', 'B38M', 'B739'] },
+    'AM': { 'name': 'Aeromexico', 'models': ['B789', 'B788', 'B738', 'B38M'] },
 }
 
 # 机型 → 搜索用关键词 (排名第一为最佳匹配)
@@ -241,14 +104,20 @@ MODEL_TERMS = {
     'A359': ['Airbus A350-900', 'A350-900'],
     'A35K': ['Airbus A350-1000', 'A350-1000'],
     'A333': ['Airbus A330-300', 'A330-300'],
+    'A332': ['Airbus A330-200', 'A330-200'],
+    'A339': ['Airbus A330-900neo', 'A330-900', 'A330neo'],
+    'A338': ['Airbus A330-800neo', 'A330-800'],
     'A388': ['Airbus A380-800', 'A380-800'],
     'A320': ['Airbus A320-200', 'A320-200', 'A320'],
     'A321': ['Airbus A321-200', 'A321-200', 'A321'],
     'A20N': ['Airbus A320neo', 'A320neo'],
     'B789': ['Boeing 787-9', '787-9 Dreamliner'],
     'B788': ['Boeing 787-8', '787-8 Dreamliner'],
+    'B78X': ['Boeing 787-10', '787-10 Dreamliner'],
     'B77W': ['Boeing 777-300ER', '777-300ER'],
+    'B77L': ['Boeing 777-200LR', '777-200LR'],
     'B748': ['Boeing 747-8', '747-8'],
+    'B763': ['Boeing 767-300ER', '767-300ER'],
     'B738': ['Boeing 737-800', '737-800'],
     'B739': ['Boeing 737-900ER', '737-900ER'],
     'B38M': ['Boeing 737 MAX 8', '737 MAX 8'],

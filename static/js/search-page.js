@@ -8,23 +8,28 @@
 import AppState from './state.js';
 import { createAutocomplete } from './autocomplete.js';
 import { AIRPORT_DB, CODE_MAP } from './airports.js';
-import { getWatchlist, removeFromWatchlist, getTrend, getPriceChange } from './watchlist.js';
+import { getWatchlist, removeFromWatchlist, getTrend, getPriceChange, refreshWatchlist } from './watchlist.js';
 
 // Autocomplete instance registry — keyed by 'origin' | 'dest'
 const _ac = { origin: null, dest: null };
 
-// Carrier preference — airlines available in the filter
-const CARRIER_LIST = [
-  { code: 'CA', name: '国航' }, { code: 'CZ', name: '南航' }, { code: 'MU', name: '东航' },
-  { code: 'HU', name: '海航' }, { code: '3U', name: '川航' }, { code: 'MF', name: '厦航' },
-  { code: 'ZH', name: '深航' }, { code: 'CX', name: '国泰' }, { code: 'SQ', name: '新航' },
-  { code: 'NH', name: '全日空' }, { code: 'JL', name: '日航' }, { code: 'KE', name: '大韩' },
-  { code: 'OZ', name: '韩亚' }, { code: 'BR', name: '长荣' }, { code: 'QF', name: '澳航' },
-  { code: 'EK', name: '阿联酋' }, { code: 'QR', name: '卡塔尔' }, { code: 'EY', name: '阿提哈德' },
-  { code: 'TK', name: '土耳其' }, { code: 'LH', name: '汉莎' }, { code: 'AF', name: '法航' },
-  { code: 'BA', name: '英航' }, { code: 'UA', name: '美联航' }, { code: 'DL', name: '达美' },
-  { code: 'AA', name: '美航' },
-];
+// Alliance → carrier mapping for the alliance filter
+const ALLIANCES = {
+  star:     { name: '星空联盟', icon: '⭐', carriers: ['CA','ZH','SQ','NH','UA','LH','TK','TG','OZ','ET','NZ','SK','TP','LO','SN','LX','OS','SA','AV','MS','AI','A3','OU'] },
+  skyteam:  { name: '天合联盟', icon: '🌐', carriers: ['CZ','MU','MF','KE','KL','AF','DL','AM','VN','CI','GA','SV','AR','ME','KQ','UX','RO','SU','OK'] },
+  oneworld: { name: '寰宇一家', icon: '🌍', carriers: ['CX','JL','BA','QF','AA','QR','AY','IB','MH','RJ','UL','AT','LA','MA','AS'] },
+};
+
+function getAllianceCarriers() {
+  const chips = document.querySelectorAll('.alliance-chip');
+  const selected = [];
+  chips.forEach(c => { if (c.classList.contains('active')) selected.push(c.dataset.alliance); });
+  // If all 3 selected, return empty = no restriction
+  if (selected.length === 3 || selected.length === 0) return [];
+  const set = new Set();
+  selected.forEach(a => ALLIANCES[a]?.carriers?.forEach(code => set.add(code)));
+  return [...set];
+}
 
 // ——— Public init ———
 
@@ -32,7 +37,7 @@ export function initSearchPage() {
   try {
     setDefaultDates();
     initAutocompletes();
-    initCarrierChips();
+    initAllianceChips();
     bindEvents();
     renderRecentSearches();
     renderWatchlistPanel();
@@ -43,52 +48,37 @@ export function initSearchPage() {
   }
 }
 
-// ——— Autocomplete initialization ———
+// ——— Alliance chip interaction ———
 
 function getSelectedCarriers() {
-  const active = document.querySelectorAll('.carrier-chip.active');
-  if (active.length === 0 || active.length === CARRIER_LIST.length) return [];
-  return [...active].map(c => c.dataset.carrier);
+  return getAllianceCarriers();
 }
 
-function initCarrierChips() {
-  const container = document.getElementById('carrierChips');
-  const toggleBtn = document.getElementById('carrierToggleAll');
+function initAllianceChips() {
+  const container = document.getElementById('allianceChips');
   if (!container) return;
 
-  // Restore from AppState if set, otherwise all active
+  // Restore from AppState if set
   const saved = AppState.preferredCarriers || [];
-  const allOn = saved.length === 0;
-
-  container.innerHTML = CARRIER_LIST.map(c => {
-    const active = allOn || saved.includes(c.code);
-    return `<button type="button" class="carrier-chip${active ? ' active' : ''}" data-carrier="${c.code}" title="${c.name} (${c.code})" aria-pressed="${active}">${c.code}</button>`;
-  }).join('');
-
-  if (toggleBtn) {
-    toggleBtn.textContent = allOn ? '全部航司' : `已选 ${saved.length}`;
-    toggleBtn.addEventListener('click', () => {
-      const chips = container.querySelectorAll('.carrier-chip');
-      const anyOff = container.querySelector('.carrier-chip:not(.active)');
-      if (anyOff) {
-        chips.forEach(c => { c.classList.add('active'); c.setAttribute('aria-pressed', 'true'); });
-        toggleBtn.textContent = '全部航司';
-      } else {
-        chips.forEach(c => { c.classList.remove('active'); c.setAttribute('aria-pressed', 'false'); });
-        toggleBtn.textContent = '全部取消';
+  if (saved.length > 0) {
+    // Non-empty saved carriers → determine which alliance(s) to activate
+    const chips = container.querySelectorAll('.alliance-chip');
+    chips.forEach(c => c.classList.remove('active'));
+    let matched = false;
+    chips.forEach(c => {
+      const codes = ALLIANCES[c.dataset.alliance]?.carriers || [];
+      if (saved.some(sc => codes.includes(sc))) {
+        c.classList.add('active');
+        matched = true;
       }
     });
+    if (!matched) chips.forEach(c => c.classList.add('active'));
   }
 
   container.addEventListener('click', (e) => {
-    const chip = e.target.closest('.carrier-chip');
+    const chip = e.target.closest('.alliance-chip');
     if (!chip) return;
     chip.classList.toggle('active');
-    chip.setAttribute('aria-pressed', chip.classList.contains('active') ? 'true' : 'false');
-    const active = container.querySelectorAll('.carrier-chip.active');
-    if (toggleBtn) {
-      toggleBtn.textContent = active.length === CARRIER_LIST.length ? '全部航司' : `已选 ${active.length}`;
-    }
   });
 }
 
@@ -536,6 +526,33 @@ export function renderWatchlistPanel() {
       }
     });
   });
+
+  // Refresh button handler
+  const refreshBtn = document.getElementById('watchlistRefreshBtn');
+  const statusEl = document.getElementById('watchlistStatus');
+  if (refreshBtn) {
+    refreshBtn.onclick = async () => {
+      refreshBtn.disabled = true;
+      refreshBtn.textContent = '⏳ 刷新中...';
+      if (statusEl) {
+        statusEl.style.display = '';
+        statusEl.textContent = '正在获取最新价格...';
+      }
+      try {
+        const updated = await refreshWatchlist();
+        const count = updated.filter(r => r.price != null).length;
+        if (statusEl) {
+          statusEl.textContent = count > 0 ? `✅ 已更新 ${count} 条价格` : '⚠️ 暂无价格数据';
+        }
+      } catch {
+        if (statusEl) statusEl.textContent = '❌ 刷新失败，请稍后重试';
+      }
+      refreshBtn.disabled = false;
+      refreshBtn.textContent = '🔄 刷新';
+      renderWatchlistPanel();
+      setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
+    };
+  }
 }
 
 

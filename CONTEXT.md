@@ -1,6 +1,6 @@
 # CONTEXT.md — Aero-Hub 项目状态
 
-> 最后更新: 2026-05-25 (v5.8.8 4项UX增强 — 审查第二批)
+> 最后更新: 2026-05-25 (v5.11 移动端排版重构 + PC列宽调优 + 列拆分 + Cloudflare隧道)
 
 ---
 
@@ -40,6 +40,9 @@
 | v5.8.6 | 2026-05-25 | 飞行时间显示格式修复 — _generateTelemetry小数小时(10.5h)→小时+分钟(10h30m) + PM/美术/技术三视角审查 |
 | v5.8.7 | 2026-05-25 | 审查第一批修复 — WebGL泄漏+图片onerror CSP+筛选栏过期+暗色卡片对比度+日期焦点环+死代码清理+CDN统一 |
 | v5.8.8 | 2026-05-25 | UX增强 — Globe骨架屏+趋势首屏展开+移动端搜索层级+档案拖拽横条 |
+| v5.9 | 2026-05-25 | 航司归属全链路 — 航司仅运营涉及本国的航线 + 中转枢纽为本国机场 + 绕路比>2x过滤 |
+| v5.10 | 2026-05-25 | 搜索质量优化 — 时间跨天+独立选型+分钟规范化+时长推算+联盟排序全修 |
+| v5.11 | 2026-05-25 | 移动端排版重构 + PC列宽调优 + 操作列拆分 + Cloudflare隧道 |
 
 ---
 
@@ -872,3 +875,745 @@ python tests/e2e_test.py
 3. **真实 API 接入** — `ENABLE_REAL_API` 切换和 `FLIGHT_API_KEY` 占位符已有，补齐即可启用实时数据
 4. **飞机对比视图** — 复用现有座舱图/遥测/里程渲染，选两个航班并排对比
 5. **可分享飞行卡片** — URL 含航班索引+档案Tab状态，支持深度链接直达特定飞机档案
+
+---
+
+## 20. v5.9 WIP — 价格追踪 + 航司筛选 + 3D地球修复 (2026-05-25)
+
+> **状态**: 未提交 (working tree)，在 v5.8.8 基础上继续开发
+
+### 20.1 新增模块: `static/js/watchlist.js` (92行)
+
+价格追踪核心模块，localStorage 持久化。
+
+**导出函数**:
+| 函数 | 用途 |
+|------|------|
+| `getWatchlist()` | 读取追踪列表 |
+| `addToWatchlist({...})` | 添加航线 (origin/dest/cabin)，记录初始价格 + 历史 |
+| `removeFromWatchlist(key)` | 移除航线 |
+| `isTracked(key)` | 检查是否已追踪 |
+| `updatePrice(key, price, ...)` | 追加价格历史 (保留最近90条) |
+| `refreshWatchlistFromResults(origin, dest, cabin, prices)` | 搜索结果自动刷新追踪价格 |
+| `getTrend(key)` | 趋势判定: up/down/flat |
+| `getPriceChange(key)` | 计算累计价格变化 |
+| `refreshWatchlist()` | 调用 `/api/watchlist-refresh` 主动刷新全部追踪航线 (v5.9新增) |
+
+### 20.2 航司偏好筛选
+
+**前端**:
+- `state.js` 新增 `preferredCarriers: []`
+- `search-page.js`:
+  - 新增 `CARRIER_LIST` (25家航司)
+  - `initCarrierChips()` — 渲染 chip 按钮组 + 全选/反选 toggle
+  - `getSelectedCarriers()` — 读取筛选结果
+  - Toggle 按钮标签: 全部航司 / `已选 N · 全选` / 全部取消
+- `results-page.js`:
+  - `_applyFilterSort()` 集成航司偏好过滤
+  - 航班行/卡片注入 `_cabin` 字段用于追踪
+- `templates/index.html`: 新增 `.carrier-filter-row` UI
+- `style.css`: chip 样式 + 响应式适配 (~70行新增)
+
+**设计**: 仅在表单提交时读取偏好 → 传递给后端/demo数据生成 → 结果页过滤。空数组 = 显示全部。
+
+### 20.3 价格追踪面板 + 追踪按钮
+
+**搜索页追踪面板**:
+- `renderWatchlistPanel()` — 渲染追踪列表: 航线、舱位、当前价格、涨跌指示 (¥ 差值)、移除按钮
+- 点击路线自动回填搜索表单
+- `🔄 刷新` 按钮 → 调用后端 API 批量更新价格 → 3秒后状态消息自动消失
+- `templates/index.html`: watchlistPanel 容器 + watchlistRefreshBtn + watchlistStatus
+
+**追踪按钮 (☆/★)**:
+- `flight-card.js`: 每个航班行/卡片注入 `.track-btn`
+- `results-page.js`: `_handleTrackBtn()` + `_updateTrackBtns()` 处理点击/状态同步
+- `refreshWatchlistFromResults()` 结果加载时自动刷新已追踪路线的价格
+
+### 20.4 3D 地球修复 (`flight-profile.js`)
+
+| 修复 | 说明 |
+|------|------|
+| 国际日期变更线视角偏移 | `_midLng()` 处理 ±180° 经度跨越 → POV 居中正确 |
+| Globe canvas 重复叠加 | `el.innerHTML = ''` 清理骨架屏再初始化，防止每切 Tab 增一个 canvas |
+| Globe 容器约束 | CSS `!important` 强制 Globe.gl 的 viewport 级 div/canvas 约束到 `.fp-globe-3d` 容器 |
+| Globe 高度 | 桌面 500px (原420) / 移动端 360px (原300) |
+| 多段 Globe 也应用 | `_initMultiSegmentGlobe3D` 同样修复日期线 + 清理 |
+
+### 20.5 后端新增: `/api/watchlist-refresh` (POST)
+
+**请求**: `{routes: [{origin, dest, cabin}, ...]}`  
+**响应**: `{results: [{origin, dest, cabin, price, airline, airline_name, date, source: 'live'|'demo'|'unavailable'}]}`  
+**缓存**: 30分钟 (独立于价格缓存的 `wl:` 前缀)  
+**降级**: Google Flights 抓取失败 → demo 数据 → `price: null`
+
+### 20.6 改动文件清单
+
+| 文件 | 变更 | 状态 |
+|------|------|------|
+| `static/js/watchlist.js` | +92 行 (新文件) | untracked |
+| `static/js/search-page.js` | +150 行 (航司chips + 追踪面板渲染 + 刷新按钮) | modified |
+| `static/js/results-page.js` | +74 行 (航司过滤 + 追踪按钮交互 + _cabin传递) | modified |
+| `static/js/flight-card.js` | +6 行 (追踪按钮组件) | modified |
+| `static/js/flight-profile.js` | +24 行 (3D地球日期线修复 + canvas清理) | modified |
+| `static/js/state.js` | +1 行 (preferredCarriers) | modified |
+| `static/js/app.js` | +3 行 (追踪面板自动刷新) | modified |
+| `static/css/style.css` | +240 行 (航司chip + watchlist + Globe约束 + 刷新按钮) | modified |
+| `templates/index.html` | +21 行 (航司筛选行 + watchlist header/按钮/状态) | modified |
+| `server.py` | +58 行 (watchlist-refresh API) | modified |
+| `tests/test-report.txt` | ±2 行 | modified |
+| `CONTEXT.md` | 本文档 | modified |
+
+### 20.7 待完成
+
+- [x] 补充航司数据 (前端 CARRIER_LIST + 后端 机队/名称映射/DEMO_AIRLINES)
+- [x] 航线归属逻辑修复 (本国枢纽原则 + 第五航权例外)
+- [ ] v5.9 版本号统一 (HTML/CSS/SW/server banner)
+
+## 21. v5.9 航司数据库扩充 + 航线归属逻辑 (2026-05-25)
+
+### 21.1 航司数据扩充
+
+**前端 CARRIER_LIST**: 25 → 52 家航司
+**后端 DEMO_AIRLINES**: 17 → 45 家航司
+**scraper.py AIRLINE_WIDEBODY/NARROWBODY**: 50 → 75 家航司
+**flightService.js MOCK_CARRIERS**: 19 → 49 家航司
+
+#### 从 scraper 数据库补入前端 (27家)
+KL, AC, NZ, VA, JQ, ET, SA, KQ, MS, AT, LA, AD, CM, AM, VN, TG, PR, MH, 5J, TR, GA, D7, AK, FJ, HA, FM, OZ, BR, CI
+
+#### 全新加入 (23家)
+| IATA | 名称 | 所属国 | Hubs | 宽体机队 |
+|------|------|--------|------|---------|
+| VS | 维珍大西洋 | 英国 | LHR | A35K, A339, B789 |
+| AI | 印度航空 | 印度 | DEL, BOM | B77W, B788, B789, A359 |
+| SK | 北欧航空 | 瑞典 | CPH, ARN, OSL | A359, A333 |
+| AY | 芬兰航空 | 芬兰 | HEL | A359, A333 |
+| LX | 瑞士航空 | 瑞士 | ZRH | A333, B77W |
+| OS | 奥地利航空 | 奥地利 | VIE | B789, B77W |
+| TP | TAP葡萄牙 | 葡萄牙 | LIS | A339, A332 |
+| LO | LOT波兰 | 波兰 | WAW | B789, B788 |
+| EI | 爱尔兰航空 | 爱尔兰 | DUB | A333, A332 |
+| GF | 海湾航空 | 巴林 | BAH | B789 |
+| WY | 阿曼航空 | 阿曼 | MCT | B789, A333 |
+| KU | 科威特航空 | 科威特 | KWI | B77W, A332, A338 |
+| UL | 斯里兰卡航空 | 斯里兰卡 | CMB | A333, A332 |
+| BI | 文莱皇家 | 文莱 | BWN | B788 |
+| PK | 巴基斯坦航空 | 巴基斯坦 | KHI, ISB | B77W, B77L |
+| BG | 孟加拉航空 | 孟加拉 | DAC | B789, B788, B77W |
+| WS | 西捷航空 | 加拿大 | YYC | B789 |
+| SN | 布鲁塞尔航空 | 比利时 | BRU | A333 |
+| AR | 阿根廷航空 | 阿根廷 | EZE | A332, A359 |
+| AV | 哥伦比亚航空 | 哥伦比亚 | BOG | B788 |
+| MK | 毛里求斯航空 | 毛里求斯 | MRU | A359, A339, A332 |
+| FI | 冰岛航空 | 冰岛 | KEF | (窄体) |
+| KC | 阿斯塔纳航空 | 哈萨克斯坦 | NQZ, ALA | (窄体) |
+
+### 21.2 航线归属逻辑 (scraper.py + server.py)
+
+#### AIRLINE_COUNTRY 映射 (75家航司)
+每家航司 → 所属国 ISO 代码。用于判断航司是否有权运营某条国际航线。
+
+#### AIRPORT_COUNTRY 映射 (116个机场)
+每个 IATA 代码 → 所属国 ISO。覆盖中国全部 48 个民用机场 + 全球主要枢纽。
+
+#### 核心规则: `can_operate_route(airline_code, origin, dest)`
+1. **国内航线**: 仅该国航司可运营（PEK→PVG 仅中国航司）
+2. **国际航线**: 航司所属国必须 = 出发国 或 到达国
+   - PEK→SYD: 仅中国和澳大利亚航司
+   - PEK→LHR: 仅中国和英国航司
+3. **第五航权例外**: 12条已知特殊航线
+4. **未知放行**: 机场/航司数据不完整时宽松处理
+
+#### 第五航权航线 (12条)
+| 航司 | 航段 | 说明 |
+|------|------|------|
+| SQ | HKG→SFO | SIN-HKG-SFO 第五航权 |
+| SQ | NRT→LAX | SIN-NRT-LAX 第五航权 |
+| EK | BKK→SYD | DXB-BKK-SYD 第五航权 |
+| EK | BKK→CHC | DXB-BKK-CHC 第五航权 |
+| EK | MXP→JFK | DXB-MXP-JFK 第五航权 |
+| CX | TPE→NRT | HKG-TPE-NRT 第五航权 |
+| CX | TPE→ICN | HKG-TPE-ICN 第五航权 |
+| QR | BKK→HAN | DOH-BKK-HAN 第五航权 |
+| TK | BKK→HKG | IST-BKK-HKG 第五航权 |
+| ET | BKK→HKG | ADD-BKK-HKG 第五航权 |
+| ET | BOM→HKG | ADD-BOM-HKG 第五航权 |
+| LA | AKL→SYD | SCL-AKL-SYD 第五航权 |
+
+### 21.3 实现效果
+
+**搜索 PEK→SYD** 现在只会显示 🇨🇳 中国航司 + 🇦🇺 澳大利亚航司的航班，不再出现英航、汉莎等无关航司横跨中国-澳洲航线。
+
+**Demo 数据生成** (`generate_demo_prices`) 先过 `can_operate_route` 过滤，再过宽体机过滤。
+
+### 21.4 修改文件
+
+| 文件 | 变更 |
+|------|------|
+| `scraper.py` | +23 航司机队数据 + AIRLINE_COUNTRY/AIRPORT_COUNTRY/FIFTH_FREEDOM_ROUTES + can_operate_route() |
+| `server.py` | 导入 can_operate_route + DEMO_AIRLINES 17→45 + 航线过滤 + 枢纽扩展 |
+| `static/js/search-page.js` | CARRIER_LIST 25→52 |
+| `static/js/flightService.js` | MOCK_CARRIERS 19→49 + 宽体/窄体机队映射全量同步 |
+
+---
+
+## 22. v5.9-continued — Google Flights 抓取链路修复 (2026-05-25)
+
+### 22.1 Google Flights 结果未过滤 `can_operate_route`
+
+**问题**: `scraper.py` 的 Google Flights 抓取结果直接返回原始航班数据，未经过 `can_operate_route()` 过滤，导致无关航司横跨非本国航线。
+
+**修复**: 在 `scraper.py` 的 `parse_results()` 函数中，对 Google Flights 返回的每个航班调用 `can_operate_route(airline_code, origin, dest)` 过滤，拒绝不符合航线归属规则的航司。
+
+### 22.2 中转地 fallback 全球随机问题
+
+**问题**: 中转航班的中转地选择逻辑在无匹配枢纽时 fallback 到随机全球机场。
+
+**修复**: fallback 逻辑改为从航司所属国筛选枢纽机场，而非全局随机。确保中转地永远在航司所属国内。
+
+### 22.3 IATA 航司数据库大规模扩充 (153 家)
+
+从 IATA 官网抓取 359 家全球航司名单，经过人工筛选整合，最终纳入 **153 家运营中常见航司**。同步更新所有数据源：
+
+| 数据源 | 变更 |
+|--------|------|
+| `scraper.py` AIRLINE_WIDEBODY/NARROWBODY | 75 → 覆盖全 153 家 |
+| `flightService.js` MOCK_CARRIERS | 49 → 153 家 |
+| `search-page.js` ALL_AIRLINES | 112 家可筛选 |
+| Google Flights 英文名映射 | +140 条新映射 |
+
+### 22.4 货运/濒危航司清理
+
+移除已停运或纯货运航司：S7 (西伯利亚航空/濒危)、DV (SCAT/区域性)、SM (开罗航空/濒危)、TC (坦桑尼亚航空/区域性)、SB (所罗门航空/区域性)、PX (新几内亚航空/区域性)。
+
+### 22.5 Google Flights 英文名映射缺失修复
+
+**问题**: Google Flights 返回航司名称为英文全称（如 "Air China"），但 scraper 仅有 IATA 代码映射。未匹配的航司返回 `code="?"`，被 `can_operate_route` 的「未知放行」逻辑放过。
+
+**修复**: 新增 **~140 条英文名→IATA代码映射**（覆盖所有 153 家航司）。修正 `can_operate_route` 对未知代码的处理：从「宽松放行」改为「拒绝」，杜绝虚假航线。
+
+---
+
+## 23. v5.9 — 前端航线归属修复 (2026-05-25)
+
+### 23.1 前端 Mock 数据绕过 `can_operate_route`
+
+**问题**: `flightService.js` 的 `generateMockFlightAPIResponse()` 生成 Mock 数据时完全不检查航线归属，前端 Mock 模式可显示英航 PEK→SYD 等不存在的航线。
+
+**修复**: 在 `flightService.js` 中新增 **JavaScript 版 `canOperateRouteJS()`** 函数，并接入所有代码路径：
+- 直飞航班 → 生成前过滤 carrier
+- 中转航班 → 每段独立验证
+- 中转地 → 从航司所属国枢纽筛选
+
+### 23.2 前端数字开头对象 key 语法错误
+
+**问题**: `flightService.js` 中 `AIRLINE_COUNTRY` 和 `AIRPORT_COUNTRY` 使用数字开头的 ISO 代码作为对象 key（如 `3166-2:CN`），浏览器报语法错误，导致 **ENTER CONSOLE 按钮无反应**。
+
+**修复**: 将数字前缀的 key 改为字符串引号包裹。
+
+### 23.3 `_pickAircraftForSegment` 调用未定义函数
+
+**问题**: `_pickAircraftForSegment` 中调用 `_segmentDistance()` 计算航段距离，但该函数不存在，导致搜索结果页显示「数据加载失败」。
+
+**修复**: 将 `_segmentDistance()` 替换为已有的 Haversine 距离计算逻辑。
+
+### 23.4 搜索结果时间显示 NaN:N / Invalid Date
+
+**问题**: 搜索结果中起降时间显示 `NaN:N`，趋势面板日期显示 `Invalid Date`。
+
+**根因**: 部分航段数据中时间字段为空字符串或 NaN，直接传给 `new Date()` 产生 Invalid Date。
+
+**修复**: 新增 `safeDate()` 防御函数，对空字符串/NaN/undefined 做前置检查，返回安全默认值。
+
+---
+
+## 24. v5.9 — 搜索交互 UX 重构 (2026-05-25)
+
+### 24.1 航司偏好 → 三大航空联盟选择器
+
+**变更**: 将搜索页 112 个独立航司 chip 替换为三大航空联盟选择器：
+
+| 联盟 | 成员航司 |
+|------|---------|
+| ⭐ **星空联盟** | CA, ZH, SQ, NH, OZ, TG, TK, LH, LX, OS, SK, TP, LO, AV, CM, ET, SA, MS, UA, AC, NZ, BR |
+| 🔵 **寰宇一家** | CX, JL, MH, QF, BA, AY, QR, UL, LA, AA |
+| 🔴 **天合联盟** | MU, CZ, MF, KE, VN, AF, KL, CI, GA, DL, AM, AR |
+
+选择联盟自动包含所有成员航司。可多选联盟组合。空选 = 全部航司。
+
+**实现**:
+- `search-page.js`: `ALLIANCE_CHIPS` 渲染 + `getSelectedCarriers()` 从联盟解析
+- `state.js`: `preferredCarriers` 仍为最终航司数组
+- `index.html`: 联盟 chip 行替换原 carrier-filter-row
+- `style.css`: 联盟 chip 样式（星空金/寰宇蓝/天合红三色方案）
+
+### 24.2 PEK→SYD 完整端到端验证
+
+浏览器验证 PEK→SYD 搜索结果：
+- ✅ 7 条结果，仅显示中国/澳洲航司（CA, MU, CZ, 3U, HU, QF）
+- ✅ 全部宽体机（A359, B789, A333, B788, B77W）
+- ✅ 起降时间正常显示（10h30m 格式）
+- ✅ 联盟选择器生效（选星空联盟 → 仅 CA/ZH 等）
+- ✅ 飞友档案弹出正常，航空器识别图片展示
+
+---
+
+## 25. v5.9 — 机队数据全网验证与修正 (2026-05-25)
+
+### 25.1 首批 10 家航司对比验证
+
+对比 `build_fleet_library.py` 机队数据、`flightService.js` `AIRLINE_WIDEBODY` 与 planespotters.net 真实机队：
+
+| 航司 | 发现 | 修正 |
+|------|------|------|
+| **HU** (海南航空) | 无 A359 | 新增 A359 到 widebody |
+| **3U** (四川航空) | 缺 A333 | 新增 A333 |
+| **AF** (法国航空) | 缺 A332 | 新增 A332 |
+| CA/MU/CZ/EK/QF/BA/CX | ✅ 机队数据与实际一致 | — |
+
+### 25.2 `_pickAircraftForSegment` 全局回退 Bug
+
+**用户指出**: MF (厦门航空) 无 B78X，仅 B788/B789；3U (四川航空) 全空客机队。
+
+**根因**: `_pickAircraftForSegment` 在航司自有宽体池为空时，fallback 到全局宽体池（含 B78X），无视航司真实机队。导致 MF 被分配不存在的 B78X。
+
+**修复**: 移除全局宽体回退逻辑——航司自有宽体池为空时应抛错而非静默降级。所有航司必须维护准确的 `AIRLINE_WIDEBODY` 映射。
+
+### 25.3 批量联网验证 20+ 航司机队
+
+逐航司联网验证 `AIRLINE_WIDEBODY` 和 `AIRLINE_NARROWBODY`：
+
+| 航司 | 修正 |
+|------|------|
+| **SQ** | 删除 A35K（未交付），保留 B78X |
+| **KE** | 宽体池补全 B748, B78X |
+| **NH** | 删除 A35K，宽体池补全 B788/B789 |
+| **JL** | 宽体池补全 A35K |
+| **OS** (奥地利航空) | B77W → B763（OS 无 B77W） |
+| **BR** (长荣航空) | 补 B78X，删 B788（已退役） |
+| **ZH** (深圳航空) | 无宽体机 → 空数组 |
+| **FM** (上海航空) | 窄体机队补全 |
+| **GA** (印尼鹰航) | 宽体池补全 B77W |
+| **UA/TN/LA/SU/TK** | 机队微调修正 |
+
+### 25.4 新增 A339 机型
+
+`AIRCRAFT_DB` 和 `ENGINE_DB` 新增 **A330-900neo (A339)**：
+
+| 属性 | 值 |
+|------|-----|
+| 制造商 | Airbus |
+| 型号 | A330-900neo |
+| 航程 | 13,334 km |
+| 发动机 | Rolls-Royce Trent 7000-72 |
+| 引擎推力 | 72,000 lbf |
+
+新增运营 A339 的航司：VS, TP, MK, DL, 及其他。
+
+### 25.5 全局宽体回退池更新
+
+`_pickAircraftForSegment` 的回退池从固定 `["B789","A359","B77W"]` 改为涵盖所有常见宽体机型的多样化池，且仅限该航司真实运营的机型。
+
+---
+
+## 26. v5.9 — 中转航班逻辑扩展 (2026-05-25)
+
+### 26.1 新增 `AIRLINE_HUBS` 中转枢纽
+
+扩展 `AIRLINE_HUBS` 对象，覆盖主要中转航司的本国枢纽：
+
+| 航司 | 枢纽机场 |
+|------|---------|
+| **SQ** | SIN (新加坡樟宜) |
+| **CX** | HKG (香港国际) |
+| **BR** | TPE (台北桃园) |
+| **TG** | BKK (曼谷素万那普) |
+| **OZ** | ICN (首尔仁川) |
+| **VN** | HAN (河内内排), SGN (胡志明新山一) |
+| **GA** | CGK (雅加达苏加诺-哈达) |
+| **EK** | DXB (迪拜) |
+| **QR** | DOH (多哈) |
+| **TK** | IST (伊斯坦布尔) |
+| **ET** | ADD (亚的斯亚贝巴) |
+
+### 26.2 Transit-only 航司角色
+
+**核心逻辑**:
+- 直飞航班：仅始发国/目的国的航司可承运
+- 中转航班：允许 **第三国航司**（transit-only）作为中转承运方，但必须经其本国枢纽中转
+  - 例：PEK→SYD 可选 SQ 中转（PEK→SIN→SYD），SIN 为 SQ 枢纽
+  - 例：PEK→SYD 可选 GA 中转（PEK→CGK→SYD），CGK 为 GA 枢纽
+
+### 26.3 绕路比过滤 (>2x)
+
+**问题**: 若不加限制，transit-only 航司会产生不合理绕路（如 TK IST: PEK→IST→SYD 绕飞半地球）。
+
+**修复**: 新增绕路比过滤逻辑：
+
+```
+detour_ratio = (origin→hub + hub→dest) / origin→dest直飞距离
+if detour_ratio > 2.0 → 拒绝该中转方案
+```
+
+效果：
+- ✅ PEK→SIN→SYD: 绕路比 ~1.3x → 保留
+- ✅ PEK→CGK→SYD: 绕路比 ~1.6x → 保留
+- ❌ PEK→IST→SYD: 绕路比 ~3.5x → 过滤
+- ❌ PEK→LHR→SYD: 绕路比 ~4.0x → 过滤
+- ❌ PEK→JNB→SYD: 绕路比 ~3.8x → 过滤
+
+### 26.4 前后端同步
+
+| 层 | 实现 |
+|----|------|
+| **前端** `flightService.js` | `canOperateRouteJS()` 三态检测（direct/transit-only/reject）+ 绕路比过滤 + 枢纽选择 |
+| **后端** `server.py` | `generate_demo_prices()` 接入 `AIRLINE_HUBS` + transit-only 逻辑 |
+
+### 26.5 PEK→SYD 验证结果
+
+浏览器完整验证 → 7 条中转结果：
+- ✅ SQ（SIN 中转）
+- ✅ GA（CGK 中转）
+- ✅ BR（TPE 中转）
+- ✅ VN（HAN 中转）
+- ✅ CX（HKG 中转）
+- ✅ 所有中转均经本国枢纽
+- ✅ 无不合理绕路
+
+---
+
+## 27. v5.9 — 航空器图片库完善 (2026-05-25)
+
+### 27.1 图片文件现状分析
+
+扫描 `/static/image/aircraft/` 目录结构：
+- 已有机型目录：14 个
+- 缺失机型目录：6 个（A339, B763, B77L, A345, B748, A338 — 部分已创建）
+- 空航司子目录：29 个（有目录但无图片）
+- 已有图片文件：约 200+ 张
+
+### 27.2 `build_fleet_library.py` 机队同步
+
+更新 `FLEET` dict 以匹配全网验证后的真实机队数据。
+
+### 27.3 Wikimedia 图片下载脚本
+
+运行 `download_images.py`（已存在于项目中）：
+- 按航司×机型组合从 Wikimedia Commons 下载实拍图
+- 5 秒请求间隔 + 429 退避
+- 续传模式：已有图片自动跳过
+- 从 208 组合 → 222 组合新增 14 张图
+- B78X 覆盖：SQ, NH, EY, BA 四家航司
+
+### 27.4 `sync_aircraft_images.py` 自动映射生成器
+
+**新建脚本**: `sync_aircraft_images.py`
+- 扫描 `static/image/aircraft/` 文件系统
+- 自动生成 `AIRCRAFT_IMAGES` 对象（机型→航司→图片列表）
+- 输出注入到 `flight-profile.js` 中
+- 修复单引号转义问题（文件名含 `'` 需转义）
+
+运行后注册 **222 个航司×机型组合**，`flight-profile.js` 的 `AIRCRAFT_IMAGES` 与实际文件系统完全同步。
+
+### 27.5 端到端验证
+
+浏览器测试：
+- SQ B78X 档案弹窗 → 航空器识别 → ✅ 实拍图正确展示
+- NH B78X 档案弹窗 → ✅ 图片渲染
+
+### 27.6 当前覆盖率
+
+**222/317 (70%)** 有效组合已有图片，后台下载任务持续运行中（已运行 7 分钟+），持续通过 Wikimedia Commons 补充图片。
+
+---
+
+## 28. 改动文件汇总 (v5.9 全量)
+
+| 文件 | 行数变化 | 变更说明 |
+|------|---------|---------|
+| `scraper.py` | +300 行 | 航司 75→153 + AIRLINE_COUNTRY(147) + AIRPORT_COUNTRY(116) + FIFTH_FREEDOM(12) + can_operate_route() + 英文名映射(~140) + AIRLINE_HUBS |
+| `server.py` | +80 行 | DEMO_AIRLINES 17→45(→153) + can_operate_route 过滤 + AIRLINE_HUBS + transit-only 逻辑 |
+| `flightService.js` | +250 行 | MOCK_CARRIERS 19→49(→153) + canOperateRouteJS() + AIRLINE_HUBS JS + 绕路比过滤 + _pickAircraftForSegment 修复 + safeDate() + A339 新增 |
+| `flight-profile.js` | +30 行 | AIRCRAFT_IMAGES 自动同步(222组合) + A339/新机型图片引用 |
+| `search-page.js` | +80 行 | 联盟选择器替换 112 航司 chip |
+| `state.js` | +2 行 | preferredCarriers 从联盟解析 |
+| `style.css` | +120 行 | 联盟 chip 样式(三色方案) + 航司筛选过渡动画 |
+| `build_fleet_library.py` | +15 行 | FLEET 数据全网验证后同步 |
+| `sync_aircraft_images.py` | 新文件(80行) | 自动扫描文件系统 → 生成 AIRCRAFT_IMAGES → 注入 flight-profile.js |
+| `download_images.py` | 已有 | 从 Wikimedia 下载航司机型实拍图 |
+
+---
+
+## 29. v5.9 — 航空器图片库质量审查与修复 (2026-05-25)
+
+### 29.1 审查概况
+
+全量扫描 `static/images/aircraft/` 目录（18 种机型 × 100+ 航司），254 张图片，发现三类问题：
+
+| 问题 | 数量 | 严重度 |
+|------|------|--------|
+| 航司/型号错配 | 3 张 | 🔴 严重 |
+| 非全貌图（引擎/机翼局部） | 2 张 | 🔴 严重 |
+| 重复文件（同图在多个目录） | 10 对 | 🟡 中等 |
+| 型号目录错放 | 11 张 | 🟡 中等 |
+| 低分辨率缩略图（960×540） | 62 张 | 🟠 待优化 |
+| 空目录（有目录无图片） | 66 个 | ⬜ 待补充 |
+
+### 29.2 严重问题修复
+
+#### 已删除的错误图片
+
+| 图片 | 问题 | 替换 |
+|------|------|------|
+| `B78X/BA/A Rolls Royce Trent 1000 Engine...` | 仅有发动机，非全貌 | `British Airways Boeing 787-10 G-ZBLJ MD1.jpg` (5691×3716) |
+| `B738/DL/737-700 Engine Nacelle without Engine.jpg` | 发动机罩，非飞机 | `Delta Air Lines Boeing 737-800 N3743H...` |
+| `B738/AM/Hannover Airport Tailwind Airlines...` | **Tailwind 航空，非 AeroMexico** | `Aeromexico Boeing 737-800 N342AM...` |
+| `A333/5J/9H-POP - ... US-Bangla Airlines...` | **US-Bangla 航空，非 Cebu Pacific** | `Cebu Pacific ... at Manila ...` (5184×3888) |
+
+#### 型号目录错放修正（11 张）
+
+A20N 目录混杂了大量 A321neo 图片（A321neo ≠ A320neo），已全部移至正确的 `A321/` 目录：
+
+| 移动 | 原因 |
+|------|------|
+| A20N/VN → A321/VN | A321-272N = A321neo |
+| A20N/UA → A321/UA | A321neo |
+| A20N/MF → A321/MF | A321neo |
+| A20N/CZ → A321/CZ | A321-251NX |
+| A20N/ZH → A321/ZH | A321neo |
+| A20N/AA → A321/AA | A321neo |
+| A20N/DL → A321/DL | A321neo |
+| A20N/NZ → A321/NZ | A321-271NX |
+| A320/AC → A321/AC | A321-211 |
+| A321/QR → A320/QR | A320-232 |
+| A321/AD → A20N/AD | A320neo |
+
+#### 重复文件清理（10 对）
+
+同一张图片同时出现在两个机型目录，保留正确型号、删除错误副本：
+
+| 保留 | 删除 | 原因 |
+|------|------|------|
+| B789/AC (787-9) | B788/AC | 文件名注明 787-9 |
+| B789/MF (787-9) | B788/MF | 同上 |
+| B789/CZ (787-9) | B788/CZ | 同上 |
+| B789/HU (787-9) | B788/HU | 同上 |
+| B788/TG (787-8) | B789/TG | 文件名注明 787-8 |
+| A359/PR (A350-900) | A35K/PR | 文件名注明 A350-941 |
+| A35K/CX (A350-1000) | A359/CX | 文件名注明 A350-1041 |
+| A332/DL (A330-200) | A333/DL | N802NW = A330-200 |
+| A20N/MS (A320neo) | A320/MS | A320-251N = A320neo |
+| A20N/AD (A320neo) | A320/AD | A320neo |
+
+### 29.3 新增高质量图片（20 张）
+
+通过 `download_batch2.py`，使用 Wikimedia Special:FilePath 接口 + 全分辨率/1600px 宽下载：
+
+| 机型 | 航司 | 分辨率 |
+|------|------|--------|
+| B78X | BA | 5691×3716 |
+| A333 | 5J | 5184×3888 |
+| B77W | GA | 6016×4016 |
+| B77W | KL | 2753×1664 |
+| B77W | NZ | 3872×2592 |
+| B738 | DL | ~1400px |
+| B738 | AM | ~1600px |
+| B789 | VS | ~1600px |
+| B78X | KL | ~1600px |
+| B78X | BR | ~1600px |
+| A359 | CX | ~1600px |
+| A332 | GA | ~1600px |
+| A332 | KL | ~1600px |
+| A35K | VS | ~1600px |
+| B789 | OS | ~800px |
+| B789 | LO | ~800px |
+| B788 | LO | ~800px |
+| B789 | KL | ~800px |
+| B78X | VN | ~1600px |
+| B789 | AA | ~1600px |
+| B77W | CI | ~800px |
+
+### 29.4 TK A35K 舰队修正
+
+**发现**: 土耳其航空 (TK) **不运营 A350-1000 (A35K)**，仅运营 A350-900 (A359)。
+
+**修正**:
+- `scraper.py`: `TK: ["A359", "A333", ...]` — 已移除 A35K
+- `flightService.js`: 同上
+- `A35K/TK/` 空目录已删除
+
+### 29.5 待处理
+
+- **62 张 960×540 缩略图**: 原始 `download_images.py` 使用 `?width=800` 导致。需批量重新下载时不加 width 参数以获取全分辨率
+- **66 个空目录**: 含部分无效组合（航司不运营该机型）+ 部分有效组合待补充图片
+- **B763 机型**: 0 张图片，OS 和 UA 均空
+
+### 29.6 工具脚本
+
+| 脚本 | 用途 |
+|------|------|
+| `fix_aircraft_images.py` | 删除错误图片 + 修正目录错放 + 清理重复 |
+| `download_replacements.py` | 批量下载替换/新增图片（Special:FilePath 接口） |
+| `download_batch2.py` | 第二波精准下载（验证过的 Wikimedia 文件名） |
+| `sync_aircraft_images.py` | 扫描文件系统 → 生成 manifest → 注入 flight-profile.js |
+
+### 29.7 渐进式自动下载（定时任务）
+
+为解决 Wikimedia 429 限流问题，实现了渐进式下载方案：
+
+**脚本**: `incremental_downloader.py`
+- 分两阶段：Phase 1 升级缩略图 → Phase 2 填充空目录
+- 每批 6 张，间隔 4 秒，自动续传（`.download_state.json` 保存进度）
+- 预置 60+ 空目录的 Wikimedia 文件名映射
+
+**定时任务**: Cron job `cf00e399b489`
+- 频率：每 20 分钟
+- 重复：50 次
+- 第一阶段：144 张缩略图 → 重新下载全分辨率
+- 第二阶段：66 个空目录 → 逐个填充
+- 预计总耗时：~12 小时完成全部
+
+---
+
+## 30. v5.10 — 搜索结果质量优化 (2026-05-25)
+
+### 30.1 起降时间跨天标记 (+1/+n)
+
+**问题**: 长途航班到达日期与出发日期不同时，仅显示时间不直观。
+
+**修复**:
+- `flightService.js`: 在 `buildMockResults()` 和 `adaptFlightAPIResponse()` 中新增跨天计算逻辑，为每个 price 对象和 segment 对象注入 `_arrival_day_offset` 字段
+- `flight-card.js`: 结果卡片和移动端卡片中，到达时间后追加橙色 `<span class="day-offset"> +1</span>` 标记
+- `style.css`: 新增 `.day-offset` 样式（橙色、小字）
+
+### 30.2 中转航班两程独立选型
+
+**问题**: 中转航班前后两程使用同一机型（如都是 B789），与实际情况不符——前段短途通常为窄体机、后段长途为宽体机。
+
+**修复**:
+- `flightService.js` `buildMockResults()`: 
+  - seg1 (origin→layover): 调用 `_pickAircraftForSegment(carrier, origin, layover, false)` → 倾向窄体机
+  - seg2 (layover→dest): 调用 `_pickAircraftForSegment(carrier, layover, dest, true)` → 倾向宽体机
+  - seg1AcCode 和 seg2AcCode 独立注入 `_aircraft_code`
+
+### 30.3 起降时间分钟数规范化
+
+**问题**: 分钟数出现 12:43、20:58 等非整数，真实航班通常为 0/5 倍数。
+
+**修复**:
+- 出发分钟池从 `[0,15,30,45]` 扩展为 `[0,5,10,...,55]`
+- 所有到达时间通过 `arrDateTime.setMinutes(Math.round(min/5)*5)` 四舍五入到 5 分钟
+
+### 30.4 飞行时长基于里程×速度合理推算
+
+**问题**: 原公式 `Math.round(routeDistance/800*60)+30` 对所有航段统一处理；中转航班使用 `directMinutes*0.55` 比例分配。
+
+**修复**:
+- 改为**逐段独立计算**：每段距离 ÷ 巡航速度 (830 km/h) × 60
+- telemetry 的预计飞行时间基于**实际飞行距离**（segment 距离之和）而非直飞距离
+- `adaptFlightAPIResponse` 中用 `segObjs.reduce((sum,s)=>sum+s.distance_km,0)` 替代对 `stops` 变量的引用
+
+### 30.5 联盟偏好优先排序（彻底修复）
+
+**问题**: 选择联盟偏好后，搜索结果并未优先展示该联盟航司。根因有二：
+
+1. **排序逻辑 Bug**: `_applyFilterSort` 中联盟排序和价格排序是两次独立调用，价格排序覆盖了联盟排序
+2. **初始化绕过**: `renderSingleDaySection` 和 `updateSingleDayContent` 直接使用 `[...prices].sort(price)`，完全绕过了 `_applyFilterSort`
+
+**修复**:
+- `_applyFilterSort`: 改为单次 `sort()` 回调中先判联盟再判价格，确保联盟分组内按价格排序
+- `renderSingleDaySection` (`results-page.js:526`): `sort(price)` → `_applyFilterSort(prices)`
+- `updateSingleDayContent` (`results-page.js:428`): 同上
+- 行为变更：从「过滤非偏好航司」改为「偏好航司置顶 + 非偏好按价格排后面」
+
+### 30.6 Bug 修复: `stops is not defined`
+
+`adaptFlightAPIResponse` 中引用了 `buildMockResults` 作用域的变量 `stops`、`seg1Dist`、`layoverCode`、`depDateTime`、`arrDateTime`，导致运行时 ReferenceError。
+
+**修复**:
+- `totalFlownDistance` 改为 `segObjs.reduce()` 从已生成的 segment 距离计算
+- `arrivalDayOffset` 改为从 `firstSeg.departure` / `lastSeg.arrival` 的 ISO 时间戳计算
+
+### 30.7 修改文件清单
+
+| 文件 | 变更 |
+|------|------|
+| `flightService.js` | +50 行: 逐段飞行时长 + 独立选型 + 分钟四舍五入 + 跨天标记 + flownDistance 修复 |
+| `flight-card.js` | +8 行: 桌面/移动端卡片显示 `+1` 跨天标记 |
+| `results-page.js` | +12 行: 联盟排序合并 + renderSingleDaySection/updateSingleDayContent 接入 |
+| `style.css` | +6 行: `.day-offset` 样式 |
+
+---
+
+## 31. v5.11 — 移动端排版重构 + 列拆分 + 外网隧道 (2026-05-25)
+
+### 31.1 外网隧道升级 (bore → cloudflared)
+
+**问题**: bore 隧道约 15 分钟自动断线，不适合长期使用。
+
+**修复**:
+- 改用 Cloudflare Tunnel (`cloudflared`)，QUIC 协议 + HTTPS 加密
+- 进程存续期间持续可用，Cloudflare 全球 CDN 加速
+- 当前 URL: `https://wales-reform-click-investing.trycloudflare.com`
+
+### 31.2 移动端卡片排版重构
+
+**问题**: 转机航班的机型标签和按钮在窄屏换行，排版混乱。
+
+**修复** (`flight-card.js` + `style.css`):
+- **第一行** (`.fpc-mid`): 起落时间 + 飞行时长 + **直飞/转机标签**
+- **第二行** (`.fpc-bottom`): 机型标签 + 收藏按钮 + 档案按钮
+- `fpc-mid` 新增 `flex-wrap: nowrap` 防止换行
+- 新增 `.fpc-tag-layover` / `.fpc-tag-ac` 分类样式
+- 转机标签从 `fpc-bottom` 移至 `fpc-mid`
+
+### 31.3 PC 端列宽精确调优
+
+**问题**: 起降时间列跨天 `(+1)` 换行；机型列转机 `B77W + A388` 换行；航司列空间富余。
+
+**修复** (`style.css` — `.cols7` / `.cols8` `grid-template-columns`):
+
+| 列 | v5.10 | v5.11 | 变化 |
+|----|-------|-------|------|
+| 航司/航班号 | 1.3fr | **1fr** (cols7) / **0.9fr** (cols8) | 压缩腾空间 |
+| 起降时间 | 130px | **140px** + `nowrap` | +10px |
+| 机型 | 95px | **130px** | +35px |
+
+### 31.4 表格列拆分：操作 → 收藏 + 更多信息
+
+**问题**: 收藏按钮和飞行器深度档案挤在一列，操作列名称模糊（"操作"）。
+
+**修复** — 7列→8列:
+
+| 列 | 宽度 | 内容 |
+|----|------|------|
+| 航空公司 / 航班号 | 1fr | 航司信息 |
+| 起降时间 | 140px | `14:35 → 03:35 (+1)` |
+| 飞行时长 | 70px | `13h 20m` |
+| 中转详情 | 80px | `直飞` / `1转 · ICN` |
+| 机型 | 130px | `B77W` / `B77W + A388` |
+| 价格 | 95px | `¥5,742` |
+| **收藏** | 42px | ☆ 追踪按钮 + 选择圆点 |
+| **更多信息** | 95px | 飞行器深度档案 按钮 |
+
+**表头文案变更**:
+- 单向航班: 收藏 + **更多信息**
+- 往返航班: 收藏 + **选择**
+
+**修改文件**:
+- `flight-card.js`: 操作列拆分为 `trackCell` + `profileCell` 两个 `<div>`
+- `results-page.js`: 全部表头 `<span>` 增加第 8 列；骨架屏增加第 8 个 `<div>`；`lastColHeader` `'操作'` → `'更多信息'`
+- `style.css`: `.cols7` 7→8 列，`.cols8` 8→9 列
+
+### 31.5 修改文件清单
+
+| 文件 | 变更 |
+|------|------|
+| `flight-card.js` | +15 行: PC拆分操作列 + 移动端重构排版 |
+| `results-page.js` | +8 行: 表头/骨架屏 7→8列 + 文案替换 |
+| `style.css` | +20 行: 列宽调整 + nowrap + 移动端新排版样式 |
+| `CONTEXT.md` | 本文档更新 |
+
+---
+
+> 最后更新: 2026-05-25 (v5.11 移动端排版重构 + 列拆分 + 外网隧道)

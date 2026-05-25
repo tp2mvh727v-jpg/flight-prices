@@ -19,42 +19,42 @@ AIRLINE_WIDEBODY = {
     "CA": ["A359", "A333", "A332", "B789", "B77W", "B748"],
     "CZ": ["A359", "A333", "B789", "B788", "B77W"],
     "MU": ["A359", "A332", "A333", "B789", "B77W"],
-    "HU": ["A359", "A333", "B789", "B788"],
-    "3U": ["A359", "A332"],
+    "HU": ["A333", "B789", "B788"],  # FIXED: A359 retired from HU
+    "3U": ["A359", "A332", "A333"],  # FIXED: +A333 (7 frames)
     "MF": ["B789", "B788"],
     "ZH": [],  # 深航无宽体机
     "EK": ["A388", "B77W", "A359"],
     "QR": ["A359", "A35K", "A388", "B77W", "B789", "B788"],
-    "EY": ["A35K", "A388", "B77W", "B789", "A333"],
-    "SQ": ["A359", "A35K", "A388", "B77W"],
+    "EY": ["A35K", "A388", "B77W", "B789", "B78X"],  # FIXED: -A333, +B78X
+    "SQ": ["A359", "A388", "B77W", "B78X"],  # FIXED: -A35K (not operated), +B78X (28)
     "CX": ["A359", "A35K", "A333", "B77W"],
-    "QF": ["A388", "B789", "A333"],
+    "QF": ["A388", "B789", "A333", "A332"],  # FIXED: +A332 (8)
     "JL": ["A359", "A35K", "B789", "B788", "B77W"],
-    "NH": ["A388", "B789", "B788", "B77W"],
+    "NH": ["A388", "B789", "B788", "B77W", "B78X"],  # FIXED: +B78X (8)
     "KE": ["A359", "A388", "A333", "B789", "B77W", "B748"],
     "OZ": ["A359", "A388", "A333", "B77W"],
-    "LH": ["A359", "A35K", "A388", "A333", "B748", "B789"],
-    "AF": ["A359", "B77W", "B789"],
-    "BA": ["A35K", "A388", "B788", "B789", "B77W"],
-    "TK": ["A359", "A35K", "A333", "B789", "B77W"],
+    "LH": ["A359", "A388", "A333", "B748", "B789"],  # FIXED: -A35K (not yet in service)
+    "AF": ["A359", "B77W", "B789", "A332"],  # FIXED: +A332
+    "BA": ["A35K", "A388", "B788", "B789", "B77W", "B78X"],  # FIXED: +B78X (12)
+    "TK": ["A359", "A333", "B789", "B77W", "A332"],  # FIXED: -A35K (not operated), +A332 (12)
     "TR": ["B788", "B789"],
-    "PR": ["A359", "A333", "B77W"],
-    "MH": ["A359", "A333"],
+    "PR": ["A359", "A333", "B77W", "A35K"],  # FIXED: +A35K (1)
+    "MH": ["A359", "A333", "A332", "A339"],  # FIXED: +A332 (3), +A339 (10)
     "5J": ["A333"],
     "TN": ["B789"],
     "NZ": ["B789", "B77W"],
-    "VN": ["A359", "B789"],
+    "VN": ["A359", "B789", "B78X"],  # FIXED: +B78X (6)
     "TG": ["A359", "A333", "B789", "B788", "B77W"],
-    "BR": ["B789", "B788", "B77W", "A333"],
+    "BR": ["B789", "B78X", "B77W", "A333"],  # FIXED: -B788 (not operated), +B78X (13)
     "CI": ["A359", "A333", "B77W"],
-    "GA": ["A333", "B77W"],
+    "GA": ["A333", "B77W", "A332", "A339"],  # FIXED: +A332 (3), +A339 (5)
     "ET": ["A359", "A35K", "B789", "B788", "B77W"],
     "SA": ["A333"],
     "KQ": ["B788"],
     "MS": ["A333", "B789"],
     "AT": ["B788", "B789"],
-    "DL": ["A359", "A333"],
-    "UA": ["B789", "B788", "B77W"],
+    "DL": ["A359", "A333", "A332", "A339"],  # FIXED: +A332 (11), +A339 (39)
+    "UA": ["B789", "B788", "B77W", "B78X", "B763"],  # FIXED: +B78X (21), +B763 (13)
     "AA": ["B789", "B788", "B77W"],
     "AC": ["B789", "B788", "B77W", "A333"],
     "LA": ["B789", "B788"],
@@ -65,10 +65,57 @@ AIRLINE_WIDEBODY = {
     "D7": ["A333"],  # 亚航X — 全A333宽体机队
     "FJ": ["A333"],  # 斐济航空
     "HA": ["A333", "B789"],  # 夏威夷航空
-    "KL": ["B77W", "B789", "B78X", "A333"],  # 荷兰皇家航空
+    "KL": ["B77W", "B789", "B78X", "A333", "A332"],  # FIXED: +A332 (6)
     "VA": [],  # 维珍澳洲全窄体机队 (B738)，无宽体机
     "JQ": ["B788"],  # 捷星航空 — B788 宽体机
     "FM": [],  # 上海航空全窄体机队，无宽体机
+    # —— v5.9 新增航司 ——
+    "VS": ["A35K", "A339", "B789", "A333"],  # FIXED: +A333 (6)
+    "AI": ["B77W", "B788", "B789", "A359"],
+    "SK": ["A359", "A333"],
+    "AY": ["A359", "A333"],
+    "LX": ["A333", "B77W"],
+    "OS": ["B789", "B763"],  # FIXED: B77W→B763 (OS has 777-200ER not -300ER)
+    "TP": ["A339", "A332"],
+    "LO": ["B789", "B788", "A339"],  # FIXED: +A339 (1)
+    "EI": ["A333", "A332"],
+    "GF": ["B789"],
+    "WY": ["B789", "A333"],
+    "KU": ["B77W", "A332", "A338"],
+    "UL": ["A333", "A332"],
+    "BI": ["B788"],
+    "PK": ["B77W", "B77L"],
+    "BG": ["B789", "B788", "B77W"],
+    "WS": ["B789"],
+    "SN": ["A333"],
+    "AR": ["A332", "A359"],
+    "AV": ["B788"],
+    "MK": ["A359", "A339", "A332"],
+    "FI": [],
+    "KC": [],
+    # —— v5.9 IATA名单补充 (78家) ——
+    "IB": ["A359", "A333", "A332"], "AZ": ["A359", "A339", "A332"],
+    "SV": ["B77W", "B789", "A333"], "LY": ["B789", "B788", "B77W"],
+    "ME": ["A332"], "RJ": ["B788", "B789"], "JU": ["A332", "A333"],
+    "RO": [], "OU": [], "FB": [], "BT": [],
+    "UX": ["B788", "B789"], "DE": ["A339", "A332"], "EW": [],
+    "VY": [], "PC": [], "XQ": [],
+    "JX": ["A359", "A339"], "HX": ["A333", "A359", "A332"],
+    "UO": [], "NX": [], "AE": [], "B7": [],
+    "6E": [], "SG": [], "G9": [], "FZ": [], "XY": [], "J9": [],
+    "PG": [], "VJ": [], "QH": ["B789"],
+    "ID": [], "QG": [], "JT": [], "7C": [], "LJ": [], "TW": [],
+    "YP": ["B789"], "ZE": [],
+    "SC": [], "HO": ["B789"], "GS": [], "JD": ["A332", "A333"],
+    "KN": [], "8L": [], "G5": [], "PN": [],
+    "TV": ["A332", "A333"], "NS": [], "KY": [], "GJ": [],
+    "BK": [], "QW": [], "DR": [], "FU": [], "GX": [], "GT": [], "UQ": [],
+    "AS": [], "WN": [], "G3": [], "TS": ["A332"], "Y4": [],
+    "WB": ["A332", "A333"], "TU": ["A332", "A333"],
+    "DT": ["B77W", "B77L", "B789"], "AH": ["A332", "A333"],
+    "HY": ["B788", "B789"],
+    "J2": ["B788", "B789", "A345"], "OV": [],
+    "TN": ["B789"],
 }
 
 # 航司 → 窄体机队 (用于非长程航段)
@@ -126,6 +173,68 @@ AIRLINE_NARROWBODY = {
     "VA": ["B738", "B38M"],  # 维珍澳洲
     "JQ": ["A320", "A321", "A20N"],  # 捷星航空
     "FM": ["B738", "B38M", "A320"],  # 上海航空
+    # —— v5.9 新增航司 ——
+    "VS": [],
+    "AI": ["A320", "A321", "A20N", "B738"],
+    "SK": ["A320", "A20N"],
+    "AY": ["A320", "A321", "A20N"],
+    "LX": ["A320", "A321", "A20N"],
+    "OS": ["A320", "A20N"],
+    "TP": ["A320", "A321", "A20N"],
+    "LO": ["B738", "B38M"],
+    "EI": ["A320", "A321"],
+    "GF": ["A320", "A321"],
+    "WY": ["B738", "B38M"],
+    "KU": ["A320", "A20N"],
+    "UL": ["A320", "A321"],
+    "BI": ["A320"],
+    "PK": ["B77W"],
+    "BG": ["B738", "B38M"],
+    "WS": ["B738", "B38M"],
+    "SN": ["A320", "A319"],
+    "AR": ["B738", "B38M"],
+    "AV": ["A320", "A20N"],
+    "MK": ["A359"],
+    "FI": ["B38M", "B763"],
+    "KC": ["A320", "A321"],
+    # —— v5.9 IATA补充 ——
+    "IB": ["A320", "A321"], "AZ": ["A320", "A321", "A20N"],
+    "SV": ["A320", "A321"], "LY": ["B738", "B38M"],
+    "ME": ["A320", "A321"], "RJ": ["A320", "A321"],
+    "JU": ["A320", "A319"], "RO": ["B738", "A318"],
+    "OU": ["A320", "A319"], "FB": ["A320", "A319"],
+    "BT": ["A220"], "UX": ["B738", "B38M"],
+    "DE": ["A320", "A321"], "EW": ["A320", "A321", "A20N"],
+    "VY": ["A320", "A321", "A20N"], "PC": ["A320", "A321", "B738"],
+    "XQ": ["B738", "B38M"], "JX": ["A321neo"],
+    "HX": ["A320"], "UO": ["A320", "A321"],
+    "NX": ["A320", "A321"], "AE": ["B738"],
+    "B7": ["ATR72", "A321"], "6E": ["A320", "A321", "A20N"],
+    "SG": ["B738", "B38M"], "G9": ["A320", "A321"],
+    "FZ": ["B738", "B38M"], "XY": ["A320", "A20N"],
+    "J9": ["A320", "A20N"], "PG": ["A320", "A319"],
+    "VJ": ["A320", "A321", "A20N"], "QH": ["A320", "A321"],
+    "ID": ["A320", "A20N"], "QG": ["A320", "A20N"],
+    "JT": ["B738", "B739", "A320"], "7C": ["B738", "B38M"],
+    "LJ": ["B738", "B38M"], "TW": ["B738", "B38M"],
+    "YP": ["B789"], "ZE": ["B738", "B38M"],
+    "SC": ["B738", "B38M"], "HO": ["A320", "A321", "B789"],
+    "GS": ["A320", "A321"], "JD": ["A320", "A321"],
+    "KN": ["B738", "B38M"], "8L": ["B738", "B38M"],
+    "G5": ["A320"], "PN": ["A320", "A321"],
+    "TV": ["A320"], "NS": ["B738", "B38M"],
+    "KY": ["B738", "B38M"], "GJ": ["A320", "A321"],
+    "BK": ["B738", "B38M"], "QW": ["A320", "A321"],
+    "DR": ["B738", "B38M"], "FU": ["B738", "B38M"],
+    "GX": ["A320"], "GT": ["A320", "A319"],
+    "UQ": ["B738", "B38M"], "AS": ["B738", "B38M", "A320"],
+    "WN": ["B738", "B38M"], "G3": ["B738", "B38M"],
+    "TS": ["A321", "A332"], "Y4": ["A320", "A321", "A20N"],
+    "WB": ["B738", "B38M"], "TU": ["A320"],
+    "DT": ["B738"], "AH": ["B738", "B38M"],
+    "HY": ["A320"],
+    "J2": ["A320", "A319"], "OV": ["B738", "B38M"],
+    "TN": ["B789"],
 }
 
 def _classify_aircraft(code):
@@ -179,6 +288,7 @@ AIRCRAFT_MAX_RANGE = {
     "B772": 13450,   # 777-200ER
     # 宽体机 (Widebody) — others
     "MD11": 12670,   # McDonnell Douglas MD-11
+    "B763": 11070,   # Boeing 767-300ER
 }
 NARROWBODY_SAFE_RANGE = 5260  # 80% of best narrowbody (6584×0.8, B38M)
 NARROWBODY_CODES = {"A320", "A20N", "A321", "B738", "B38M", "B739"}
@@ -192,6 +302,137 @@ TECH_STOP_AIRPORTS = {
     "HKG": "香港国际", "ICN": "首尔仁川", "NRT": "东京成田", "BKK": "曼谷素万那普",
     "IST": "伊斯坦布尔", "FRA": "法兰克福", "LHR": "伦敦希思罗",
 }
+
+# ——— 航司 → 所属国家 (v5.9 航线归属逻辑) ———
+AIRLINE_COUNTRY = {
+    # Chinese carriers
+    "CA": "CN", "CZ": "CN", "MU": "CN", "HU": "CN", "3U": "CN", "MF": "CN", "ZH": "CN", "FM": "CN",
+    # Hong Kong / Taiwan
+    "CX": "HK", "BR": "TW", "CI": "TW",
+    # Asia-Pacific
+    "SQ": "SG", "TR": "SG", "KE": "KR", "OZ": "KR",
+    "NH": "JP", "JL": "JP",
+    "QF": "AU", "VA": "AU", "JQ": "AU",
+    "NZ": "NZ", "FJ": "FJ",
+    # Southeast Asia
+    "VN": "VN", "TG": "TH", "PR": "PH", "MH": "MY", "AK": "MY", "D7": "MY",
+    "5J": "PH", "GA": "ID",
+    # South Asia
+    "AI": "IN", "UL": "LK", "PK": "PK", "BG": "BD",
+    # Middle East
+    "EK": "AE", "EY": "AE", "QR": "QA", "TK": "TR",
+    "GF": "BH", "WY": "OM", "KU": "KW",
+    # Europe
+    "LH": "DE", "AF": "FR", "BA": "GB", "VS": "GB",
+    "KL": "NL", "SK": "SE", "AY": "FI", "LX": "CH", "OS": "AT",
+    "TP": "PT", "LO": "PL", "EI": "IE", "FI": "IS", "SN": "BE",
+    # Americas
+    "UA": "US", "DL": "US", "AA": "US", "B6": "US", "HA": "US",
+    "AC": "CA", "WS": "CA",
+    "LA": "CL", "AD": "BR", "CM": "PA", "AM": "MX",
+    "AR": "AR", "AV": "CO",
+    # Africa
+    "ET": "ET", "SA": "ZA", "KQ": "KE", "MS": "EG", "AT": "MA", "MK": "MU",
+    # Central Asia
+    "KC": "KZ",
+    # —— v5.9 IATA补充 ——
+    "IB": "ES", "AZ": "IT", "SV": "SA", "LY": "IL",
+    "ME": "LB", "RJ": "JO", "JU": "RS",
+    "RO": "RO", "OU": "HR", "FB": "BG", "BT": "LV",
+    "UX": "ES", "DE": "DE", "EW": "DE",
+    "VY": "ES", "PC": "TR", "XQ": "TR",
+    "JX": "TW", "HX": "HK", "UO": "HK", "NX": "MO", "AE": "TW", "B7": "TW",
+    "6E": "IN", "SG": "IN", "G9": "AE", "FZ": "AE",
+    "XY": "SA", "J9": "KW",
+    "PG": "TH", "VJ": "VN", "QH": "VN",
+    "ID": "ID", "QG": "ID", "JT": "ID",
+    "7C": "KR", "LJ": "KR", "TW": "KR", "YP": "KR", "ZE": "KR",
+    "SC": "CN", "HO": "CN", "GS": "CN", "JD": "CN",
+    "KN": "CN", "8L": "CN", "G5": "CN", "PN": "CN",
+    "TV": "CN", "NS": "CN", "KY": "CN", "GJ": "CN",
+    "BK": "CN", "QW": "CN", "DR": "CN", "FU": "CN",
+    "GX": "CN", "GT": "CN", "UQ": "CN",
+    "AS": "US", "WN": "US", "G3": "BR", "TS": "CA", "Y4": "MX",
+    "WB": "RW", "TU": "TN", "DT": "AO", "AH": "DZ",
+    "HY": "UZ",
+    "J2": "AZ", "OV": "OM",
+    "TN": "PF",
+}
+
+# ——— 机场 → 所属国家 (v5.9) ———
+AIRPORT_COUNTRY = {
+    # China
+    "PEK": "CN", "PKX": "CN", "PVG": "CN", "SHA": "CN", "CAN": "CN", "SZX": "CN",
+    "TFU": "CN", "CTU": "CN", "CKG": "CN", "HGH": "CN", "XIY": "CN", "WUH": "CN",
+    "NKG": "CN", "KMG": "CN", "CSX": "CN", "XMN": "CN", "TAO": "CN", "DLC": "CN",
+    "TSN": "CN", "CGO": "CN", "SYX": "CN", "HAK": "CN", "HRB": "CN", "SHE": "CN",
+    "FOC": "CN", "KWE": "CN", "NNG": "CN", "URC": "CN", "LHW": "CN", "TYN": "CN",
+    "HET": "CN", "SJW": "CN", "TNA": "CN", "CGQ": "CN", "KHN": "CN", "HFE": "CN",
+    "KWL": "CN", "WNZ": "CN", "NGB": "CN", "WEH": "CN", "YNT": "CN", "WUX": "CN",
+    "LYI": "CN", "LJG": "CN", "JHG": "CN", "DYG": "CN", "DOY": "CN",
+    # Hong Kong / Taiwan
+    "HKG": "HK", "TPE": "TW",
+    # Asia-Pacific
+    "SIN": "SG", "ICN": "KR", "HND": "JP", "NRT": "JP", "KIX": "JP",
+    "SYD": "AU", "MEL": "AU", "BNE": "AU", "PER": "AU", "AKL": "NZ", "CHC": "NZ", "NAN": "FJ",
+    # Southeast Asia
+    "BKK": "TH", "SGN": "VN", "HAN": "VN", "MNL": "PH", "KUL": "MY",
+    "CGK": "ID", "DPS": "ID",
+    # South Asia
+    "DEL": "IN", "BOM": "IN", "CMB": "LK", "KHI": "PK", "ISB": "PK", "DAC": "BD",
+    # Middle East
+    "DXB": "AE", "AUH": "AE", "DOH": "QA", "IST": "TR",
+    "BAH": "BH", "MCT": "OM", "KWI": "KW",
+    # Europe
+    "FRA": "DE", "MUC": "DE", "CDG": "FR", "LHR": "GB", "AMS": "NL",
+    "CPH": "DK", "ARN": "SE", "HEL": "FI", "ZRH": "CH", "VIE": "AT",
+    "LIS": "PT", "WAW": "PL", "DUB": "IE", "KEF": "IS", "BRU": "BE",
+    # Americas
+    "JFK": "US", "LAX": "US", "SFO": "US", "ORD": "US", "MIA": "US", "SEA": "US",
+    "YVR": "CA", "YYZ": "CA", "YYC": "CA",
+    "EZE": "AR", "BOG": "CO", "GRU": "BR",
+    # Africa
+    "ADD": "ET", "JNB": "ZA", "NBO": "KE", "CAI": "EG", "CMN": "MA", "MRU": "MU",
+    # Central Asia
+    "NQZ": "KZ", "ALA": "KZ",
+}
+
+# ——— 第五航权特殊航线 (v5.9) ———
+FIFTH_FREEDOM_ROUTES = {
+    ("SQ", "HK", "US"): "SQ SIN-HKG-SFO",
+    ("SQ", "JP", "US"): "SQ SIN-NRT-LAX",
+    ("EK", "TH", "AU"): "EK DXB-BKK-SYD",
+    ("EK", "TH", "NZ"): "EK DXB-BKK-CHC",
+    ("EK", "IT", "US"): "EK DXB-MXP-JFK",
+    ("CX", "TW", "JP"): "CX HKG-TPE-NRT",
+    ("CX", "TW", "KR"): "CX HKG-TPE-ICN",
+    ("QR", "TH", "VN"): "QR DOH-BKK-HAN",
+    ("TK", "TH", "HK"): "TK IST-BKK-HKG",
+    ("ET", "TH", "HK"): "ET ADD-BKK-HKG",
+    ("ET", "IN", "HK"): "ET ADD-BOM-HKG",
+    ("LA", "NZ", "AU"): "LA SCL-AKL-SYD",
+}
+
+def can_operate_route(airline_code, origin_airport, dest_airport):
+    """判断航司是否有权运营该航线（本国枢纽原则 + 第五航权例外）。"""
+    origin_country = AIRPORT_COUNTRY.get(origin_airport)
+    dest_country = AIRPORT_COUNTRY.get(dest_airport)
+    airline_country = AIRLINE_COUNTRY.get(airline_code)
+    # 机场未知 → 无法判断，宽松放行
+    if not origin_country or not dest_country:
+        return True
+    # 航司未知 → 保守拒绝（防止 Google Flights 抓取到的未识别航司漏过）
+    if not airline_country:
+        return False
+    if origin_country == dest_country:
+        return airline_country == origin_country
+    if airline_country in (origin_country, dest_country):
+        return True
+    if (airline_code, origin_country, dest_country) in FIFTH_FREEDOM_ROUTES:
+        return True
+    return False
+
+
 
 def _haversine_km(lat1, lng1, lat2, lng2):
     """Great-circle distance between two lat/lng points (km)."""
@@ -315,6 +556,126 @@ AIRLINE_NAME_TO_CODE = {
     "酷航": "TR", "亚洲航空": "AK", "亚航X": "D7", "宿务太平洋航空": "5J",
     "斐济航空": "FJ", "夏威夷航空": "HA",
     "THAI": "TG", "Thai": "TG",
+    # —— v5.9 新增航司名称映射 ——
+    "维珍大西洋": "VS", "印度航空": "AI", "印航": "AI",
+    "北欧航空": "SK", "SAS": "SK", "芬兰航空": "AY", "芬航": "AY",
+    "瑞士航空": "LX", "瑞航": "LX", "SWISS": "LX",
+    "奥地利航空": "OS", "奥航": "OS",
+    "TAP葡萄牙": "TP", "葡萄牙航空": "TP",
+    "LOT波兰": "LO", "波兰航空": "LO",
+    "爱尔兰航空": "EI", "Aer Lingus": "EI",
+    "海湾航空": "GF", "阿曼航空": "WY",
+    "科威特航空": "KU", "斯里兰卡航空": "UL",
+    "文莱皇家": "BI", "巴基斯坦航空": "PK",
+    "孟加拉航空": "BG", "冰岛航空": "FI",
+    "西捷航空": "WS", "布鲁塞尔航空": "SN",
+    "阿根廷航空": "AR", "哥伦比亚航空": "AV", "Avianca": "AV",
+    "毛里求斯航空": "MK", "阿斯塔纳航空": "KC",
+    # —— v5.9 IATA补充 ——
+    "伊比利亚航空": "IB", "西班牙国家航空": "IB", "Iberia": "IB",
+    "ITA航空": "AZ", "意大利航空": "AZ", "ITA": "AZ",
+    "沙特航空": "SV", "Saudia": "SV", "Saudi Arabian": "SV",
+    "以色列航空": "LY", "EL AL": "LY", "以航": "LY",
+    "中东航空": "ME", "MEA": "ME", "黎巴嫩航空": "ME",
+    "约旦皇家航空": "RJ", "皇家约旦": "RJ", "Royal Jordanian": "RJ",
+    "塞尔维亚航空": "JU", "Air Serbia": "JU",
+    "欧罗巴航空": "UX", "Air Europa": "UX",
+    "康多尔航空": "DE", "Condor": "DE",
+    "星宇航空": "JX", "STARLUX": "JX",
+    "香港航空": "HX", "Hong Kong Airlines": "HX",
+    "靛蓝航空": "6E", "IndiGo": "6E", "香料航空": "SG", "SpiceJet": "SG",
+    "阿拉伯航空": "G9", "Air Arabia": "G9", "迪拜航空": "FZ", "flydubai": "FZ",
+    "济州航空": "7C", "真航空": "LJ", "德威航空": "TW",
+    "山东航空": "SC", "山航": "SC", "吉祥航空": "HO", "吉祥": "HO",
+    "天津航空": "GS", "天航": "GS", "首都航空": "JD", "首航": "JD",
+    "西藏航空": "TV", "藏航": "TV", "祥鹏航空": "8L",
+    "华夏航空": "G5", "西部航空": "PN", "昆明航空": "KY",
+    "长龙航空": "GJ", "奥凯航空": "BK", "青岛航空": "QW",
+    "越南航空": "VN", "越捷航空": "VJ", "Vietjet": "VJ",
+    "曼谷航空": "PG", "Bangkok Airways": "PG",
+    "狮航": "JT", "Lion Air": "JT", "连城航空": "QG",
+    "巴泽航空": "ID", "Batik Air": "ID",
+    "乌兹别克斯坦航空": "HY", "阿塞拜疆航空": "J2",
+    "阿拉斯加航空": "AS", "Alaska": "AS",
+    "西南航空": "WN", "Southwest": "WN",
+    "越洋航空": "TS", "Air Transat": "TS",
+    "大溪地航空": "TN", "Air Tahiti Nui": "TN",
+    "卢旺达航空": "WB", "RwandAir": "WB",
+    # —— v5.9 英文名全局补充 (Google Flights 抓取匹配) ——
+    "Air China": "CA", "China Southern": "CZ", "China Eastern": "MU",
+    "Hainan Airlines": "HU", "Sichuan Airlines": "3U", "Xiamen Airlines": "MF",
+    "Shenzhen Airlines": "ZH", "Shanghai Airlines": "FM",
+    "Cathay Pacific": "CX", "Cathay": "CX",
+    "Singapore Airlines": "SQ", "Korean Air": "KE",
+    "Asiana Airlines": "OZ", "Asiana": "OZ",
+    "All Nippon Airways": "NH", "ANA": "NH",
+    "Japan Airlines": "JL", "JAL": "JL",
+    "Qantas": "QF", "Qantas Airways": "QF",
+    "EVA Air": "BR", "Eva Airways": "BR",
+    "China Airlines": "CI",
+    "Emirates": "EK", "Emirates Airlines": "EK",
+    "Qatar Airways": "QR", "Qatar": "QR",
+    "Turkish Airlines": "TK", "Turkish": "TK",
+    "Etihad Airways": "EY", "Etihad": "EY",
+    "Lufthansa": "LH", "Air France": "AF",
+    "British Airways": "BA", "KLM": "KL", "KLM Royal Dutch": "KL",
+    "Virgin Atlantic": "VS", "Virgin Atlantic Airways": "VS",
+    "SAS": "SK", "Scandinavian Airlines": "SK",
+    "Finnair": "AY", "SWISS": "LX", "Swiss International": "LX",
+    "Austrian Airlines": "OS", "Austrian": "OS",
+    "TAP Portugal": "TP", "TAP Air Portugal": "TP",
+    "LOT Polish": "LO", "LOT Polish Airlines": "LO",
+    "Aer Lingus": "EI", "Brussels Airlines": "SN",
+    "Iberia": "IB", "ITA Airways": "AZ",
+    "Air Europa": "UX", "Condor": "DE",
+    "Saudia": "SV", "Saudi Arabian Airlines": "SV",
+    "EL AL": "LY", "El Al Israel Airlines": "LY",
+    "Royal Jordanian": "RJ", "MEA": "ME", "Middle East Airlines": "ME",
+    "Air Serbia": "JU", "STARLUX": "JX", "Starlux Airlines": "JX",
+    "Hong Kong Airlines": "HX", "HK Express": "UO",
+    "Air Macau": "NX", "Mandarin Airlines": "AE", "UNI Air": "B7",
+    "IndiGo": "6E", "SpiceJet": "SG",
+    "Air Arabia": "G9", "flydubai": "FZ", "Flynas": "XY",
+    "Jazeera Airways": "J9", "SalamAir": "OV",
+    "Bangkok Airways": "PG", "VietJet": "VJ", "VietJet Air": "VJ",
+    "Bamboo Airways": "QH", "Batik Air": "ID",
+    "Citilink": "QG", "Lion Air": "JT",
+    "Jeju Air": "7C", "Jin Air": "LJ", "T'way Air": "TW",
+    "Air Premia": "YP", "Eastar Jet": "ZE",
+    "Shandong Airlines": "SC", "Juneyao Airlines": "HO",
+    "Tianjin Airlines": "GS", "Beijing Capital Airlines": "JD",
+    "Tibet Airlines": "TV", "Lucky Air": "8L",
+    "China Express": "G5", "West Air": "PN",
+    "Kunming Airlines": "KY", "Loong Air": "GJ",
+    "Okay Airways": "BK", "Qingdao Airlines": "QW",
+    "Alaska Airlines": "AS", "Southwest Airlines": "WN",
+    "GOL Airlines": "G3", "GOL": "G3",
+    "Air Transat": "TS", "Volaris": "Y4",
+    "RwandAir": "WB", "Tunisair": "TU",
+    "TAAG Angola": "DT", "TAAG": "DT",
+    "Air Algerie": "AH", "Uzbekistan Airways": "HY",
+    "Azerbaijan Airlines": "J2", "AZAL": "J2",
+    "Air Tahiti Nui": "TN", "Vietnam Airlines": "VN",
+    "Philippine Airlines": "PR", "Malaysia Airlines": "MH",
+    "Garuda Indonesia": "GA", "Cebu Pacific": "5J",
+    "AirAsia": "AK", "AirAsia X": "D7",
+    "Thai Airways": "TG", "THAI Airways": "TG",
+    "Air New Zealand": "NZ", "Fiji Airways": "FJ",
+    "Virgin Australia": "VA", "Jetstar": "JQ",
+    "Air India": "AI", "SriLankan": "UL", "SriLankan Airlines": "UL",
+    "Gulf Air": "GF", "Oman Air": "WY",
+    "Ethiopian Airlines": "ET", "South African Airways": "SA",
+    "Kenya Airways": "KQ", "EgyptAir": "MS",
+    "Royal Air Maroc": "AT", "Air Mauritius": "MK",
+    "Hawaiian Airlines": "HA", "Air Canada": "AC",
+    "LATAM Airlines": "LA", "LATAM": "LA",
+    "Aeromexico": "AM", "Copa Airlines": "CM",
+    "Aerolineas Argentinas": "AR", "Avianca": "AV",
+    "United Airlines": "UA", "Delta Air Lines": "DL",
+    "American Airlines": "AA", "Icelandair": "FI",
+    "WestJet": "WS", "Air Astana": "KC",
+    "Air Premia": "YP", "Greater Bay Airlines": "HB",
+    "Pegasus Airlines": "PC", "SunExpress": "XQ",
 }
 
 # ——— PEK→SYD 航线航班号 (业内公开信息) ———
@@ -511,7 +872,17 @@ def _build_generic_segments(airline_code, layover_code, stops, origin, dest):
         }], airline_code)
 
     # One-stop: origin → layover → dest
-    layover = layover_code.upper() if layover_code else "HKG"
+    # v5.9: Default layover to airline's home country hub, not HKG
+    if layover_code:
+        layover = layover_code.upper()
+    else:
+        country = AIRLINE_COUNTRY.get(airline_code)
+        if country:
+            home_airports = [ap for ap, c in AIRPORT_COUNTRY.items()
+                             if c == country and ap != origin and ap != dest]
+            layover = random.choice(home_airports) if home_airports else "HKG"
+        else:
+            layover = "HKG"
     fn1 = f"{airline_code}{_gen_flight_number(origin, layover)}"
     fn2 = f"{airline_code}{_gen_flight_number(layover, dest)}"
     ac1 = _validate_aircraft_for_segment(narrow_ac, origin, layover, airline_code)

@@ -134,13 +134,22 @@
             </div>
           </div>
 
-          <!-- Carrier preference filter -->
+          <!-- Alliance filter -->
           <div class="carrier-filter-row">
             <div class="carrier-filter-header">
-              <span class="carrier-filter-label">航司偏好</span>
-              <button type="button" class="carrier-toggle-all" id="carrierToggleAll">全部航司</button>
+              <span class="carrier-filter-label">航空联盟</span>
             </div>
-            <div class="carrier-chips" id="carrierChips" role="group" aria-label="航空公司筛选"></div>
+            <div class="alliance-chips" id="allianceChips" role="group" aria-label="航空联盟筛选">
+              <button type="button" class="alliance-chip active" data-alliance="star" aria-pressed="true">
+                <span class="alliance-icon">⭐</span> 星空联盟
+              </button>
+              <button type="button" class="alliance-chip active" data-alliance="skyteam" aria-pressed="true">
+                <span class="alliance-icon">🌐</span> 天合联盟
+              </button>
+              <button type="button" class="alliance-chip active" data-alliance="oneworld" aria-pressed="true">
+                <span class="alliance-icon">🌍</span> 寰宇一家
+              </button>
+            </div>
           </div>
 
           <!-- Dates -->
@@ -169,8 +178,12 @@
     <!-- Price watchlist -->
     <div class="search-card-wrap" id="watchlistPanel" style="margin-top:12px;display:none;">
       <div class="watchlist-card">
-        <h3>📡 价格追踪</h3>
+        <div class="watchlist-header">
+          <h3>📡 价格追踪</h3>
+          <button class="watchlist-refresh-btn" id="watchlistRefreshBtn" title="刷新所有追踪价格">🔄 刷新</button>
+        </div>
         <div id="watchlistContent"></div>
+        <div id="watchlistStatus" class="watchlist-status" style="display:none;"></div>
       </div>
     </div>
 

@@ -90,3 +90,33 @@ export function getPriceChange(key) {
   const prev = entry.history[0].price;
   return latest - prev;
 }
+
+/** Refresh all tracked routes by calling backend API */
+export async function refreshWatchlist() {
+  const items = _load();
+  if (!items.length) return [];
+
+  const routes = items.map(i => ({
+    origin: i.origin, dest: i.dest, cabin: i.cabin,
+  }));
+
+  try {
+    const resp = await fetch('/api/watchlist-refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ routes }),
+    });
+    const data = await resp.json();
+    const updated = data.results || [];
+    for (const r of updated) {
+      if (r.price != null) {
+        const key = `${r.origin}-${r.dest}-${r.cabin}`;
+        updatePrice(key, r.price, r.airline, r.airline_name, r.date);
+      }
+    }
+    return updated;
+  } catch (e) {
+    console.warn('[Watchlist] Refresh failed:', e);
+    return [];
+  }
+}

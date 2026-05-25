@@ -51,7 +51,7 @@ export async function renderResults() {
 
   const isRT = summary.tripType === 'roundtrip';
   const legLabel = isRT ? 'STEP 1 · 去程航班' : '单日航班详情';
-  const lastColHeader = isRT ? '选择' : '操作';
+  const lastColHeader = isRT ? '选择' : '更多信息';
   document.getElementById('singleDaySection').innerHTML = `
     <div class="section">
       <div class="section-header">
@@ -78,7 +78,7 @@ export async function renderResults() {
           </select>
         </div>
         <div class="table-header cols7">
-          <span>航空公司 / 航班号</span><span>起降时间</span><span>飞行时长</span><span>中转详情</span><span>机型</span><span>价格</span><span>${lastColHeader}</span>
+          <span>航空公司 / 航班号</span><span>起降时间</span><span>飞行时长</span><span>中转详情</span><span>机型</span><span>价格</span><span>收藏</span><span>${lastColHeader}</span>
         </div>
         ${[1,2,3,4,5].map(() => `
           <div class="table-row cols7" style="border-bottom:1px solid var(--border);">
@@ -88,6 +88,7 @@ export async function renderResults() {
             <div><div class="skeleton-line w-50"></div></div>
             <div><div class="skeleton-line w-35"></div></div>
             <div><div class="skeleton-line w-50 h-lg"></div></div>
+            <div><div class="skeleton-line w-25"></div></div>
             <div><div class="skeleton-line w-55"></div></div>
           </div>
         `).join('')}
@@ -153,7 +154,7 @@ async function loadSingleDay(summary) {
             `).join('')}
           </div>
           <div class="table-header cols7">
-            <span>航空公司 / 航班号</span><span>起降时间</span><span>飞行时长</span><span>中转详情</span><span>机型</span><span>价格</span><span>选择</span>
+            <span>航空公司 / 航班号</span><span>起降时间</span><span>飞行时长</span><span>中转详情</span><span>机型</span><span>价格</span><span>收藏</span><span>选择</span>
           </div>
           ${[1,2,3,4,5].map(() => `
             <div class="table-row cols7" style="border-bottom:1px solid var(--border);">
@@ -163,6 +164,7 @@ async function loadSingleDay(summary) {
               <div><div class="skeleton-line w-50"></div></div>
               <div><div class="skeleton-line w-35"></div></div>
               <div><div class="skeleton-line w-50 h-lg"></div></div>
+              <div><div class="skeleton-line w-25"></div></div>
               <div><div class="skeleton-line w-55"></div></div>
             </div>
           `).join('')}
@@ -228,7 +230,7 @@ function renderReturnSection(data, summary) {
       <div class="section-body">
         ${renderStatsGrid(prices)}
         <div class="table-header cols7">
-          <span>航空公司 / 航班号</span><span>起降时间</span><span>飞行时长</span><span>中转详情</span><span>机型</span><span>价格</span><span>选择</span>
+          <span>航空公司 / 航班号</span><span>起降时间</span><span>飞行时长</span><span>中转详情</span><span>机型</span><span>价格</span><span>收藏</span><span>选择</span>
         </div>
         <div id="returnPriceList">
           ${sorted.length
@@ -298,15 +300,20 @@ function _applyFilterSort(prices) {
   if (_filterState.mode === 'direct') {
     filtered = filtered.filter(p => p.stops === 0);
   }
-  // Carrier preference filter
-  if (AppState.preferredCarriers && AppState.preferredCarriers.length > 0) {
-    const allowed = new Set(AppState.preferredCarriers);
-    filtered = filtered.filter(p => {
-      const code = p.airline || (p.segments && p.segments[0] && p.segments[0].airline) || '';
-      return allowed.has(code);
-    });
-  }
+  // v5.10: Carrier preference — prioritize (sort to top) instead of filter out
+  const preferredCarriers = AppState.preferredCarriers && AppState.preferredCarriers.length > 0
+    ? new Set(AppState.preferredCarriers) : null;
+
   filtered.sort((a, b) => {
+    // First: preferred carriers always above non-preferred
+    if (preferredCarriers) {
+      const aCode = a.airline || (a.segments && a.segments[0] && a.segments[0].airline) || '';
+      const bCode = b.airline || (b.segments && b.segments[0] && b.segments[0].airline) || '';
+      const aPref = preferredCarriers.has(aCode) ? 0 : 1;
+      const bPref = preferredCarriers.has(bCode) ? 0 : 1;
+      if (aPref !== bPref) return aPref - bPref;
+    }
+    // Second: sort by selected criteria within same preference group
     if (_filterState.sort === 'duration') return (a.duration_minutes || 999) - (b.duration_minutes || 999);
     if (_filterState.sort === 'departure') return (a.departure_time || '99:99').localeCompare(b.departure_time || '99:99');
     return (a.price || 99999) - (b.price || 99999);
@@ -420,7 +427,7 @@ function refreshRoundtripUI() {
 function updateSingleDayContent(data, summary) {
   const prices = data.prices || [];
   const dateStr = formatDate(data.date || summary.departDate);
-  const sorted = [...prices].sort((a, b) => a.price - b.price);
+  const sorted = _applyFilterSort(prices);
   const isRT = summary.tripType === 'roundtrip';
 
   // Store indices for profile button
@@ -460,7 +467,7 @@ function updateSingleDayContent(data, summary) {
 
   // Flight list
   const outIdx = AppState.selectedOutbound;
-  const lastColHeader = isRT ? '选择' : '操作';
+  const lastColHeader = isRT ? '选择' : '更多信息';
   const thLast = document.querySelector('#singleDaySection .table-header span:last-child');
   if (thLast) thLast.textContent = lastColHeader;
 
@@ -518,7 +525,7 @@ function renderSingleDaySection(data, summary) {
   // Store indices for profile button lookups
   prices.forEach((p, i) => { p._index = i; });
 
-  const sorted = [...prices].sort((a, b) => a.price - b.price);
+  const sorted = _applyFilterSort(prices);
 
   const returnBtnHtml = AppState.isViewingDifferentDate() ? `
         <button class="back-to-original-btn" id="backToOriginalBtn">
@@ -527,7 +534,7 @@ function renderSingleDaySection(data, summary) {
 
   const outIdx = AppState.selectedOutbound;
   const legLabel = isRT ? '去程航班' : '单日航班详情';
-  const lastColHeader = isRT ? '选择' : '操作';
+  const lastColHeader = isRT ? '选择' : '更多信息';
 
   container.innerHTML = `
     <div class="section">
@@ -548,7 +555,7 @@ function renderSingleDaySection(data, summary) {
           </select>
         </div>
         <div class="table-header cols7">
-          <span>航空公司 / 航班号</span><span>起降时间</span><span>飞行时长</span><span>中转详情</span><span>机型</span><span>价格</span><span>${lastColHeader}</span>
+          <span>航空公司 / 航班号</span><span>起降时间</span><span>飞行时长</span><span>中转详情</span><span>机型</span><span>价格</span><span>收藏</span><span>${lastColHeader}</span>
         </div>
         <div id="singlePriceList">
           ${sorted.length

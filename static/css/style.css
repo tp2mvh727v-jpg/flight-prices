@@ -778,6 +778,39 @@ body {
   opacity: 0.4;
 }
 
+/* —— Alliance chips —— */
+.alliance-chips {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.alliance-chip {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(148,163,184,0.3);
+  background: rgba(15,23,42,0.6);
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.alliance-chip:hover {
+  border-color: var(--aero-accent, #38bdf8);
+  color: #e2e8f0;
+}
+.alliance-chip.active {
+  background: rgba(56,189,248,0.12);
+  border-color: var(--aero-accent, #38bdf8);
+  color: var(--aero-accent, #38bdf8);
+  box-shadow: 0 0 10px rgba(56,189,248,0.15);
+}
+.alliance-icon {
+  font-size: 1rem;
+  margin-right: 2px;
+}
+
 /* —— Date row —— */
 .date-row {
   display: grid;
@@ -1964,12 +1997,12 @@ body {
 
 /* Column layouts */
 .cols7 {
-  grid-template-columns: 1.3fr 130px 80px 90px 100px 100px 90px;
+  grid-template-columns: 1fr 140px 70px 80px 130px 95px 42px 95px;
   gap: 0 8px;
 }
 
 .cols8 {
-  grid-template-columns: 90px 1.1fr 130px 75px 90px 100px 100px 90px;
+  grid-template-columns: 85px 0.9fr 140px 70px 80px 130px 95px 42px 95px;
   gap: 0 8px;
 }
 
@@ -1977,6 +2010,7 @@ body {
 .table-row .airline { font-weight: 600; font-size: 0.9rem; }
 .table-row .airline-code { font-size: 0.75rem; color: var(--muted); }
 .table-row .price-val { font-weight: 700; font-size: 1.05rem; color: var(--primary); }
+.time-cell { white-space: nowrap; }
 
 .stops-direct {
   color: var(--green);
@@ -2188,6 +2222,7 @@ body {
   padding: 8px 0;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+  flex-wrap: nowrap;
 }
 .fpc-timeline {
   display: flex;
@@ -2198,6 +2233,12 @@ body {
   color: var(--text);
 }
 .fpc-time { font-variant-numeric: tabular-nums; }
+.day-offset {
+  color: var(--orange);
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-left: 2px;
+}
 .fpc-arrow { color: var(--muted); font-size: 0.85rem; }
 .fpc-duration {
   font-size: 0.82rem;
@@ -2509,6 +2550,41 @@ footer a { color: var(--primary); text-decoration: none; }
 }
 
 /* —— Price Watchlist Panel —— */
+/* —— Watchlist Panel —— */
+.watchlist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.watchlist-header h3 {
+  margin: 0;
+}
+.watchlist-refresh-btn {
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid rgba(56,189,248,0.3);
+  background: rgba(56,189,248,0.08);
+  color: var(--aero-accent, #38bdf8);
+  cursor: pointer;
+  transition: all 0.18s;
+}
+.watchlist-refresh-btn:hover {
+  background: rgba(56,189,248,0.18);
+  border-color: var(--aero-accent, #38bdf8);
+}
+.watchlist-refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.watchlist-status {
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  text-align: center;
+  padding: 6px;
+}
 .watchlist-card {
   background: var(--card-bg, rgba(15,23,42,0.85));
   border: 1px solid rgba(148,163,184,0.15);
@@ -3898,6 +3974,103 @@ footer a { color: var(--primary); text-decoration: none; }
     align-items: flex-start;
   }
 
+  /* Results page — compact spacing for mobile cards */
+  .results-container {
+    padding: 14px 10px;
+  }
+  .section {
+    margin-bottom: 14px;
+    border-radius: 12px;
+  }
+  .section-header {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+  .section-header h2 {
+    font-size: 0.95rem;
+  }
+  .section-body {
+    padding: 12px 10px;
+  }
+
+  /* Stats grid — 2 equal columns, tighter */
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .stat-card {
+    padding: 12px 10px;
+  }
+  .stat-card .value {
+    font-size: 1.25rem;
+  }
+  .stat-card .label {
+    font-size: 0.62rem;
+  }
+  .stat-card .sub {
+    font-size: 0.68rem;
+  }
+
+  /* Search summary — smaller text */
+  .search-summary {
+    gap: 6px;
+  }
+  .search-summary .route-text {
+    font-size: 0.95rem;
+  }
+  .search-summary .date-info {
+    font-size: 0.75rem;
+  }
+  .search-summary .pax-info {
+    font-size: 0.68rem;
+  }
+
+  /* Filter bar — tighter */
+  .filter-bar {
+    gap: 5px;
+    padding: 8px 0;
+  }
+  .filter-bar button {
+    font-size: 0.72rem;
+    padding: 6px 12px;
+  }
+
+  /* Trend toggle — compact */
+  .trend-toggle {
+    padding: 12px 14px;
+    font-size: 0.82rem;
+    gap: 8px;
+  }
+  /* Trend collapse */
+  .trend-collapse {
+    margin-top: 14px;
+    padding-top: 14px;
+  }
+
+  /* Roundtrip summary bar — stack on mobile */
+  .rt-summary {
+    padding: 14px 16px;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .rt-summary-leg {
+    font-size: 0.8rem;
+  }
+  .rt-summary-label {
+    font-size: 0.65rem;
+  }
+  .rt-summary-flight {
+    font-size: 0.75rem;
+  }
+  .rt-summary-price {
+    font-size: 0.9rem;
+  }
+  .rt-summary-total-price {
+    font-size: 1.2rem;
+  }
+
+  /* Trend summary inline — stack */
   .trend-summary-inline {
     flex-direction: column;
   }
@@ -3913,10 +4086,6 @@ footer a { color: var(--primary); text-decoration: none; }
       .cols7, .cols8 { display: none; }
       .flight-card-list { display: flex; }
 
-
-  .stats-grid {
-    grid-template-columns: 1fr 1fr;
-  }
 
   .features-strip {
     gap: 20px;
@@ -4348,6 +4517,255 @@ footer a { color: var(--primary); text-decoration: none; }
   }
   .fp-aircraft-img {
     max-height: 260px;
+  }
+}
+
+/* ============================================================
+   Phone breakpoint (420px) — iPhone SE/12/13/14/Pro, Pixel, etc.
+   ============================================================ */
+@media (max-width: 420px) {
+  /* --- Flight cards: compact layout --- */
+  .flight-card {
+    padding: 14px;
+    gap: 8px;
+    border-radius: 12px;
+  }
+
+  /* Top row: airline + price */
+  .fpc-top {
+    gap: 6px;
+  }
+  .fpc-top .airline {
+    font-size: 0.82rem;
+  }
+  .fpc-top .airline-code {
+    font-size: 0.68rem;
+  }
+  .fpc-price {
+    font-size: 1rem;
+  }
+
+  /* Mid row: timeline + duration + layover — one line */
+  .fpc-mid {
+    gap: 6px;
+    padding: 6px 0;
+    flex-wrap: nowrap;
+  }
+  .fpc-timeline {
+    font-size: 0.82rem;
+    gap: 5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .fpc-time {
+    font-size: 0.82rem;
+  }
+  .fpc-arrow {
+    font-size: 0.72rem;
+  }
+  .day-offset {
+    font-size: 0.62rem;
+    margin-left: 1px;
+  }
+  .fpc-duration {
+    font-size: 0.7rem;
+    white-space: nowrap;
+  }
+  .fpc-tag-layover {
+    font-size: 0.65rem;
+    padding: 2px 7px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Bottom row: aircraft + buttons — full width */
+  .fpc-bottom {
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .fpc-tag-ac {
+    font-size: 0.65rem;
+    padding: 2px 7px;
+  }
+
+  /* --- Search form: compact --- */
+  .search-card {
+    padding: 22px 16px;
+    border-radius: 18px;
+  }
+  .search-card h2 {
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    margin-bottom: 18px;
+  }
+  .search-hero {
+    padding: 36px 12px 20px;
+  }
+  .search-hero h1 {
+    font-size: 1.25rem;
+  }
+  .search-card-wrap {
+    padding: 0 10px;
+    margin-bottom: 30px;
+  }
+
+  /* Trip type buttons */
+  .trip-type-btn {
+    padding: 7px 14px;
+    font-size: 0.72rem;
+  }
+
+  /* City inputs — tighter */
+  .city-row {
+    grid-template-columns: 1fr 28px 1fr;
+    gap: 4px;
+  }
+  .city-group input {
+    font-size: 0.8rem;
+    padding: 10px 10px;
+  }
+
+  /* Alliance chips — smaller */
+  .alliance-chips {
+    gap: 6px;
+  }
+  .alliance-chip {
+    padding: 6px 12px;
+    font-size: 0.72rem;
+  }
+
+  /* Date row — stack */
+  .date-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  /* Passenger & cabin selects — side by side on phone */
+  .pax-row {
+    flex-direction: row;
+    gap: 8px;
+  }
+  .pax-row select {
+    font-size: 0.75rem;
+    padding: 6px 8px;
+  }
+
+  /* RADAR button — full width */
+  .search-submit-wrap button,
+  .btn-search {
+    width: 100%;
+    font-size: 0.85rem;
+    padding: 12px 0;
+  }
+
+  /* --- Results header --- */
+  .results-header-inner {
+    padding: 8px 12px;
+    gap: 6px;
+  }
+  .results-header-inner h2 {
+    font-size: 0.95rem;
+  }
+  .section-header {
+    padding: 10px 14px;
+  }
+
+  /* Stats grid — single column */
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .stat-card {
+    padding: 10px 12px;
+  }
+
+  /* Section — minimal chrome */
+  .section {
+    margin-bottom: 10px;
+    border-radius: 10px;
+  }
+  .section-header {
+    padding: 10px 10px;
+    gap: 6px;
+  }
+  .section-header h2 {
+    font-size: 0.85rem;
+  }
+  .section-body {
+    padding: 10px 6px;
+  }
+
+  /* Search summary */
+  .search-summary .route-text {
+    font-size: 0.85rem;
+  }
+  .search-summary .date-info {
+    font-size: 0.7rem;
+  }
+
+  /* Trend toggle */
+  .trend-toggle {
+    padding: 10px 12px;
+    font-size: 0.75rem;
+  }
+
+  /* Date strip — horizontal scroll */
+  .date-strip {
+    gap: 4px;
+  }
+  .date-strip-card {
+    min-width: 66px;
+    padding: 8px 10px;
+    font-size: 0.7rem;
+  }
+
+  /* Flight profile panel — full width, less padding */
+  .fp-panel {
+    width: 100vw;
+    border-radius: 16px 16px 0 0;
+  }
+  .fp-header {
+    padding: 10px 14px 8px;
+  }
+  .fp-section {
+    padding: 10px 14px;
+  }
+  .fp-registration {
+    font-size: 1.3rem;
+  }
+  .fp-specs-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .fp-telem-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  /* Ensure buttons are tappable */
+  .geek-profile-btn,
+  .track-btn {
+    min-height: 40px;
+    min-width: 40px;
+    font-size: 0.75rem;
+    padding: 6px 10px;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    gap: 4px;
+  }
+  .filter-bar button {
+    font-size: 0.7rem;
+    padding: 5px 10px;
+  }
+
+  /* Footer */
+  footer {
+    font-size: 0.65rem;
+    padding: 12px 10px;
   }
 }
 

@@ -19,7 +19,7 @@ export function renderFlightRow(flight, dateVal, columns = 7, opts = {}) {
   const selClass = selectable ? ' flight-row-selectable' : '';
   const activeClass = selected ? ' flight-row-selected' : '';
 
-  const timeCell = `<div class="time-cell">${flight.departure || '--:--'} &rarr; ${flight.arrival || '--:--'}</div>`;
+  const timeCell = `<div class="time-cell">${flight.departure || '--:--'} &rarr; ${flight.arrival || '--:--'}${flight._arrival_day_offset ? '<span class="day-offset"> (' + escapeHtml(flight._arrival_day_offset) + ')</span>' : ''}</div>`;
   const durCell = `<div class="dur-cell">${flight.duration || '--'}</div>`;
   const layoverCell = `<div class="layover-cell">${layoverInfo(flight)}</div>`;
   const acCell = `<div>${aircraftBadge(flight)}</div>`;
@@ -30,6 +30,9 @@ export function renderFlightRow(flight, dateVal, columns = 7, opts = {}) {
     ? `<div class="flight-sel-radio ${selected ? 'checked' : ''}" data-leg="${leg}" data-idx="${flight._index ?? ''}"></div>`
     : '';
   const trackBtn = `<button class="track-btn" data-track-origin="${flight.origin || ''}" data-track-dest="${flight.dest || ''}" data-track-cabin="${flight._cabin || 'economy'}" data-track-price="${flight.price || 0}" data-track-airline="${flight.airline || ''}" data-track-airline-name="${escapeHtml(flight.airline_name || '')}" data-track-key="${flight.origin || ''}-${flight.dest || ''}-${flight._cabin || 'economy'}" title="追踪此航线价格">☆</button>`;
+
+  const trackCell = `<div>${trackBtn}${selIndicator}</div>`;
+  const profileCell = `<div>${profileBtn}</div>`;
 
   if (columns === 8) {
     const dateCell = `<div class="date-cell">${dateVal.slice(5)}</div>`;
@@ -42,7 +45,8 @@ export function renderFlightRow(flight, dateVal, columns = 7, opts = {}) {
         ${layoverCell}
         <div class="ac-badge-placeholder">${acCell}</div>
         ${priceCell}
-        <div>${trackBtn}${selIndicator}${profileBtn}</div>
+        ${trackCell}
+        ${profileCell}
       </div>`;
   }
 
@@ -54,7 +58,8 @@ export function renderFlightRow(flight, dateVal, columns = 7, opts = {}) {
       ${layoverCell}
       ${acCell}
       ${priceCell}
-      <div>${trackBtn}${selIndicator}${profileBtn}</div>
+      ${trackCell}
+      ${profileCell}
     </div>`;
 }
 
@@ -68,7 +73,7 @@ export function renderFlightCard(flight, dateVal, opts = {}) {
   const timeHtml = flight.departure
     ? `<span class="fpc-time">${escapeHtml(flight.departure)}</span>
        <span class="fpc-arrow">&rarr;</span>
-       <span class="fpc-time">${escapeHtml(flight.arrival)}</span>`
+       <span class="fpc-time">${escapeHtml(flight.arrival)}${flight._arrival_day_offset ? '<span class="day-offset"> ' + escapeHtml(flight._arrival_day_offset) + '</span>' : ''}</span>`
     : '<span class="fpc-time">--:--</span>';
 
   const selDot = selectable
@@ -84,10 +89,10 @@ export function renderFlightCard(flight, dateVal, opts = {}) {
       <div class="fpc-mid">
         <div class="fpc-timeline">${timeHtml}</div>
         <div class="fpc-duration">${flight.duration || '--'}</div>
+        <span class="fpc-tag fpc-tag-layover">${layoverInfo(flight)}</span>
       </div>
       <div class="fpc-bottom">
-        <span class="fpc-tag">${layoverInfo(flight)}</span>
-        <span class="fpc-tag">${aircraftBadge(flight)}</span>
+        <span class="fpc-tag fpc-tag-ac">${aircraftBadge(flight)}</span>
         ${selDot}
         <button class="track-btn" data-track-origin="${flight.origin || ''}" data-track-dest="${flight.dest || ''}" data-track-cabin="${flight._cabin || 'economy'}" data-track-price="${flight.price || 0}" data-track-airline="${flight.airline || ''}" data-track-airline-name="${escapeHtml(flight.airline_name || '')}" data-track-key="${flight.origin || ''}-${flight.dest || ''}-${flight._cabin || 'economy'}" title="追踪此航线价格">☆</button>
         <button class="geek-profile-btn" data-flight-index="${flight._index ?? ''}">飞行器深度档案</button>
