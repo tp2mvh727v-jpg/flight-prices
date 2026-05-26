@@ -1,0 +1,95 @@
+{
+  "dep_iata": "LAX",
+  "arr_iata": "PEK",
+  "routes": [
+    {
+      "airline_iata": "CA",
+      "airline_icao": "CCA",
+      "flight_number": "984",
+      "flight_iata": "CA984",
+      "dep_iata": "LAX",
+      "arr_iata": "PEK",
+      "dep_time": "23:25",
+      "arr_time": "05:30",
+      "dep_time_utc": "06:25",
+      "arr_time_utc": "21:30",
+      "duration": 905,
+      "days": [
+        "fri",
+        "mon",
+        "thu"
+      ],
+      "dep_terminal": "TBIT",
+      "arr_terminal": "3",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 117620
+    },
+    {
+      "airline_iata": "CA",
+      "airline_icao": "CCA",
+      "flight_number": "988",
+      "flight_iata": "CA988",
+      "dep_iata": "LAX",
+      "arr_iata": "PEK",
+      "dep_time": "14:20",
+      "arr_time": "18:00",
+      "dep_time_utc": "21:20",
+      "arr_time_utc": "10:00",
+      "duration": 760,
+      "days": [
+        "sun"
+      ],
+      "dep_terminal": "TBIT",
+      "arr_terminal": "3",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 45734
+    },
+    {
+      "airline_iata": "UA",
+      "airline_icao": "UAL",
+      "flight_number": "771",
+      "flight_iata": "UA771",
+      "dep_iata": "LAX",
+      "arr_iata": "PEK",
+      "dep_time": "23:05",
+      "arr_time": "04:40",
+      "dep_time_utc": "06:05",
+      "arr_time_utc": "20:40",
+      "duration": 875,
+      "days": [
+        "tue"
+      ],
+      "dep_terminal": "7",
+      "arr_terminal": "3",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 12037
+    },
+    {
+      "airline_iata": "UA",
+      "airline_icao": "UAL",
+      "flight_number": "771",
+      "flight_iata": "UA771",
+      "dep_iata": "LAX",
+      "arr_iata": "PEK",
+      "dep_time": "23:35",
+      "arr_time": "04:40",
+      "dep_time_utc": "06:35",
+      "arr_time_utc": "20:40",
+      "duration": 845,
+      "days": [
+        "sat",
+        "thu"
+      ],
+      "dep_terminal": "7",
+      "arr_terminal": "3",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 1208
+    }
+  ],
+  "count": 4,
+  "cached_at": 1779739989.96326
+}

@@ -1,0 +1,56 @@
+{
+  "dep_iata": "SYD",
+  "arr_iata": "PEK",
+  "routes": [
+    {
+      "airline_iata": "CA",
+      "airline_icao": "CCA",
+      "flight_number": "174",
+      "flight_iata": "CA174",
+      "dep_iata": "SYD",
+      "arr_iata": "PEK",
+      "dep_time": "19:40",
+      "arr_time": "05:25",
+      "dep_time_utc": "09:40",
+      "arr_time_utc": "21:25",
+      "duration": 705,
+      "days": [
+        "sat",
+        "sun",
+        "thu",
+        "tue"
+      ],
+      "dep_terminal": "1",
+      "arr_terminal": "3",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 123956
+    },
+    {
+      "airline_iata": "NZ",
+      "airline_icao": "ANZ",
+      "flight_number": "3884",
+      "flight_iata": "NZ3884",
+      "dep_iata": "SYD",
+      "arr_iata": "PEK",
+      "dep_time": "19:40",
+      "arr_time": "05:25",
+      "dep_time_utc": "09:40",
+      "arr_time_utc": "21:25",
+      "duration": 705,
+      "days": [
+        "sat",
+        "sun",
+        "thu",
+        "tue"
+      ],
+      "dep_terminal": "1",
+      "arr_terminal": "3",
+      "cs_airline_iata": "CA",
+      "cs_flight_iata": "CA174",
+      "counter": 123758
+    }
+  ],
+  "count": 2,
+  "cached_at": 1779735251.0703108
+}

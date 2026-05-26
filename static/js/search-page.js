@@ -256,7 +256,10 @@ function onSubmit(e) {
 
   // Guard: autocomplete must be initialized
   if (!_ac.origin || !_ac.dest) {
-    console.error('[SearchPage] Submit blocked — autocomplete not initialized');
+    console.warn('[SearchPage] Submit blocked — autocomplete not initialized after page load');
+    // Show user feedback instead of silently failing
+    if (!_ac.origin) showFieldError('originInput', '搜索组件加载中，请稍后再试');
+    if (!_ac.dest) showFieldError('destInput', '搜索组件加载中，请稍后再试');
     return;
   }
 

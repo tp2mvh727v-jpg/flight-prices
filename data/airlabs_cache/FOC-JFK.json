@@ -1,0 +1,30 @@
+{
+  "dep_iata": "FOC",
+  "arr_iata": "JFK",
+  "routes": [
+    {
+      "airline_iata": "MF",
+      "airline_icao": "CXA",
+      "flight_number": "849",
+      "flight_iata": "MF849",
+      "dep_iata": "FOC",
+      "arr_iata": "JFK",
+      "dep_time": "09:00",
+      "arr_time": "11:55",
+      "dep_time_utc": "01:00",
+      "arr_time_utc": "15:55",
+      "duration": 895,
+      "days": [
+        "fri",
+        "mon"
+      ],
+      "dep_terminal": null,
+      "arr_terminal": "4",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 38748
+    }
+  ],
+  "count": 1,
+  "cached_at": 1779739974.006007
+}

@@ -2,7 +2,7 @@
 // Aero-Hub Service Worker — PWA offline support
 // ============================================================
 
-const CACHE_NAME = 'aerohub-v5.8';
+const CACHE_NAME = 'aerohub-v5.18';
 
 const PRECACHE_URLS = [
   '/',
@@ -70,6 +70,12 @@ self.addEventListener('fetch', (event) => {
 
   // CSS + JS files: network-first so fixes reach users without cache-busting params
   if (url.pathname.endsWith('.css') || url.pathname.endsWith('.js')) {
+    event.respondWith(networkFirst(event.request));
+    return;
+  }
+
+  // Images: network-first with cache fallback — avoids stale cache blocking new uploads
+  if (/\.(png|jpg|jpeg|gif|webp|svg|ico)(\?|$)/i.test(url.pathname)) {
     event.respondWith(networkFirst(event.request));
     return;
   }

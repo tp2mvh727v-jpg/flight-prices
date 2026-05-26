@@ -1,0 +1,131 @@
+{
+  "dep_iata": "CAN",
+  "arr_iata": "IST",
+  "routes": [
+    {
+      "airline_iata": "CZ",
+      "airline_icao": "CSN",
+      "flight_number": "8065",
+      "flight_iata": "CZ8065",
+      "dep_iata": "CAN",
+      "arr_iata": "IST",
+      "dep_time": "01:10",
+      "arr_time": "07:15",
+      "dep_time_utc": "17:10",
+      "arr_time_utc": "04:15",
+      "duration": 665,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": null,
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 28262
+    },
+    {
+      "airline_iata": "CZ",
+      "airline_icao": "CSN",
+      "flight_number": "8089",
+      "flight_iata": "CZ8089",
+      "dep_iata": "CAN",
+      "arr_iata": "IST",
+      "dep_time": "16:00",
+      "arr_time": "22:10",
+      "dep_time_utc": "08:00",
+      "arr_time_utc": "19:10",
+      "duration": 670,
+      "days": [
+        "mon",
+        "sat",
+        "thu"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": null,
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 9337
+    },
+    {
+      "airline_iata": "TK",
+      "airline_icao": "THY",
+      "flight_number": "299",
+      "flight_iata": "TK299",
+      "dep_iata": "CAN",
+      "arr_iata": "IST",
+      "dep_time": "08:50",
+      "arr_time": "15:20",
+      "dep_time_utc": "00:50",
+      "arr_time_utc": "12:20",
+      "duration": 690,
+      "days": [
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": null,
+      "arr_terminal": "I",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 13983
+    },
+    {
+      "airline_iata": "TK",
+      "airline_icao": "THY",
+      "flight_number": "299",
+      "flight_iata": "TK299",
+      "dep_iata": "CAN",
+      "arr_iata": "IST",
+      "dep_time": "09:00",
+      "arr_time": "15:30",
+      "dep_time_utc": "01:00",
+      "arr_time_utc": "12:30",
+      "duration": 690,
+      "days": [
+        "mon"
+      ],
+      "dep_terminal": null,
+      "arr_terminal": "I",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 4440
+    },
+    {
+      "airline_iata": "TK",
+      "airline_icao": "THY",
+      "flight_number": "73",
+      "flight_iata": "TK73",
+      "dep_iata": "CAN",
+      "arr_iata": "IST",
+      "dep_time": "23:00",
+      "arr_time": "05:30",
+      "dep_time_utc": "15:00",
+      "arr_time_utc": "02:30",
+      "duration": 690,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": null,
+      "arr_terminal": "I",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 198280
+    }
+  ],
+  "count": 5,
+  "cached_at": 1779735246.841057
+}

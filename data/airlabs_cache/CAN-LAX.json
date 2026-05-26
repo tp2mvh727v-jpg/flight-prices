@@ -1,0 +1,33 @@
+{
+  "dep_iata": "CAN",
+  "arr_iata": "LAX",
+  "routes": [
+    {
+      "airline_iata": "CZ",
+      "airline_icao": "CSN",
+      "flight_number": "327",
+      "flight_iata": "CZ327",
+      "dep_iata": "CAN",
+      "arr_iata": "LAX",
+      "dep_time": "21:50",
+      "arr_time": "20:00",
+      "dep_time_utc": "13:50",
+      "arr_time_utc": "03:00",
+      "duration": 790,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "wed"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "TBIT",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 80409
+    }
+  ],
+  "count": 1,
+  "cached_at": 1779735312.562866
+}

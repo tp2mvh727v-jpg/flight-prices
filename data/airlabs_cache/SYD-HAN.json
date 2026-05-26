@@ -1,0 +1,79 @@
+{
+  "dep_iata": "SYD",
+  "arr_iata": "HAN",
+  "routes": [
+    {
+      "airline_iata": "AF",
+      "airline_icao": "AFR",
+      "flight_number": "5136",
+      "flight_iata": "AF5136",
+      "dep_iata": "SYD",
+      "arr_iata": "HAN",
+      "dep_time": "14:15",
+      "arr_time": "21:20",
+      "dep_time_utc": "04:15",
+      "arr_time_utc": "14:20",
+      "duration": 605,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "wed"
+      ],
+      "dep_terminal": "1",
+      "arr_terminal": "T2",
+      "cs_airline_iata": "VN",
+      "cs_flight_iata": "VN786",
+      "counter": 73498
+    },
+    {
+      "airline_iata": "K6",
+      "airline_icao": "KHV",
+      "flight_number": "3786",
+      "flight_iata": "K63786",
+      "dep_iata": "SYD",
+      "arr_iata": "HAN",
+      "dep_time": "14:15",
+      "arr_time": "21:20",
+      "dep_time_utc": "04:15",
+      "arr_time_utc": "14:20",
+      "duration": 605,
+      "days": [
+        "mon",
+        "sat",
+        "wed"
+      ],
+      "dep_terminal": "1",
+      "arr_terminal": "T2",
+      "cs_airline_iata": "VN",
+      "cs_flight_iata": "VN786",
+      "counter": 71448
+    },
+    {
+      "airline_iata": "VN",
+      "airline_icao": "HVN",
+      "flight_number": "786",
+      "flight_iata": "VN786",
+      "dep_iata": "SYD",
+      "arr_iata": "HAN",
+      "dep_time": "14:15",
+      "arr_time": "21:20",
+      "dep_time_utc": "04:15",
+      "arr_time_utc": "14:20",
+      "duration": 605,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "wed"
+      ],
+      "dep_terminal": "1",
+      "arr_terminal": "T2",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 78266
+    }
+  ],
+  "count": 3,
+  "cached_at": 1779735253.821308
+}

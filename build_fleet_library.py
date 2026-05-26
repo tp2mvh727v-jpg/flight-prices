@@ -88,10 +88,10 @@ FLEET = {
     'AT': { 'name': 'Royal Air Maroc', 'models': ['B788', 'B789', 'B738', 'B38M', 'A320', 'A321'] },
 
     # ═══ 美洲航司 ═══
-    'DL': { 'name': 'Delta Air Lines', 'models': ['A359', 'A333', 'A332', 'A339', 'A20N', 'A321', 'B739', 'B738'] },
+    'DL': { 'name': 'Delta Air Lines', 'models': ['A359', 'A333', 'A332', 'A339', 'A321', 'B739', 'B738'] },
     'UA': { 'name': 'United Airlines', 'models': ['B789', 'B788', 'B77W', 'B78X', 'B763',
-                   'A320', 'A321', 'A20N', 'B738', 'B739', 'B38M'] },
-    'AA': { 'name': 'American Airlines', 'models': ['B789', 'B788', 'B77W', 'A321', 'A320', 'A20N', 'B738', 'B38M'] },
+                   'A320', 'A321', 'B738', 'B739', 'B38M'] },
+    'AA': { 'name': 'American Airlines', 'models': ['B789', 'B788', 'B77W', 'A321', 'A320', 'B738', 'B38M'] },
     'AC': { 'name': 'Air Canada', 'models': ['B789', 'B788', 'B77W', 'A333', 'A321', 'A320', 'B738', 'B38M'] },
     'LA': { 'name': 'LATAM Airlines', 'models': ['B789', 'B788', 'A320', 'A20N', 'A321'] },
     'AD': { 'name': 'Azul Linhas Aereas', 'models': ['A333', 'A20N', 'A321', 'A320'] },

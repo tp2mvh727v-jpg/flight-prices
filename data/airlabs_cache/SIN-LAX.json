@@ -1,0 +1,58 @@
+{
+  "dep_iata": "SIN",
+  "arr_iata": "LAX",
+  "routes": [
+    {
+      "airline_iata": "SQ",
+      "airline_icao": "SIA",
+      "flight_number": "36",
+      "flight_iata": "SQ36",
+      "dep_iata": "SIN",
+      "arr_iata": "LAX",
+      "dep_time": "18:40",
+      "arr_time": "19:10",
+      "dep_time_utc": "10:40",
+      "arr_time_utc": "02:10",
+      "duration": 930,
+      "days": [
+        "fri",
+        "sun",
+        "wed"
+      ],
+      "dep_terminal": "3",
+      "arr_terminal": "TBIT",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 111234
+    },
+    {
+      "airline_iata": "SQ",
+      "airline_icao": "SIA",
+      "flight_number": "38",
+      "flight_iata": "SQ38",
+      "dep_iata": "SIN",
+      "arr_iata": "LAX",
+      "dep_time": "20:45",
+      "arr_time": "21:20",
+      "dep_time_utc": "12:45",
+      "arr_time_utc": "04:20",
+      "duration": 935,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "3",
+      "arr_terminal": "TBIT",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 473912
+    }
+  ],
+  "count": 2,
+  "cached_at": 1779735313.281277
+}

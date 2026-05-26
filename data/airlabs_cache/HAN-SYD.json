@@ -1,0 +1,55 @@
+{
+  "dep_iata": "HAN",
+  "arr_iata": "SYD",
+  "routes": [
+    {
+      "airline_iata": "K6",
+      "airline_icao": "KHV",
+      "flight_number": "3787",
+      "flight_iata": "K63787",
+      "dep_iata": "HAN",
+      "arr_iata": "SYD",
+      "dep_time": "23:40",
+      "arr_time": "12:15",
+      "dep_time_utc": "16:40",
+      "arr_time_utc": "02:15",
+      "duration": 575,
+      "days": [
+        "fri",
+        "sun",
+        "tue"
+      ],
+      "dep_terminal": "T2",
+      "arr_terminal": "1",
+      "cs_airline_iata": "VN",
+      "cs_flight_iata": "VN787",
+      "counter": 52259
+    },
+    {
+      "airline_iata": "VN",
+      "airline_icao": "HVN",
+      "flight_number": "787",
+      "flight_iata": "VN787",
+      "dep_iata": "HAN",
+      "arr_iata": "SYD",
+      "dep_time": "23:40",
+      "arr_time": "12:15",
+      "dep_time_utc": "16:40",
+      "arr_time_utc": "02:15",
+      "duration": 575,
+      "days": [
+        "fri",
+        "sun",
+        "thu",
+        "tue"
+      ],
+      "dep_terminal": "T2",
+      "arr_terminal": "1",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 56923
+    }
+  ],
+  "count": 2,
+  "cached_at": 1779734593.049141
+}

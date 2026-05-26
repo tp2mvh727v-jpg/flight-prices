@@ -8,6 +8,369 @@
 import { getAirport } from './state.js';
 
 // ——————————————————————————————————————————
+// OpenFlights Route Database (lazy-loaded)
+// ——————————————————————————————————————————
+let _routeDBCache = null;
+let _routeDBPromise = null;
+
+async function _loadRouteDB() {
+  if (_routeDBCache) return _routeDBCache;
+  if (_routeDBPromise) return _routeDBPromise;
+  
+  _routeDBPromise = fetch('/static/data/route_db.json')
+    .then(r => r.json())
+    .then(data => {
+      _routeDBCache = data;
+      console.log('[flightService] Route DB loaded:', data.stats.total_routes, 'real routes,', data.stats.route_pairs, 'pairs');
+      return data;
+    })
+    .catch(e => {
+      console.warn('[flightService] Route DB unavailable, using fallback:', e.message);
+      _routeDBPromise = null;
+      return null;
+    });
+  
+  return _routeDBPromise;
+}
+
+// Kick off load immediately (non-blocking)
+_loadRouteDB();
+
+// ——————————————————————————————————————————
+// Verified Route Anchors (v5.15)
+// These are the "credibility anchors" — iconic routes with verified aircraft, flight numbers,
+// and schedules. They NEVER randomize and always appear when searched.
+// ——————————————————————————————————————————
+let _verifiedRouteCache = null;
+let _verifiedRoutePromise = null;
+
+async function _loadVerifiedRoutes() {
+  if (_verifiedRouteCache) return _verifiedRouteCache;
+  if (_verifiedRoutePromise) return _verifiedRoutePromise;
+
+  _verifiedRoutePromise = fetch('/static/data/verified_routes.json')
+    .then(r => r.json())
+    .then(data => {
+      _verifiedRouteCache = data.routes || {};
+      console.log('[flightService] Verified routes loaded:', Object.keys(_verifiedRouteCache).length, 'iconic routes');
+      return _verifiedRouteCache;
+    })
+    .catch(e => {
+      console.warn('[flightService] Verified routes unavailable:', e.message);
+      _verifiedRoutePromise = null;
+      return {};
+    });
+
+  return _verifiedRoutePromise;
+}
+
+// Kick off immediately
+_loadVerifiedRoutes();
+
+function _getVerifiedRoute(origin, dest) {
+  if (!_verifiedRouteCache) return null;
+  return _verifiedRouteCache[origin + '-' + dest] || null;
+}
+
+function _getVerifiedRouteByCarrier(origin, dest, carrierCode) {
+  const vr = _getVerifiedRoute(origin, dest);
+  if (vr && vr.airline === carrierCode) return vr;
+  return null;
+}
+
+// ——————————————————————————————————————————
+// AirLabs Route Cache (server-side, fetched on demand)
+// ——————————————————————————————————————————
+const _airlabsCache = new Map();  // key: "ORIGIN-DEST" → {routes, ...}
+
+async function _fetchAirLabsRoutes(origin, dest) {
+  const cacheKey = `${origin}-${dest}`;
+  if (_airlabsCache.has(cacheKey)) return _airlabsCache.get(cacheKey);
+  
+  try {
+    const resp = await fetch(`/api/airlabs-routes?dep=${origin}&arr=${dest}`);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    if (data.error) return null;
+    _airlabsCache.set(cacheKey, data);
+    return data;
+  } catch (e) {
+    console.warn('[flightService] AirLabs fetch failed:', e.message);
+    return null;
+  }
+}
+
+/**
+ * Enrich mock itineraries with real AirLabs schedule data.
+ * Modifies the leg/segment objects (departure, arrival, duration, flight_number)
+ * so that adaptFlightAPIResponse picks up the real values.
+ *
+ * V5.11 FIX: apiData.itineraries lack airline_iata — carrier is on legs→carriers.
+ * We now receive full apiData, look up the carrier via legs+carriers maps,
+ * and modify leg/segment objects (the source adaptFlightAPIResponse reads from).
+ */
+function _enrichWithAirLabs(apiData, airlabsData, origin, dest) {
+  if (!airlabsData?.routes?.length) return 0;
+  if (!apiData?.itineraries?.length) return 0;
+
+  // v5.15: Skip enrichment for verified route carriers — their data is already curated
+  const verifiedRoute = _getVerifiedRoute(origin, dest);
+  const skipCarrier = verifiedRoute ? verifiedRoute.airline : null;
+
+  const { itineraries, legs, segments, carriers } = apiData;
+  
+  // Build lookup maps
+  const carrierById = new Map((carriers || []).map(c => [c.id, c]));
+  const legById = new Map((legs || []).map(l => [l.id, l]));
+  const segmentById = new Map((segments || []).map(s => [s.id, s]));
+  
+  // Index AirLabs routes by airline, excluding codeshares
+  const routesByAirline = new Map();
+  for (const r of airlabsData.routes) {
+    if (!r.airline_iata || r.cs_airline_iata) continue; // skip codeshares
+    if (!routesByAirline.has(r.airline_iata)) routesByAirline.set(r.airline_iata, []);
+    routesByAirline.get(r.airline_iata).push(r);
+  }
+  
+  let enriched = 0;
+  
+  for (const itin of itineraries) {
+    // Look up carrier via primary leg
+    const primaryLeg = legById.get(itin.leg_ids?.[0]);
+    if (!primaryLeg) continue;
+    const mainCarrierId = primaryLeg.marketing_carrier_ids?.[0];
+    const mainCarrier = carrierById.get(mainCarrierId);
+    if (!mainCarrier) continue;
+    
+    const carrierCode = mainCarrier.code;
+    
+    // v5.15: Skip enrichment for verified route carriers — preserve curated data
+    if (skipCarrier && carrierCode === skipCarrier) continue;
+    
+    const matches = routesByAirline.get(carrierCode);
+    if (!matches?.length) continue;
+    
+    // Pick a random real route for this carrier
+    const real = matches[Math.floor(Math.random() * matches.length)];
+    
+    // --- Override the LEG object (adaptFlightAPIResponse reads from these) ---
+    if (real.dep_time && real.arr_time) {
+      // Reconstruct ISO timestamps using the original date + real HH:MM
+      const origDepISO = primaryLeg.departure; // "2026-05-26T08:00:00"
+      const datePart = (origDepISO || '').split('T')[0];
+      primaryLeg.departure = `${datePart}T${real.dep_time}:00`;
+      // Arrival: handle multi-day by checking if arr_time < dep_time
+      if (real.arr_time < real.dep_time) {
+        // Next day arrival
+        const arrDate = new Date(datePart);
+        arrDate.setDate(arrDate.getDate() + 1);
+        const pad = n => String(n).padStart(2, '0');
+        const arrDateStr = `${arrDate.getFullYear()}-${pad(arrDate.getMonth()+1)}-${pad(arrDate.getDate())}`;
+        primaryLeg.arrival = `${arrDateStr}T${real.arr_time}:00`;
+      } else {
+        primaryLeg.arrival = `${datePart}T${real.arr_time}:00`;
+      }
+    }
+    if (real.duration) {
+      primaryLeg.duration = real.duration;
+    }
+    
+    // --- Override SEGMENT flight numbers (at least the first segment) ---
+    const segIds = primaryLeg.segment_ids || [];
+    if (segIds.length > 0 && real.flight_number) {
+      const firstSeg = segmentById.get(segIds[0]);
+      if (firstSeg) {
+        firstSeg.marketing_flight_number = real.flight_iata || `${carrierCode}${real.flight_number}`;
+      }
+    }
+    
+    // --- Override segment departure/arrival/duration to match ---
+    for (const sid of segIds) {
+      const seg = segmentById.get(sid);
+      if (!seg) continue;
+      const segDur = real.duration || seg.duration || 0;
+      const pad = n => String(n).padStart(2, '0');
+      if (real.dep_time) {
+        const datePartSeg = (seg.departure || '').split('T')[0];
+        seg.departure = `${datePartSeg}T${real.dep_time}:00`;
+      }
+      if (real.arr_time) {
+        // v5.14 FIX: Compute arrival date from departure date + duration,
+        // NOT from the original mock segment's arrival date (which may have a spurious day offset).
+        const depDatePart = (seg.departure || '').split('T')[0];
+        const depDate = new Date(depDatePart);
+        const depMin = _timeToMinutes(real.dep_time);
+        const arrMin = _timeToMinutes(real.arr_time);
+        if (depMin !== null && arrMin !== null) {
+          // If arr_time < dep_time, it crosses midnight
+          const flightMin = arrMin >= depMin ? arrMin - depMin : arrMin - depMin + 1440;
+          const arrDate = new Date(depDate);
+          arrDate.setMinutes(arrDate.getMinutes() + flightMin);
+          seg.arrival = `${arrDate.getFullYear()}-${pad(arrDate.getMonth()+1)}-${pad(arrDate.getDate())}T${real.arr_time}:00`;
+        } else {
+          // Fallback: duration-based
+          const arrDate = new Date(depDate);
+          arrDate.setMinutes(arrDate.getMinutes() + segDur);
+          seg.arrival = `${arrDate.getFullYear()}-${pad(arrDate.getMonth()+1)}-${pad(arrDate.getDate())}T${real.arr_time}:00`;
+        }
+      }
+      if (real.duration) {
+        seg.duration = real.duration;
+      }
+    }
+    
+    // Save additional metadata (operating days, terminals) for future use
+    itin._airlabs_days = real.days || [];
+    itin._airlabs_dep_terminal = real.dep_terminal || '';
+    itin._airlabs_arr_terminal = real.arr_terminal || '';
+    
+    enriched++;
+  }
+  
+  return enriched;
+}
+
+function _getRealCarriers(origin, dest) {
+  if (!_routeDBCache?.routes) return null;
+  return _routeDBCache.routes[origin]?.[dest] || null;
+}
+
+function _getRealEquipment(origin, dest, carrier) {
+  if (!_routeDBCache?.equipment) return null;
+  const raw = _routeDBCache.equipment[`${origin}-${dest}`]?.[carrier];
+  if (!raw) return null;
+  // OpenFlights format: array of space-separated strings or single string
+  if (Array.isArray(raw)) return raw.join(' ');
+  return typeof raw === 'string' ? raw : null;
+}
+
+// ——————————————————————————————————————————
+// AirLabs Real Connecting Flights (v5.12)
+// ——————————————————————————————————————————
+
+const _connectionsCache = new Map();  // key: "ORIGIN-DEST" → connections array
+
+function _timeToMinutes(t) {
+  /** HH:MM → minutes since midnight */
+  if (!t) return null;
+  const parts = String(t).split(':');
+  return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+}
+
+async function _fetchRealConnections(origin, dest, dateStr) {
+  const cacheKey = `${origin}-${dest}`;
+  if (_connectionsCache.has(cacheKey)) return _connectionsCache.get(cacheKey);
+  
+  try {
+    const resp = await fetch(`/api/airlabs-connections?dep=${origin}&arr=${dest}&date=${dateStr}`);
+    if (!resp.ok) return [];
+    const data = await resp.json();
+    if (data.error || !data.connections) return [];
+    _connectionsCache.set(cacheKey, data.connections);
+    return data.connections;
+  } catch (e) {
+    console.warn('[flightService] Connections fetch failed:', e.message);
+    return [];
+  }
+}
+
+/**
+ * Convert an AirLabs connection into the internal price result format.
+ * Mimics the structure produced by adaptFlightAPIResponse so flight cards render it.
+ */
+function _adaptConnectionToResult(conn, origin, dest, dateStr) {
+  const hub = conn.hub;
+  const ac1 = conn.airline_leg1 || conn.airline;
+  const ac2 = conn.airline_leg2 || conn.airline;
+  const carrier1 = MOCK_CARRIERS.find(c => c.code === ac1) || { code: ac1, name: ac1, id: Math.abs(_hashCode(ac1)) % 90000 + 10000 };
+  const carrier2 = MOCK_CARRIERS.find(c => c.code === ac2) || { code: ac2, name: ac2, id: Math.abs(_hashCode(ac2)) % 90000 + 10000 };
+  
+  // Aircraft selection
+  const seg1Dist = _estimateDistance(origin, hub);
+  const seg2Dist = _estimateDistance(hub, dest);
+  const acCode1 = _pickAircraftForSegment(ac1, origin, hub, false).code;
+  const acCode2 = _pickAircraftForSegment(ac2, hub, dest, true).code;
+  
+  // Duration formatting
+  const totalMin = conn.total_duration;
+  const durH = Math.floor(totalMin / 60);
+  const durM = Math.floor(totalMin % 60);
+  const layH = Math.floor(conn.layover_min / 60);
+  const layM = Math.floor(conn.layover_min % 60);
+  
+  // Flight numbers
+  const fn1 = conn.leg1.flight_iata || `${ac1}${conn.leg1.flight_number}`;
+  const fn2 = conn.leg2.flight_iata || `${ac2}${conn.leg2.flight_number}`;
+  
+  // Price: base on total distance + layover penalty (shorter layover = higher price, premium routing)
+  const totalDist = seg1Dist + seg2Dist;
+  const price = Math.round((totalDist * 0.55 + conn.layover_min * 2 + 2000 + Math.random() * 800) / 10) * 10;
+  
+  const segObjs = [
+    {
+      aircraft: acCode1, flight_no: fn1, airline: ac1,
+      departure: conn.leg1.dep_time, arrival: conn.leg1.arr_time,
+      origin, destination: hub, distance_km: seg1Dist,
+      range_pct: Math.round(seg1Dist / ((AIRCRAFT_DB[acCode1] || {}).rangeKm || 8000) * 100),
+    },
+    {
+      aircraft: acCode2, flight_no: fn2, airline: ac2,
+      departure: conn.leg2.dep_time, arrival: conn.leg2.arr_time,
+      origin: hub, destination: dest, distance_km: seg2Dist,
+      range_pct: Math.round(seg2Dist / ((AIRCRAFT_DB[acCode2] || {}).rangeKm || 8000) * 100),
+    },
+  ];
+  
+  // Aircraft for geek data (use the long-haul segment)
+  const acCode = acCode2;
+  const acInfo = AIRCRAFT_DB[acCode] || {};
+  const registration = _generateRegistration(carrier1.code, acCode);
+  const aircraftAge = _generateAircraftAge(acCode);
+  const livery = _generateLivery(carrier1.code);
+  
+  return {
+    price,
+    currency: 'CNY',
+    stops: 1,
+    airline: ac1,
+    airline_name: carrier1.name,
+    departure: conn.leg1.dep_time,
+    arrival: conn.leg2.arr_time,
+    duration: `${durH}h${String(durM).padStart(2,'0')}m`,
+    layover_airport: hub,
+    layover_duration: `${layH}h${String(layM).padStart(2,'0')}m`,
+    aircraft_code: acCode,
+    aircraft_type: _classifyAircraftType(acCode),
+    origin, dest,
+    segments: segObjs,
+    source: 'AirLabs (real schedule)',
+    deep_link: '',
+    booking_token: `conn-${ac1}${ac2}-${hub}-${dateStr}`,
+    // Tag: real connection
+    _real_connection: true,
+    _match_type: conn.match_type,
+    _connection_airlines: conn.airline,
+    // Geek data (simplified for connections)
+    geek: {
+      registration,
+      exactModel: acInfo.fullName || acCode,
+      modelCode: acInfo.model || acCode,
+      manufacturer: acInfo.manufacturer || '—',
+      aircraftAge: `${aircraftAge}年`,
+      ageLabel: _ageLabel(aircraftAge),
+      liveryName: livery.name,
+      liveryType: livery.type,
+      engines: ENGINE_DB[acCode] || '2x 涡扇发动机',
+      seatCount: acInfo.seats || 200,
+      seatLayout: acInfo.layout || [3,3,3],
+      seatRows: acInfo.rows || 30,
+      telemetry: _generateTelemetry(acCode, totalDist),
+      recentLogs: _generateRecentLogs(origin, dest, dateStr, ac1),
+    },
+  };
+}
+
+// ——————————————————————————————————————————
 // Feature Toggle
 // ——————————————————————————————————————————
 const ENABLE_REAL_API = false;
@@ -184,6 +547,11 @@ const AIRPORT_COUNTRY_JS = {
 };
 
 function canOperateRouteJS(airlineCode, originAirport, destAirport) {
+  // v5.9: Check OpenFlights route DB — real data beats country logic
+  const realCarriers = _getRealCarriers(originAirport, destAirport);
+  if (realCarriers && realCarriers.includes(airlineCode)) return true;
+  
+  // Fall back to country-based deduction
   const origC = AIRPORT_COUNTRY_JS[originAirport];
   const destC = AIRPORT_COUNTRY_JS[destAirport];
   const airC = AIRLINE_COUNTRY_JS[airlineCode];
@@ -218,6 +586,16 @@ const AIRCRAFT_DB = {
   'B739': { manufacturer: '波音', model: '737-900ER', fullName: '波音 737-900ER', seats: 189, layout: [3,3], rows: 33, cruiseAlt: 37000, cruiseMach: 0.785, rangeKm: 5925 },
   'B38M': { manufacturer: '波音', model: '737 MAX 8', fullName: '波音 737 MAX 8', seats: 178, layout: [3,3], rows: 31, cruiseAlt: 38000, cruiseMach: 0.79, rangeKm: 6570 },
   'B763': { manufacturer: '波音', model: '767-300ER', fullName: '波音 767-300ER', seats: 218, layout: [2,3,2], rows: 29, cruiseAlt: 38000, cruiseMach: 0.80, rangeKm: 11070 },
+  // v5.12: OpenFlights mapped types not in original DB
+  'A319': { manufacturer: '空客', model: 'A319-100', fullName: '空客 A319', seats: 134, layout: [3,3], rows: 23, cruiseAlt: 37000, cruiseMach: 0.78, rangeKm: 6950 },
+  'A343': { manufacturer: '空客', model: 'A340-300', fullName: '空客 A340-300', seats: 295, layout: [2,4,2], rows: 38, cruiseAlt: 39000, cruiseMach: 0.82, rangeKm: 13500 },
+  'A345': { manufacturer: '空客', model: 'A340-500', fullName: '空客 A340-500', seats: 293, layout: [2,4,2], rows: 38, cruiseAlt: 40000, cruiseMach: 0.82, rangeKm: 16670 },
+  'A346': { manufacturer: '空客', model: 'A340-600', fullName: '空客 A340-600', seats: 326, layout: [2,4,2], rows: 42, cruiseAlt: 39000, cruiseMach: 0.83, rangeKm: 14450 },
+  'B744': { manufacturer: '波音', model: '747-400', fullName: '波音 747-400', seats: 416, layout: [3,4,3], rows: 35, cruiseAlt: 39000, cruiseMach: 0.85, rangeKm: 13450 },
+  'B752': { manufacturer: '波音', model: '757-200', fullName: '波音 757-200', seats: 200, layout: [3,3], rows: 34, cruiseAlt: 38000, cruiseMach: 0.80, rangeKm: 7250 },
+  'B753': { manufacturer: '波音', model: '757-300', fullName: '波音 757-300', seats: 243, layout: [3,3], rows: 41, cruiseAlt: 38000, cruiseMach: 0.80, rangeKm: 6290 },
+  'B772': { manufacturer: '波音', model: '777-200ER', fullName: '波音 777-200ER', seats: 313, layout: [3,3,3], rows: 36, cruiseAlt: 39000, cruiseMach: 0.84, rangeKm: 13080 },
+  'B773': { manufacturer: '波音', model: '777-300', fullName: '波音 777-300', seats: 368, layout: [3,4,3], rows: 38, cruiseAlt: 39000, cruiseMach: 0.84, rangeKm: 11135 },
 };
 
 const ENGINE_DB = {
@@ -238,6 +616,16 @@ const ENGINE_DB = {
   'B738': '2x CFM56-7B27',
   'B739': '2x CFM56-7B27',
   'B38M': '2x CFM LEAP-1B28',
+  // v5.12: OpenFlights mapped types
+  'A319': '2x CFM56-5B6',
+  'A343': '4x CFM56-5C4',
+  'A345': '4x Rolls-Royce Trent 556',
+  'A346': '4x Rolls-Royce Trent 556',
+  'B744': '4x GE CF6-80C2B1F',
+  'B752': '2x Rolls-Royce RB211-535E4',
+  'B753': '2x Rolls-Royce RB211-535E4',
+  'B772': '2x GE90-94B',
+  'B773': '2x PW4098',
 };
 
 // Livery pool: 80% standard, 20% special
@@ -580,8 +968,8 @@ const CHINA_AIRPORTS = new Set([
 // Map `${origin}-${dest}` → { airline, flightNo, aircraft }
 const FIXED_AIRCRAFT_ROUTES = {
   // === China ↔ USA ===
-  'PEK-JFK': { airline:'CA', flightNo:'CA981', aircraft:'B748' },
-  'JFK-PEK': { airline:'CA', flightNo:'CA982', aircraft:'B748' },
+  'PEK-JFK': { airline:'CA', flightNo:'CA981', aircraft:'B77W' },
+  'JFK-PEK': { airline:'CA', flightNo:'CA982', aircraft:'B77W' },
   'PEK-LAX': { airline:'CA', flightNo:'CA983', aircraft:'B77W' },
   'LAX-PEK': { airline:'CA', flightNo:'CA984', aircraft:'B77W' },
   'PEK-SFO': { airline:'CA', flightNo:'CA985', aircraft:'B77W' },
@@ -765,6 +1153,10 @@ const _DIRECT_PAIRS = new Set();
 })();
 
 function _hasDirectFlight(origin, dest) {
+  // v5.9: Check OpenFlights route DB first
+  const realCarriers = _getRealCarriers(origin, dest);
+  if (realCarriers && realCarriers.length > 0) return true;
+  // Fall back to static hardcoded pairs
   return _DIRECT_PAIRS.has(origin + '-' + dest);
 }
 
@@ -864,22 +1256,50 @@ function generateMockFlightAPIResponse(origin, dest, dateStr) {
   const isIntl = _isInternationalRoute(origin, dest);
   let availableCarriers;
   if (isIntl) {
-    // International routes: carriers that can serve this route —
-    // either directly (home country matches origin/dest) or via their home hub (transit)
+    // v5.9: Prefer real carriers from OpenFlights route DB
+    const realCarriers = _getRealCarriers(origin, dest) || [];
+    const realCarrierSet = new Set(realCarriers);
+    
     availableCarriers = _shuffle(MOCK_CARRIERS.filter(c => {
       if (!(AIRLINE_WIDEBODY[c.code] || []).length > 0) return false;
-      // Direct: home country matches origin or dest
+      // Direct: carrier actually flies this route per OpenFlights data
+      if (realCarrierSet.has(c.code)) return true;
+      // Country-based deduction as fallback
       if (canOperateRouteJS(c.code, origin, dest)) return true;
       // Transit: has a hub airport, and that hub is not origin or dest
       const hub = AIRLINE_HUBS[c.code];
       return hub && hub !== origin && hub !== dest;
     }));
+    
+    // Push real carriers to front (they get used first)
+    availableCarriers.sort((a, b) => {
+      const aReal = realCarrierSet.has(a.code) ? 1 : 0;
+      const bReal = realCarrierSet.has(b.code) ? 1 : 0;
+      return bReal - aReal;
+    });
   } else {
     // Domestic routes: only Chinese carriers
     const chineseCodes = new Set(['CA','CZ','MU','HU','3U','MF','ZH']);
     availableCarriers = _shuffle(MOCK_CARRIERS.filter(c => chineseCodes.has(c.code)));
   }
   const usedCarriers = availableCarriers.slice(0, 8 + Math.floor(Math.random() * 5));
+
+  // v5.15: Verified route anchors — force verified carrier into results, always direct
+  const verifiedRoute = _getVerifiedRoute(origin, dest);
+  if (verifiedRoute) {
+    const verifiedCarrier = MOCK_CARRIERS.find(c => c.code === verifiedRoute.airline);
+    if (verifiedCarrier && !usedCarriers.some(c => c.code === verifiedRoute.airline)) {
+      // Prepend verified carrier so it's always the first result
+      usedCarriers.unshift(verifiedCarrier);
+      // Ensure we don't exceed a reasonable cap
+      if (usedCarriers.length > 14) usedCarriers.pop();
+    }
+    // Also ensure the verified origin/dest pair is marked as direct
+    if (!_DIRECT_PAIRS.has(origin + '-' + dest)) {
+      _DIRECT_PAIRS.add(origin + '-' + dest);
+      _DIRECT_PAIRS.add(dest + '-' + origin);
+    }
+  }
 
   // Build places, carriers, agents maps
   const placesMap = new Map();
@@ -982,25 +1402,43 @@ function generateMockFlightAPIResponse(origin, dest, dateStr) {
       _addPlace(layoverCode, layoverAirport?.name || layoverCode);
     }
 
-    // Assign aircraft code — check fixed route for this carrier first
-    const fixedRoute = stops === 0 ? _getFixedRoute(origin, dest) : null;
+    // Assign aircraft code — check verified route first, then fixed route
+    const fullVerified = _getVerifiedRouteByCarrier(origin, dest, carrier.code);
+    const fixedRoute = !fullVerified && stops === 0 ? _getFixedRoute(origin, dest) : null;
     const useFixed = fixedRoute && fixedRoute.airline === carrier.code;
-    const acCode = useFixed ? fixedRoute.aircraft : _pickAircraftForSegment(carrier.code, origin, dest, stops === 0).code;
+    const acCode = fullVerified ? fullVerified.aircraft
+      : (useFixed ? fixedRoute.aircraft : _pickAircraftForSegment(carrier.code, origin, dest, stops === 0).code);
 
-    // Generate departure/arrival times — minutes always on 0/5 boundaries
-    const baseDepHour = stops === 0
-      ? _pickRandom([0, 1, 7, 8, 15, 16, 22, 23])
-      : _pickRandom([7, 8, 9, 10, 14, 15, 20, 21]);
-    const depMinute = _pickRandom([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]);
+    // Generate departure/arrival times — verified routes use real schedule
+    let baseDepHour, depMinute, totalMinutes;
+    let seg1Minutes = 0, seg2Minutes = 0, layoverMinutes = 0;
+    if (fullVerified) {
+      // Use verified schedule times
+      const depParts = fullVerified.departure.split(':');
+      baseDepHour = parseInt(depParts[0], 10);
+      depMinute = parseInt(depParts[1], 10);
+      totalMinutes = fullVerified.duration;
+      // Verified routes are always direct (stop=0)
+      stops = 0;
+      layoverCode = null;
+      // Record verified source for debugging
+      carrier._verifiedRoute = fullVerified;
+    } else {
+      // Generate random departure/arrival as before
+      baseDepHour = stops === 0
+        ? _pickRandom([0, 1, 7, 8, 15, 16, 22, 23])
+        : _pickRandom([7, 8, 9, 10, 14, 15, 20, 21]);
+      depMinute = _pickRandom([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55]);
 
-    // v5.10: Per-segment flight duration based on segment distance and aircraft cruise speed
-    const seg1Dist = stops > 0 ? _estimateDistance(origin, layoverCode) : routeDistance;
-    const seg1Speed = 830; // km/h typical medium/long-haul cruise
-    const seg1Minutes = stops > 0 ? Math.round(seg1Dist / seg1Speed * 60) : Math.round(routeDistance / seg1Speed * 60);
+      // v5.10: Per-segment flight duration based on segment distance and aircraft cruise speed
+      const seg1Dist = stops > 0 ? _estimateDistance(origin, layoverCode) : routeDistance;
+      const seg1Speed = 830; // km/h typical medium/long-haul cruise
+      seg1Minutes = stops > 0 ? Math.round(seg1Dist / seg1Speed * 60) : Math.round(routeDistance / seg1Speed * 60);
     
-    const seg2Minutes = stops > 0 ? Math.round(_estimateDistance(layoverCode, dest) / seg1Speed * 60) : 0;
-    const layoverMinutes = stops > 0 ? 60 + Math.floor(Math.random() * 120) : 0; // v5.10: tighter layover
-    const totalMinutes = seg1Minutes + seg2Minutes + layoverMinutes;
+      seg2Minutes = stops > 0 ? Math.round(_estimateDistance(layoverCode, dest) / seg1Speed * 60) : 0;
+      layoverMinutes = stops > 0 ? 60 + Math.floor(Math.random() * 120) : 0;
+      totalMinutes = seg1Minutes + seg2Minutes + layoverMinutes;
+    }
 
     const depDateTime = safeDate(dateStr);
     depDateTime.setHours(baseDepHour, depMinute, 0, 0);
@@ -1021,7 +1459,7 @@ function generateMockFlightAPIResponse(origin, dest, dateStr) {
         departure: _iso(depDateTime),
         arrival: _iso(arrDateTime),
         duration: totalMinutes,
-        marketing_flight_number: useFixed ? fixedRoute.flightNo : _genFlightNumber(origin, dest),
+        marketing_flight_number: fullVerified ? fullVerified.flightNo : (useFixed ? fixedRoute.flightNo : _genFlightNumber(origin, dest)),
         marketing_carrier_id: carrier.id,
         operating_carrier_id: carrier.id,
         mode: 'flight',
@@ -1437,7 +1875,33 @@ export async function getFlights(origin, dest, date) {
   } else {
     apiData = generateMockFlightAPIResponse(origin, dest, date);
   }
-  return adaptFlightAPIResponse(apiData, origin, dest, date);
+  
+  // v5.11: Enrich with real AirLabs schedule data (pass full apiData so we can look up carriers via legs)
+  const airlabsData = await _fetchAirLabsRoutes(origin, dest);
+  if (airlabsData && apiData?.itineraries) {
+    const n = _enrichWithAirLabs(apiData, airlabsData, origin, dest);
+    console.log(`[flightService] AirLabs enriched: ${n} itineraries for ${origin}→${dest}`);
+  }
+  
+  const result = adaptFlightAPIResponse(apiData, origin, dest, date);
+
+  // v5.12: Inject real connecting flights from AirLabs transit hubs
+  const connections = await _fetchRealConnections(origin, dest, date);
+  if (connections.length > 0) {
+    const realConnResults = connections.map(c => _adaptConnectionToResult(c, origin, dest, date));
+    // Insert real connections at the top (after direct flights, before mock connecting flights)
+    // Find the first mock connecting flight (stops > 0) and insert before it
+    const mockConnIdx = result.prices.findIndex(p => p.stops > 0 && !p._real_connection);
+    if (mockConnIdx >= 0) {
+      result.prices.splice(mockConnIdx, 0, ...realConnResults);
+    } else {
+      // No mock connecting flights → append
+      result.prices.push(...realConnResults);
+    }
+    console.log(`[flightService] Real connections injected: ${realConnResults.length} for ${origin}→${dest}`);
+  }
+  
+  return result;
 }
 
 /**
@@ -1616,10 +2080,82 @@ function _guessAircraft(carrierCode, stops) {
   return _pickRandom(allWide.length ? allWide : WIDE_BODY);
 }
 
+// ——— OpenFlights 3-char equipment code → AIRCRAFT_DB key mapper ———
+// Parses space-separated string like "320 333 77W" and maps to DB keys
+const _EQUIPMENT_MAP = {
+  // Airbus
+  '319': 'A319', '320': 'A320', '321': 'A321', '32N': 'A20N', '32Q': 'A20N',
+  '332': 'A332', '333': 'A333', '339': 'A339', '338': 'A338',
+  '343': 'A343', '345': 'A345', '346': 'A346',
+  '359': 'A359', '351': 'A35K', '35X': 'A35K',
+  '388': 'A388',
+  // Boeing
+  '737': 'B738', '73G': 'B738', '738': 'B738', '739': 'B739', '73H': 'B738',
+  '7M8': 'B38M', '7M9': 'B38M', 'MAX': 'B38M',
+  '744': 'B744', '74E': 'B744', '748': 'B748',
+  '752': 'B752', '753': 'B753',
+  '762': 'B763', '763': 'B763', '764': 'B763',
+  '772': 'B77W', '773': 'B77W', '77W': 'B77W', '77L': 'B77W',
+  '788': 'B788', '789': 'B789', '78X': 'B78X', '781': 'B78X',
+  // Others
+  'CRJ': null, 'ERJ': null, 'E70': null, 'E75': null, 'E90': null,
+  'ATR': null, 'DH4': null, 'DH3': null, 'SF3': null, '100': null,
+  'SU9': null, 'AR1': null, 'AR8': null, 'M80': null, 'M83': null,
+  'M90': null, '717': null, '146': null, 'CS1': null, 'CS3': null,
+  '290': null, '190': null, '195': null, 'AB6': null,
+};
+
+function _mapEquipment(rawString) {
+  /** Parse OpenFlights space-separated equipment string → array of valid AIRCRAFT_DB keys. */
+  if (!rawString || typeof rawString !== 'string') return [];
+  return rawString.split(/\s+/)
+    .map(code => _EQUIPMENT_MAP[code] || null)
+    .filter((code, i, arr) => code && AIRCRAFT_DB[code] && arr.indexOf(code) === i);
+  // Dedup: openflights often has "333" and "333" duplicates → filter by first occurrence
+}
+
 /** Pick an aircraft that can actually fly the given segment distance.
  *  @returns {{ code: string, distanceKm: number, rangeKm: number, rangePct: number }} */
 function _pickAircraftForSegment(carrierCode, origin, dest, preferredWide = false) {
   const segDist = _estimateDistance(origin, dest);
+  
+  // v5.12: Parse OpenFlights space-separated equipment string via _mapEquipment
+  const realEquipRaw = _getRealEquipment(origin, dest, carrierCode);
+  const realEquip = _mapEquipment(realEquipRaw);
+  // v5.14: Validate OpenFlights equipment against airline's ACTUAL fleet
+  // Filters out stale data (e.g., CX A340 which was retired >15 years ago)
+  const fleetWide = (AIRLINE_WIDEBODY[carrierCode] || []).filter(Boolean);
+  const fleetNarrow = (AIRLINE_NARROWBODY[carrierCode] || []).filter(Boolean);
+  const fleetSet = new Set([...fleetWide, ...fleetNarrow]);
+  const fleetFiltered = realEquip.filter(code => fleetSet.has(code));
+
+  // If OpenFlights data exists but is stale (all filtered) or too sparse,
+  // fall back to airline's known fleet instead of trusting bad data
+  let equipPool = fleetFiltered;
+  if (fleetFiltered.length < 2 && segDist > 2500) {
+    // Long-haul segment with sparse/stale OpenFlights data:
+    // supplement with all widebody types from the airline's actual fleet
+    equipPool = [...new Set([...fleetFiltered, ...fleetWide])];
+  }
+  
+  if (equipPool.length > 0) {
+    const validEquip = equipPool
+      .map(code => ({ code, db: AIRCRAFT_DB[code] }))
+      .filter(e => e.db && e.db.rangeKm >= segDist * 0.8);
+    if (validEquip.length > 0) {
+      const wide = validEquip.filter(e => (e.db.rangeKm >= 10000 || e.db.seats >= 250));
+      const candidates = preferredWide && wide.length > 0 ? wide : validEquip;
+      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      return {
+        code: pick.code,
+        distanceKm: segDist,
+        rangeKm: pick.db.rangeKm,
+        rangePct: Math.round(segDist / pick.db.rangeKm * 100),
+        source: fleetFiltered.length >= 2 ? 'openflights' : 'openflights+fleet',
+      };
+    }
+  }
+  
   const wideList = (AIRLINE_WIDEBODY[carrierCode] || []).filter(Boolean);
   const narrowList = (AIRLINE_NARROWBODY[carrierCode] || []).filter(Boolean);
   

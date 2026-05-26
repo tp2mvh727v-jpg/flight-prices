@@ -1,0 +1,29 @@
+{
+  "dep_iata": "NRT",
+  "arr_iata": "SYD",
+  "routes": [
+    {
+      "airline_iata": null,
+      "airline_icao": "QQE",
+      "flight_number": "103",
+      "flight_iata": null,
+      "dep_iata": "NRT",
+      "arr_iata": "SYD",
+      "dep_time": "10:30",
+      "arr_time": "20:44",
+      "dep_time_utc": "01:30",
+      "arr_time_utc": "10:44",
+      "duration": null,
+      "days": [
+        "wed"
+      ],
+      "dep_terminal": null,
+      "arr_terminal": null,
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 200
+    }
+  ],
+  "count": 1,
+  "cached_at": 1779734589.713771
+}

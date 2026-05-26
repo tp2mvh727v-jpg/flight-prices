@@ -1,0 +1,89 @@
+{
+  "dep_iata": "MUC",
+  "arr_iata": "JFK",
+  "routes": [
+    {
+      "airline_iata": "LH",
+      "airline_icao": "DLH",
+      "flight_number": "410",
+      "flight_iata": "LH410",
+      "dep_iata": "MUC",
+      "arr_iata": "JFK",
+      "dep_time": "12:10",
+      "arr_time": "15:00",
+      "dep_time_utc": "10:10",
+      "arr_time_utc": "19:00",
+      "duration": 530,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "1",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 58896
+    },
+    {
+      "airline_iata": "SN",
+      "airline_icao": "BEL",
+      "flight_number": "7234",
+      "flight_iata": "SN7234",
+      "dep_iata": "MUC",
+      "arr_iata": "JFK",
+      "dep_time": "12:10",
+      "arr_time": "15:00",
+      "dep_time_utc": "10:10",
+      "arr_time_utc": "19:00",
+      "duration": 530,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "1",
+      "cs_airline_iata": "LH",
+      "cs_flight_iata": "LH410",
+      "counter": 58361
+    },
+    {
+      "airline_iata": "UA",
+      "airline_icao": "UAL",
+      "flight_number": "8871",
+      "flight_iata": "UA8871",
+      "dep_iata": "MUC",
+      "arr_iata": "JFK",
+      "dep_time": "12:10",
+      "arr_time": "15:00",
+      "dep_time_utc": "10:10",
+      "arr_time_utc": "19:00",
+      "duration": 530,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "1",
+      "cs_airline_iata": "LH",
+      "cs_flight_iata": "LH410",
+      "counter": 58361
+    }
+  ],
+  "count": 3,
+  "cached_at": 1779739996.535296
+}

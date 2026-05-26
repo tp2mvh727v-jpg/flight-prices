@@ -1,0 +1,55 @@
+{
+  "dep_iata": "PEK",
+  "arr_iata": "KUL",
+  "routes": [
+    {
+      "airline_iata": "CA",
+      "airline_icao": "CCA",
+      "flight_number": "871",
+      "flight_iata": "CA871",
+      "dep_iata": "PEK",
+      "arr_iata": "KUL",
+      "dep_time": "16:20",
+      "arr_time": "23:00",
+      "dep_time_utc": "08:20",
+      "arr_time_utc": "15:00",
+      "duration": 400,
+      "days": [
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "3",
+      "arr_terminal": "1",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 157251
+    },
+    {
+      "airline_iata": "CA",
+      "airline_icao": "CCA",
+      "flight_number": "871",
+      "flight_iata": "CA871",
+      "dep_iata": "PEK",
+      "arr_iata": "KUL",
+      "dep_time": "16:30",
+      "arr_time": "23:00",
+      "dep_time_utc": "08:30",
+      "arr_time_utc": "15:00",
+      "duration": 390,
+      "days": [
+        "fri",
+        "mon"
+      ],
+      "dep_terminal": "3",
+      "arr_terminal": "1",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 66519
+    }
+  ],
+  "count": 2,
+  "cached_at": 1779734591.86463
+}

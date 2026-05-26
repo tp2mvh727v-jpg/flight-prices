@@ -1,0 +1,62 @@
+{
+  "dep_iata": "KUL",
+  "arr_iata": "CDG",
+  "routes": [
+    {
+      "airline_iata": "AT",
+      "airline_icao": "RAM",
+      "flight_number": "5607",
+      "flight_iata": "AT5607",
+      "dep_iata": "KUL",
+      "arr_iata": "CDG",
+      "dep_time": "23:40",
+      "arr_time": "06:55",
+      "dep_time_utc": "15:40",
+      "arr_time_utc": "04:55",
+      "duration": 795,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "1",
+      "arr_terminal": "2A",
+      "cs_airline_iata": "MH",
+      "cs_flight_iata": "MH20",
+      "counter": 31747
+    },
+    {
+      "airline_iata": "MH",
+      "airline_icao": "MAS",
+      "flight_number": "20",
+      "flight_iata": "MH20",
+      "dep_iata": "KUL",
+      "arr_iata": "CDG",
+      "dep_time": "23:40",
+      "arr_time": "06:55",
+      "dep_time_utc": "15:40",
+      "arr_time_utc": "04:55",
+      "duration": 795,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "1",
+      "arr_terminal": "2A",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 102805
+    }
+  ],
+  "count": 2,
+  "cached_at": 1779735225.86759
+}

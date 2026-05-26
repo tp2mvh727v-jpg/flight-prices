@@ -1,0 +1,62 @@
+{
+  "dep_iata": "CAN",
+  "arr_iata": "LHR",
+  "routes": [
+    {
+      "airline_iata": "3U",
+      "airline_icao": "CSC",
+      "flight_number": "7103",
+      "flight_iata": "3U7103",
+      "dep_iata": "CAN",
+      "arr_iata": "LHR",
+      "dep_time": "13:40",
+      "arr_time": "19:20",
+      "dep_time_utc": "05:40",
+      "arr_time_utc": "18:20",
+      "duration": 760,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "4",
+      "cs_airline_iata": "CZ",
+      "cs_flight_iata": "CZ303",
+      "counter": 30208
+    },
+    {
+      "airline_iata": "CZ",
+      "airline_icao": "CSN",
+      "flight_number": "303",
+      "flight_iata": "CZ303",
+      "dep_iata": "CAN",
+      "arr_iata": "LHR",
+      "dep_time": "13:40",
+      "arr_time": "19:20",
+      "dep_time_utc": "05:40",
+      "arr_time_utc": "18:20",
+      "duration": 760,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "4",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 109291
+    }
+  ],
+  "count": 2,
+  "cached_at": 1779735164.519763
+}

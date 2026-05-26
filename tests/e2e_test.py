@@ -160,10 +160,12 @@ def main():
 
             # Wait for results view to become active
             page.wait_for_selector("#view-results.active", timeout=15000)
-            # Wait for result rows (.table-row or .flight-card)
-            page.wait_for_selector(".table-row, .flight-card", timeout=15000)
-            result_rows = page.locator(".table-row, .flight-card").count()
-            print(f"  PASS — Results view active, {result_rows} flight rows rendered")
+            # Wait for real data rows (skeleton rows also have .table-row class, so
+            # we must wait for an actual data indicator like .geek-profile-btn)
+            page.wait_for_selector(".geek-profile-btn", timeout=15000)
+            page.wait_for_timeout(500)  # Let all DOM updates settle
+            result_rows = page.locator(".geek-profile-btn").count()
+            print(f"  PASS — Results view active, {result_rows} flight rows with profile buttons rendered")
 
             # ============================================================
             # TEST 5: Click a flight → flight profile panel opens

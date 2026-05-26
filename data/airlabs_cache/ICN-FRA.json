@@ -1,0 +1,109 @@
+{
+  "dep_iata": "ICN",
+  "arr_iata": "FRA",
+  "routes": [
+    {
+      "airline_iata": "KE",
+      "airline_icao": "KAL",
+      "flight_number": "945",
+      "flight_iata": "KE945",
+      "dep_iata": "ICN",
+      "arr_iata": "FRA",
+      "dep_time": "10:50",
+      "arr_time": "17:40",
+      "dep_time_utc": "01:50",
+      "arr_time_utc": "15:40",
+      "duration": 830,
+      "days": [
+        "fri",
+        "sun",
+        "wed"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "2",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 119192
+    },
+    {
+      "airline_iata": "LH",
+      "airline_icao": "DLH",
+      "flight_number": "713",
+      "flight_iata": "LH713",
+      "dep_iata": "ICN",
+      "arr_iata": "FRA",
+      "dep_time": "12:20",
+      "arr_time": "18:40",
+      "dep_time_utc": "03:20",
+      "arr_time_utc": "16:40",
+      "duration": 800,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "1",
+      "arr_terminal": "1",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 49806
+    },
+    {
+      "airline_iata": "OZ",
+      "airline_icao": "AAR",
+      "flight_number": "541",
+      "flight_iata": "OZ541",
+      "dep_iata": "ICN",
+      "arr_iata": "FRA",
+      "dep_time": "10:50",
+      "arr_time": "17:40",
+      "dep_time_utc": "01:50",
+      "arr_time_utc": "15:40",
+      "duration": 830,
+      "days": [
+        "mon",
+        "sat",
+        "thu",
+        "tue"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "1",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 16949
+    },
+    {
+      "airline_iata": "TW",
+      "airline_icao": "TWB",
+      "flight_number": "403",
+      "flight_iata": "TW403",
+      "dep_iata": "ICN",
+      "arr_iata": "FRA",
+      "dep_time": "09:50",
+      "arr_time": "16:50",
+      "dep_time_utc": "00:50",
+      "arr_time_utc": "14:50",
+      "duration": 840,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "1",
+      "arr_terminal": "2",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 107845
+    }
+  ],
+  "count": 4,
+  "cached_at": 1779735229.34916
+}

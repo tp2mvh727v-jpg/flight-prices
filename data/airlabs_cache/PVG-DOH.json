@@ -1,0 +1,85 @@
+{
+  "dep_iata": "PVG",
+  "arr_iata": "DOH",
+  "routes": [
+    {
+      "airline_iata": "AY",
+      "airline_icao": "FIN",
+      "flight_number": "6690",
+      "flight_iata": "AY6690",
+      "dep_iata": "PVG",
+      "arr_iata": "DOH",
+      "dep_time": "00:35",
+      "arr_time": "05:30",
+      "dep_time_utc": "16:35",
+      "arr_time_utc": "02:30",
+      "duration": 595,
+      "days": [
+        "mon",
+        "sat",
+        "thu"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "HIA",
+      "cs_airline_iata": "QR",
+      "cs_flight_iata": "QR871",
+      "counter": 10501
+    },
+    {
+      "airline_iata": "IB",
+      "airline_icao": "IBE",
+      "flight_number": "6340",
+      "flight_iata": "IB6340",
+      "dep_iata": "PVG",
+      "arr_iata": "DOH",
+      "dep_time": "00:35",
+      "arr_time": "05:30",
+      "dep_time_utc": "16:35",
+      "arr_time_utc": "02:30",
+      "duration": 595,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "HIA",
+      "cs_airline_iata": "QR",
+      "cs_flight_iata": "QR871",
+      "counter": 22236
+    },
+    {
+      "airline_iata": "QR",
+      "airline_icao": "QTR",
+      "flight_number": "871",
+      "flight_iata": "QR871",
+      "dep_iata": "PVG",
+      "arr_iata": "DOH",
+      "dep_time": "00:35",
+      "arr_time": "05:30",
+      "dep_time_utc": "16:35",
+      "arr_time_utc": "02:30",
+      "duration": 595,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "HIA",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 217188
+    }
+  ],
+  "count": 3,
+  "cached_at": 1779735184.129188
+}

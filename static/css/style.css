@@ -4747,8 +4747,8 @@ footer a { color: var(--primary); text-decoration: none; }
   /* Ensure buttons are tappable */
   .geek-profile-btn,
   .track-btn {
-    min-height: 40px;
-    min-width: 40px;
+    min-height: 44px;
+    min-width: 44px;
     font-size: 0.75rem;
     padding: 6px 10px;
   }
@@ -4845,4 +4845,30 @@ footer a { color: var(--primary); text-decoration: none; }
 }
 .skip-to-content:focus {
   top: 0;
+}
+
+/* ============================================================
+   Search Loading State — pulse animation for result transitions
+   ============================================================ */
+@keyframes searchPulse {
+  0% { opacity: 0.3; transform: scale(0.95); }
+  50% { opacity: 0.6; transform: scale(1.02); }
+  100% { opacity: 0.3; transform: scale(0.95); }
+}
+.search-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  padding: 80px 20px;
+  color: var(--muted);
+  font-size: 1rem;
+  animation: searchPulse 1.8s ease-in-out infinite;
+}
+.search-loading-icon {
+  font-size: 2rem;
+  opacity: 0.6;
+}
+
 }

@@ -1,0 +1,62 @@
+{
+  "dep_iata": "HAN",
+  "arr_iata": "FRA",
+  "routes": [
+    {
+      "airline_iata": "UX",
+      "airline_icao": "AEA",
+      "flight_number": "3949",
+      "flight_iata": "UX3949",
+      "dep_iata": "HAN",
+      "arr_iata": "FRA",
+      "dep_time": "23:00",
+      "arr_time": "06:00",
+      "dep_time_utc": "16:00",
+      "arr_time_utc": "04:00",
+      "duration": 720,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "T2",
+      "arr_terminal": "2",
+      "cs_airline_iata": "VN",
+      "cs_flight_iata": "VN37",
+      "counter": 24823
+    },
+    {
+      "airline_iata": "VN",
+      "airline_icao": "HVN",
+      "flight_number": "37",
+      "flight_iata": "VN37",
+      "dep_iata": "HAN",
+      "arr_iata": "FRA",
+      "dep_time": "23:00",
+      "arr_time": "06:00",
+      "dep_time_utc": "16:00",
+      "arr_time_utc": "04:00",
+      "duration": 720,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "T2",
+      "arr_terminal": "2",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 27963
+    }
+  ],
+  "count": 2,
+  "cached_at": 1779735233.442739
+}

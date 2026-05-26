@@ -54,7 +54,11 @@ export async function renderResults() {
   const lastColHeader = isRT ? '选择' : '更多信息';
   document.getElementById('singleDaySection').innerHTML = `
     <div class="section">
-      <div class="section-header">
+      <div class="search-loading" style="padding:20px;text-align:center;">
+        <div class="search-loading-icon">🛰</div>
+        <div>正在扫描航线网络...</div>
+      </div>
+      <div class="section-header" style="display:none;">
         <h2>${legLabel} — <span class="skeleton-line" style="display:inline-block;width:90px;vertical-align:middle;"></span></h2>
         ${isRT ? '<p class="section-step-hint">请在下方选择一个去程航班，再选择返程航班以计算往返总价</p>' : ''}
       </div>
@@ -911,9 +915,25 @@ function renderMiniChart(results, activeIdx) {
               if (!items.length) return '';
               const idx = items[0].dataIndex;
               const r = trendResultsCache[idx];
-              return r ? formatTooltipDate(r.date) : items[0].label;
+              if (!r) return items[0].label;
+              const d = new Date(r.date);
+              const weekdays = ['周日','周一','周二','周三','周四','周五','周六'];
+              return `${formatTooltipDate(r.date)} ${weekdays[d.getDay()]}`;
             },
-            label: ctx => `最低价: ¥${ctx.parsed.y.toLocaleString()}`,
+            label: ctx => {
+              const price = ctx.parsed.y;
+              const currentPrice = trendResultsCache.find(r => r.date === AppState.departDate)?.lowest;
+              const allPrices = trendResultsCache.map(r => r.lowest).filter(p => p > 0);
+              const minPrice = Math.min(...allPrices);
+              let lines = [`💰 最低价: ¥${price.toLocaleString()}`];
+              if (currentPrice && price !== currentPrice) {
+                const diff = price - currentPrice;
+                const sign = diff > 0 ? '📈 贵' : '📉 便宜';
+                lines.push(`${sign} ¥${Math.abs(diff).toLocaleString()} (vs 当天)`);
+              }
+              if (price === minPrice) lines.push('🔴 14天内最低价');
+              return lines;
+            },
           }
         }
       },

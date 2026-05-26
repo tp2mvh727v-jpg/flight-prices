@@ -1,0 +1,83 @@
+{
+  "dep_iata": "TPE",
+  "arr_iata": "SYD",
+  "routes": [
+    {
+      "airline_iata": "CI",
+      "airline_icao": "CAL",
+      "flight_number": "51",
+      "flight_iata": "CI51",
+      "dep_iata": "TPE",
+      "arr_iata": "SYD",
+      "dep_time": "23:30",
+      "arr_time": "10:45",
+      "dep_time_utc": "15:30",
+      "arr_time_utc": "00:45",
+      "duration": 555,
+      "days": [
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "1",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 127048
+    },
+    {
+      "airline_iata": "KL",
+      "airline_icao": "KLM",
+      "flight_number": "4991",
+      "flight_iata": "KL4991",
+      "dep_iata": "TPE",
+      "arr_iata": "SYD",
+      "dep_time": "23:30",
+      "arr_time": "10:45",
+      "dep_time_utc": "15:30",
+      "arr_time_utc": "00:45",
+      "duration": 555,
+      "days": [
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "1",
+      "cs_airline_iata": "CI",
+      "cs_flight_iata": "CI51",
+      "counter": 126817
+    },
+    {
+      "airline_iata": "QF",
+      "airline_icao": "QFA",
+      "flight_number": "8730",
+      "flight_iata": "QF8730",
+      "dep_iata": "TPE",
+      "arr_iata": "SYD",
+      "dep_time": "23:30",
+      "arr_time": "10:45",
+      "dep_time_utc": "15:30",
+      "arr_time_utc": "00:45",
+      "duration": 555,
+      "days": [
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "1",
+      "cs_airline_iata": "CI",
+      "cs_flight_iata": "CI51",
+      "counter": 126817
+    }
+  ],
+  "count": 3,
+  "cached_at": 1779734590.725379
+}

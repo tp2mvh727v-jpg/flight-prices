@@ -2,6 +2,7 @@ import os
 import time
 import random
 import socket
+import json
 from datetime import datetime, timedelta
 
 from flask import Flask, jsonify, render_template, request
@@ -12,6 +13,13 @@ from scraper import (scrape_google_flights, scrape_date_range,
                       _classify_aircraft, _get_typical_aircraft,
                       FLIGHT_NUMBERS, AIRLINE_WIDEBODY, can_operate_route,
                       AIRLINE_COUNTRY, AIRPORT_COUNTRY)
+
+# AirLabs route fetcher (server-side caching, no per-user API calls)
+try:
+    from airlabs_fetcher import fetch_routes as airlabs_fetch_routes, get_cache_stats
+except ImportError:
+    airlabs_fetch_routes = None
+    get_cache_stats = None
 
 load_dotenv()
 
@@ -278,7 +286,7 @@ def make_best_offer(day_prices):
 def api_status():
     return jsonify({
         "mode": "google_flights",
-        "method": "Playwright 抓取 Google Flights",
+        "method": "Google Flights (Playwright)",
         "free": True,
     })
 
@@ -377,6 +385,305 @@ def api_analytics():
     for ev in events:
         app.logger.info("[Analytics] %s: %s", ev.get("event", "?"), ev.get("data", {}))
     return jsonify({"status": "ok", "count": len(events)})
+
+
+# ── AirLabs Routes API (server-side caching) ──
+@app.route("/api/airlabs-routes")
+def api_airlabs_routes():
+    """Fetch real flight schedule data from AirLabs (cached server-side)."""
+    if not airlabs_fetch_routes:
+        return jsonify({"error": "AirLabs fetcher not available", "routes": []}), 503
+    
+    dep = request.args.get('dep', '').strip().upper()
+    arr = request.args.get('arr', '').strip().upper()
+    force = request.args.get('force', '0') == '1'
+    
+    if not dep or not arr:
+        return jsonify({"error": "dep and arr required", "routes": []}), 400
+    
+    result = airlabs_fetch_routes(dep, arr, force_refresh=force)
+    return jsonify(result)
+
+
+@app.route("/api/airlabs-cache-stats")
+def api_airlabs_cache_stats():
+    """Return AirLabs cache statistics."""
+    if not get_cache_stats:
+        return jsonify({"error": "AirLabs not available"}), 503
+    return jsonify(get_cache_stats())
+
+# ── AirLabs Connecting Flights API ──
+# Matches real schedules through transit hubs.
+# Rules: same airline > same alliance > layover < 24h > detour < 2x
+
+# Airline → hub (subset of AIRLINE_HUBS in flightService.js)
+_TRANSIT_HUBS = {
+    'KE': 'ICN', 'OZ': 'ICN',  # Korean Air + Asiana → Seoul
+    'CX': 'HKG',                # Cathay Pacific → Hong Kong
+    'MU': 'PVG', 'CZ': 'CAN', '3U': 'CTU', 'CA': 'PEK',  # Chinese carriers
+    'SQ': 'SIN',                # Singapore Airlines
+    'JL': 'HND', 'NH': 'NRT',  # JAL + ANA → Tokyo
+    'BR': 'TPE', 'CI': 'TPE',  # EVA + China Airlines → Taipei
+    'TG': 'BKK',                # Thai Airways → Bangkok
+    'MH': 'KUL',                # Malaysia Airlines → KL
+    'VN': 'HAN',                # Vietnam Airlines → Hanoi
+    'QF': 'SYD',                # Qantas → Sydney
+    'EK': 'DXB', 'QR': 'DOH', 'EY': 'AUH',  # Middle East
+    'TK': 'IST',                # Turkish
+    'GA': 'CGK',                # Garuda → Jakarta
+}
+
+# Airport coordinates for detour calculation
+_AIRPORT_COORDS = {
+    'PEK': (40.08,116.58), 'PKX': (39.51,116.41), 'PVG': (31.14,121.81),
+    'CAN': (23.39,113.31), 'CTU': (30.58,103.95), 'SZX': (22.64,113.81),
+    'HKG': (22.31,113.92), 'ICN': (37.46,126.44), 'NRT': (35.76,140.39),
+    'HND': (35.55,139.78), 'TPE': (25.08,121.23), 'SIN': (1.36,103.99),
+    'BKK': (13.69,100.75), 'KUL': (2.75,101.71), 'HAN': (21.22,105.81),
+    'SYD': (-33.87,151.21), 'MEL': (-37.67,144.84),
+    'DXB': (25.25,55.36), 'DOH': (25.27,51.61), 'AUH': (24.43,54.65),
+    'IST': (41.26,28.74), 'CGK': (-6.13,106.66),
+    'DEL': (28.57,77.10), 'BOM': (19.09,72.87),
+    'LHR': (51.47,-0.46), 'CDG': (49.01,2.55), 'FRA': (50.04,8.56),
+    'AMS': (52.31,4.76), 'LAX': (33.94,-118.41), 'JFK': (40.64,-73.78),
+    'SFO': (37.62,-122.38), 'ORD': (41.98,-87.90),
+    'ADD': (8.98,38.80), 'JNB': (-26.13,28.24), 'CAI': (30.12,31.41),
+}
+import math
+
+def _haversine_km(lat1, lon1, lat2, lon2):
+    R = 6371
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+def _candidate_hubs(origin, dest):
+    """Return candidate transit hubs filtered by geographic detour ratio < 2.0x, capped at 10."""
+    orig_coords = _AIRPORT_COORDS.get(origin)
+    dest_coords = _AIRPORT_COORDS.get(dest)
+    if not orig_coords or not dest_coords:
+        return list(set(h for h in _TRANSIT_HUBS.values() if h not in (origin, dest)))[:10]
+
+    direct_dist = _haversine_km(*orig_coords, *dest_coords)
+    
+    hubs_with_score = []
+    seen = set()
+    for airline, hub in _TRANSIT_HUBS.items():
+        if hub in (origin, dest) or hub in seen:
+            continue
+        hub_coords = _AIRPORT_COORDS.get(hub)
+        if not hub_coords:
+            continue
+        detour = _haversine_km(*orig_coords, *hub_coords) + _haversine_km(*hub_coords, *dest_coords)
+        ratio = detour / max(direct_dist, 1000)
+        if ratio < 2.0:
+            hubs_with_score.append((hub, ratio))
+            seen.add(hub)
+    
+    # Sort by detour ratio (closest first), keep all within 2x
+    hubs_with_score.sort(key=lambda x: x[1])
+    return [h for h, _ in hubs_with_score]
+
+
+# Alliance data (mirrors flight-profile.js AIRLINE_ALLIANCE)
+_AIRLINE_ALLIANCE = {
+    'CA': 'star', 'NH': 'star', 'NZ': 'star', 'OZ': 'star', 'BR': 'star',
+    'LH': 'star', 'SQ': 'star', 'TG': 'star', 'UA': 'star', 'AC': 'star',
+    'TK': 'star', 'ZH': 'star', 'ET': 'star',
+    'AA': 'oneworld', 'BA': 'oneworld', 'CX': 'oneworld', 'JL': 'oneworld',
+    'MH': 'oneworld', 'QF': 'oneworld', 'QR': 'oneworld',
+    'AF': 'skyteam', 'CI': 'skyteam', 'DL': 'skyteam', 'GA': 'skyteam',
+    'KE': 'skyteam', 'MU': 'skyteam', 'VN': 'skyteam',
+}
+
+
+def _time_to_minutes(t):
+    """HH:MM → minutes since midnight."""
+    if not t:
+        return None
+    parts = str(t).split(':')
+    return int(parts[0]) * 60 + int(parts[1])
+
+
+def _build_connections(dep, arr, date_str):
+    """Build real connecting flights through transit hubs.
+    Returns list of connection dicts, ranked best→worst.
+    """
+    if not airlabs_fetch_routes:
+        return []
+
+    hubs = _candidate_hubs(dep, arr)
+    connections = []
+
+    for hub in hubs:
+        # Fetch both legs (cached server-side)
+        leg1_data = airlabs_fetch_routes(dep, hub)
+        leg2_data = airlabs_fetch_routes(hub, arr)
+
+        leg1_routes = leg1_data.get('routes', []) if isinstance(leg1_data, dict) else []
+        leg2_routes = leg2_data.get('routes', []) if isinstance(leg2_data, dict) else []
+
+        if not leg1_routes or not leg2_routes:
+            continue
+
+        # Index by airline
+        leg1_by_airline = {}
+        for r in leg1_routes:
+            code = r.get('airline_iata')
+            if not code or r.get('cs_airline_iata'):
+                continue
+            leg1_by_airline.setdefault(code, []).append(r)
+
+        leg2_by_airline = {}
+        for r in leg2_routes:
+            code = r.get('airline_iata')
+            if not code or r.get('cs_airline_iata'):
+                continue
+            leg2_by_airline.setdefault(code, []).append(r)
+
+        # --- PASS 1: Same airline ---
+        for airline in leg1_by_airline:
+            if airline not in leg2_by_airline:
+                continue
+            for r1 in leg1_by_airline[airline]:
+                arr1_min = _time_to_minutes(r1.get('arr_time'))
+                dur1 = r1.get('duration', 0)
+                if arr1_min is None:
+                    continue
+                for r2 in leg2_by_airline[airline]:
+                    dep2_min = _time_to_minutes(r2.get('dep_time'))
+                    dur2 = r2.get('duration') or 0
+                    if dep2_min is None:
+                        continue
+                    # Layover: time from arrival of leg1 to departure of leg2
+                    # Handle day wrap: if leg2 departs "earlier" than leg1 arrives, it's next day
+                    raw_gap = dep2_min - arr1_min
+                    if raw_gap < 60:  # same-day but too tight (<1h) → next day
+                        raw_gap += 1440
+                    if raw_gap < 60:  # still too tight after wrap
+                        continue
+                    if raw_gap > 1440:  # >24h layover
+                        continue
+
+                    layover_min = raw_gap
+                    total_dur = dur1 + dur2 + layover_min
+                    detour_ratio = (dur1 + dur2) / max(dur1, 60)
+
+                    connections.append({
+                        'airline': airline,
+                        'hub': hub,
+                        'leg1': {
+                            'flight_iata': r1.get('flight_iata'),
+                            'flight_number': r1.get('flight_number'),
+                            'dep_time': r1.get('dep_time'),
+                            'arr_time': r1.get('arr_time'),
+                            'duration': dur1,
+                            'dep_terminal': r1.get('dep_terminal'),
+                            'arr_terminal': r1.get('arr_terminal'),
+                        },
+                        'leg2': {
+                            'flight_iata': r2.get('flight_iata'),
+                            'flight_number': r2.get('flight_number'),
+                            'dep_time': r2.get('dep_time'),
+                            'arr_time': r2.get('arr_time'),
+                            'duration': r2.get('duration', 0),
+                            'dep_terminal': r2.get('dep_terminal'),
+                            'arr_terminal': r2.get('arr_terminal'),
+                        },
+                        'total_duration': total_dur,
+                        'layover_min': layover_min,
+                        'match_type': 'same_airline',
+                        'score': 100 - layover_min / 10,  # shorter layover = better
+                    })
+
+        # --- PASS 2: Same alliance ---
+        alliance1_map = {}
+        for code in leg1_by_airline:
+            al = _AIRLINE_ALLIANCE.get(code)
+            if al:
+                alliance1_map.setdefault(al, []).append(code)
+
+        for al_key in alliance1_map:
+            ally_codes_leg2 = [c for c in leg2_by_airline if _AIRLINE_ALLIANCE.get(c) == al_key]
+            if not ally_codes_leg2:
+                continue
+
+            for ac1 in alliance1_map[al_key]:
+                for r1 in leg1_by_airline[ac1]:
+                    arr1_min = _time_to_minutes(r1.get('arr_time'))
+                    dur1 = r1.get('duration', 0)
+                    if arr1_min is None:
+                        continue
+                    for ac2 in ally_codes_leg2:
+                        if ac1 == ac2:
+                            continue  # already handled in PASS 1
+                        for r2 in leg2_by_airline[ac2]:
+                            dep2_min = _time_to_minutes(r2.get('dep_time'))
+                            dur2 = r2.get('duration') or 0
+                            if dep2_min is None:
+                                continue
+                            raw_gap = dep2_min - arr1_min
+                            if raw_gap < 60:
+                                raw_gap += 1440
+                            if raw_gap < 60 or raw_gap > 1440:
+                                continue
+
+                            layover_min = raw_gap
+                            total_dur = dur1 + dur2 + layover_min
+
+                            connections.append({
+                                'airline': f"{ac1}/{ac2}",
+                                'airline_leg1': ac1,
+                                'airline_leg2': ac2,
+                                'hub': hub,
+                                'alliance': al_key,
+                                'leg1': {
+                                    'flight_iata': r1.get('flight_iata'),
+                                    'flight_number': r1.get('flight_number'),
+                                    'dep_time': r1.get('dep_time'),
+                                    'arr_time': r1.get('arr_time'),
+                                    'duration': dur1,
+                                },
+                                'leg2': {
+                                    'flight_iata': r2.get('flight_iata'),
+                                    'flight_number': r2.get('flight_number'),
+                                    'dep_time': r2.get('dep_time'),
+                                    'arr_time': r2.get('arr_time'),
+                                    'duration': r2.get('duration', 0),
+                                },
+                                'total_duration': total_dur,
+                                'layover_min': layover_min,
+                                'match_type': 'same_alliance',
+                                'score': 70 - layover_min / 10,
+                            })
+
+    # Sort by match type priority, then by score
+    type_order = {'same_airline': 0, 'same_alliance': 1}
+    connections.sort(key=lambda c: (type_order.get(c['match_type'], 9), -c['score']))
+
+    return connections[:12]  # max 12 results
+
+
+@app.route("/api/airlabs-connections")
+def api_airlabs_connections():
+    """Build real connecting flights through transit hubs."""
+    if not airlabs_fetch_routes:
+        return jsonify({"error": "AirLabs fetcher not available", "connections": []}), 503
+
+    dep = request.args.get('dep', '').strip().upper()
+    arr = request.args.get('arr', '').strip().upper()
+    date_str = request.args.get('date', '').strip()
+
+    if not dep or not arr:
+        return jsonify({"error": "dep and arr required", "connections": []}), 400
+
+    connections = _build_connections(dep, arr, date_str)
+    return jsonify({
+        'dep': dep, 'arr': arr,
+        'connections': connections,
+        'count': len(connections),
+    })
 
 
 @app.route("/api/watchlist-refresh", methods=["POST"])
@@ -483,12 +790,12 @@ if __name__ == "__main__":
     lan_ip = _get_lan_ip()
     banner = f"""
 ┌────────────────────────────────────────────────────────┐
-│  🚀 机票展示网页 v5.6.4 启动成功！                     │
+│  🚀 机票展示网页 v5.14 启动成功！                      │
 ├────────────────────────────────────────────────────────┤
 │  💻 本地开发访问:  http://localhost:5088               │
 │  📱 手机同步测试:  http://{lan_ip}:5088                │
 ├────────────────────────────────────────────────────────┤
-│  📡 数据源: Google Flights (Playwright 抓取, 免费)     │
+│  📡 数据源: Google Flights                           │
 └────────────────────────────────────────────────────────┘
 """
     print(banner)

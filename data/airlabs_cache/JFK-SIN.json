@@ -1,0 +1,56 @@
+{
+  "dep_iata": "JFK",
+  "arr_iata": "SIN",
+  "routes": [
+    {
+      "airline_iata": "SQ",
+      "airline_icao": "SIA",
+      "flight_number": "23",
+      "flight_iata": "SQ23",
+      "dep_iata": "JFK",
+      "arr_iata": "SIN",
+      "dep_time": "22:15",
+      "arr_time": "05:30",
+      "dep_time_utc": "02:15",
+      "arr_time_utc": "21:30",
+      "duration": 1155,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "4",
+      "arr_terminal": "3",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 132457
+    },
+    {
+      "airline_iata": "SQ",
+      "airline_icao": "SIA",
+      "flight_number": "9023",
+      "flight_iata": "SQ9023",
+      "dep_iata": "JFK",
+      "arr_iata": "SIN",
+      "dep_time": "14:00",
+      "arr_time": "21:15",
+      "dep_time_utc": "18:00",
+      "arr_time_utc": "13:15",
+      "duration": 1155,
+      "days": [
+        "thu"
+      ],
+      "dep_terminal": "4",
+      "arr_terminal": "2",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 304
+    }
+  ],
+  "count": 2,
+  "cached_at": 1779739988.7117598
+}

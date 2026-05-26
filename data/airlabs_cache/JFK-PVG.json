@@ -1,0 +1,135 @@
+{
+  "dep_iata": "JFK",
+  "arr_iata": "PVG",
+  "routes": [
+    {
+      "airline_iata": "CA",
+      "airline_icao": "CAO",
+      "flight_number": "1050",
+      "flight_iata": "CA1050",
+      "dep_iata": "JFK",
+      "arr_iata": "PVG",
+      "dep_time": "02:10",
+      "arr_time": "06:23",
+      "dep_time_utc": "06:10",
+      "arr_time_utc": "22:23",
+      "duration": 973,
+      "days": [
+        "tue"
+      ],
+      "dep_terminal": null,
+      "arr_terminal": "2",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 313
+    },
+    {
+      "airline_iata": "CA",
+      "airline_icao": "CAO",
+      "flight_number": "1050",
+      "flight_iata": "CA1050",
+      "dep_iata": "JFK",
+      "arr_iata": "PVG",
+      "dep_time": "20:05",
+      "arr_time": "00:24",
+      "dep_time_utc": "00:05",
+      "arr_time_utc": "16:24",
+      "duration": 979,
+      "days": [
+        "mon"
+      ],
+      "dep_terminal": null,
+      "arr_terminal": "2",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 644
+    },
+    {
+      "airline_iata": "CA",
+      "airline_icao": "CAO",
+      "flight_number": "1078",
+      "flight_iata": "CA1078",
+      "dep_iata": "JFK",
+      "arr_iata": "PVG",
+      "dep_time": "13:15",
+      "arr_time": "17:21",
+      "dep_time_utc": "17:15",
+      "arr_time_utc": "09:21",
+      "duration": 966,
+      "days": [
+        "thu"
+      ],
+      "dep_terminal": null,
+      "arr_terminal": "2",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 358
+    },
+    {
+      "airline_iata": "CA",
+      "airline_icao": "CAO",
+      "flight_number": "1078",
+      "flight_iata": "CA1078",
+      "dep_iata": "JFK",
+      "arr_iata": "PVG",
+      "dep_time": "15:55",
+      "arr_time": "19:47",
+      "dep_time_utc": "19:55",
+      "arr_time_utc": "11:47",
+      "duration": 952,
+      "days": [
+        "sat"
+      ],
+      "dep_terminal": null,
+      "arr_terminal": "2",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 657
+    },
+    {
+      "airline_iata": "CA",
+      "airline_icao": "CAO",
+      "flight_number": "1080",
+      "flight_iata": "CA1080",
+      "dep_iata": "JFK",
+      "arr_iata": "PVG",
+      "dep_time": "22:20",
+      "arr_time": "01:58",
+      "dep_time_utc": "02:20",
+      "arr_time_utc": "17:58",
+      "duration": 938,
+      "days": [
+        "sun"
+      ],
+      "dep_terminal": null,
+      "arr_terminal": "2",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 284
+    },
+    {
+      "airline_iata": "MU",
+      "airline_icao": "CES",
+      "flight_number": "588",
+      "flight_iata": "MU588",
+      "dep_iata": "JFK",
+      "arr_iata": "PVG",
+      "dep_time": "16:25",
+      "arr_time": "19:25",
+      "dep_time_utc": "20:25",
+      "arr_time_utc": "11:25",
+      "duration": 900,
+      "days": [
+        "mon",
+        "wed"
+      ],
+      "dep_terminal": "1",
+      "arr_terminal": "1",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 89105
+    }
+  ],
+  "count": 6,
+  "cached_at": 1779739987.795611
+}

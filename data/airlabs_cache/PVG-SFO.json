@@ -1,0 +1,85 @@
+{
+  "dep_iata": "PVG",
+  "arr_iata": "SFO",
+  "routes": [
+    {
+      "airline_iata": "CA",
+      "airline_icao": "CCA",
+      "flight_number": "7209",
+      "flight_iata": "CA7209",
+      "dep_iata": "PVG",
+      "arr_iata": "SFO",
+      "dep_time": "12:10",
+      "arr_time": "08:55",
+      "dep_time_utc": "04:10",
+      "arr_time_utc": "15:55",
+      "duration": 705,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "INTL",
+      "cs_airline_iata": "UA",
+      "cs_flight_iata": "UA858",
+      "counter": 121568
+    },
+    {
+      "airline_iata": "MU",
+      "airline_icao": "CES",
+      "flight_number": "589",
+      "flight_iata": "MU589",
+      "dep_iata": "PVG",
+      "arr_iata": "SFO",
+      "dep_time": "12:30",
+      "arr_time": "09:05",
+      "dep_time_utc": "04:30",
+      "arr_time_utc": "16:05",
+      "duration": 695,
+      "days": [
+        "mon",
+        "sat",
+        "thu"
+      ],
+      "dep_terminal": "1",
+      "arr_terminal": "INTL",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 48881
+    },
+    {
+      "airline_iata": "UA",
+      "airline_icao": "UAL",
+      "flight_number": "858",
+      "flight_iata": "UA858",
+      "dep_iata": "PVG",
+      "arr_iata": "SFO",
+      "dep_time": "12:10",
+      "arr_time": "08:55",
+      "dep_time_utc": "04:10",
+      "arr_time_utc": "15:55",
+      "duration": 705,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "2",
+      "arr_terminal": "INTL",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 121568
+    }
+  ],
+  "count": 3,
+  "cached_at": 1779740005.36936
+}

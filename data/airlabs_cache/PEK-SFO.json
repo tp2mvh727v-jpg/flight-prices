@@ -1,0 +1,104 @@
+{
+  "dep_iata": "PEK",
+  "arr_iata": "SFO",
+  "routes": [
+    {
+      "airline_iata": "CA",
+      "airline_icao": "CCA",
+      "flight_number": "7205",
+      "flight_iata": "CA7205",
+      "dep_iata": "PEK",
+      "arr_iata": "SFO",
+      "dep_time": "17:25",
+      "arr_time": "14:20",
+      "dep_time_utc": "09:25",
+      "arr_time_utc": "21:20",
+      "duration": 715,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "3",
+      "arr_terminal": "INTL",
+      "cs_airline_iata": "UA",
+      "cs_flight_iata": "UA889",
+      "counter": 234955
+    },
+    {
+      "airline_iata": "CA",
+      "airline_icao": "CCA",
+      "flight_number": "985",
+      "flight_iata": "CA985",
+      "dep_iata": "PEK",
+      "arr_iata": "SFO",
+      "dep_time": "12:55",
+      "arr_time": "10:30",
+      "dep_time_utc": "04:55",
+      "arr_time_utc": "17:30",
+      "duration": 755,
+      "days": [
+        "sat"
+      ],
+      "dep_terminal": "3",
+      "arr_terminal": "INTL",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 4348
+    },
+    {
+      "airline_iata": "CA",
+      "airline_icao": "CCA",
+      "flight_number": "985",
+      "flight_iata": "CA985",
+      "dep_iata": "PEK",
+      "arr_iata": "SFO",
+      "dep_time": "13:00",
+      "arr_time": "10:30",
+      "dep_time_utc": "05:00",
+      "arr_time_utc": "17:30",
+      "duration": 750,
+      "days": [
+        "wed"
+      ],
+      "dep_terminal": "3",
+      "arr_terminal": "INTL",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 56407
+    },
+    {
+      "airline_iata": "UA",
+      "airline_icao": "UAL",
+      "flight_number": "889",
+      "flight_iata": "UA889",
+      "dep_iata": "PEK",
+      "arr_iata": "SFO",
+      "dep_time": "17:25",
+      "arr_time": "14:20",
+      "dep_time_utc": "09:25",
+      "arr_time_utc": "21:20",
+      "duration": 715,
+      "days": [
+        "fri",
+        "mon",
+        "sat",
+        "sun",
+        "thu",
+        "tue",
+        "wed"
+      ],
+      "dep_terminal": "3",
+      "arr_terminal": "INTL",
+      "cs_airline_iata": null,
+      "cs_flight_iata": null,
+      "counter": 234955
+    }
+  ],
+  "count": 4,
+  "cached_at": 1779740001.486057
+}
