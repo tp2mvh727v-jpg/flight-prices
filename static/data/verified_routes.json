@@ -8,18 +8,18 @@
       "airline": "CA",
       "airlineName": "中国国航",
       "flightNo": "CA981",
-      "aircraft": "B77W",
+      "aircraft": "B748",
       "departure": "13:00",
       "arrival": "13:30",
       "duration": 810,
       "days": [1,2,3,4,5,6,7],
-      "note": "国航旗舰航线，波音777-300ER执飞"
+      "note": "国航旗舰航线，波音747-8执飞"
     },
     "JFK-PEK": {
       "airline": "CA",
       "airlineName": "中国国航",
       "flightNo": "CA982",
-      "aircraft": "B77W",
+      "aircraft": "B748",
       "departure": "16:50",
       "arrival": "18:20",
       "duration": 810,
@@ -154,22 +154,23 @@
       "airline": "SQ",
       "airlineName": "新加坡航空",
       "flightNo": "SQ24",
-      "aircraft": "A359",
+      "aircraft": "A35J",
       "departure": "00:05",
       "arrival": "06:30",
       "duration": 1105,
       "days": [1,2,3,4,5,6,7],
-      "note": "世界最长航线之一，A350-900ULR执飞"
+      "note": "世界最长航线之一，A350-900ULR执飞 (18,000km/9,700nmi)"
     },
     "JFK-SIN": {
       "airline": "SQ",
       "airlineName": "新加坡航空",
       "flightNo": "SQ23",
-      "aircraft": "A359",
+      "aircraft": "A35J",
       "departure": "22:30",
       "arrival": "05:00",
       "duration": 1115,
       "days": [1,2,3,4,5,6,7],
+      "note": "A350-900ULR执飞，全球最长商业航线之一",
       "arrivalDayOffset": 2
     },
     "SIN-LAX": {

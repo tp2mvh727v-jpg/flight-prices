@@ -50,7 +50,7 @@
 || v5.16 | 2026-05-27 | 移除 OpenSky ADS-B 实时航班模块 — 删除 server.py API 路由 + results-page.js 实时面板 + flight-profile.js Globe 叠加层 + CSS 样式 |
 || v5.17 | 2026-05-27 | 机型图片库全量规范化 — 统一命名(285文件) + 格式转换(5张) + 新下载(25组合) + 错配修正(2张) + 覆盖率76%→99% |
 || v5.18 | 2026-05-27 | 体验打磨 — search-loading过渡动画 + trend tooltip增强(星期+价格对比+最低价标记) + 移动端track-btn 40→44px + E2E Test 5骨架屏修复 + form submit加固 + 66条航线校验(0机型错配) + SW/href/cache triple-bump |
-|| v5.19 | 2026-05-28 | 项目重构 — Python脚本整理到 scripts/{data,images,utils}/ 子目录 + server.py import 路径同步修正 + .gitignore 大体积文件排除(图片/缓存/数据) |
+|| v5.19 | 2026-05-28 | 项目重构 — Python脚本整理到 scripts/{data,images,utils}/ 子目录 + server.py import 路径同步修正 + .gitignore 大体积文件排除(图片/缓存/数据) + 机型航程修正(A35J 18,000km) + CA981 B748执飞 + JFK-SIN A35J修正 |
 || v5.20 | 2026-05-28 | 版本同步 — SW/HTML四重bump (v5.18→v5.20) + footer-version badge样式 + AirLabs缓存预热(44航线/374连接) + CONTEXT.md版本记录修正 |
 
 ---

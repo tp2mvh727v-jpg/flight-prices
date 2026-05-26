@@ -26,7 +26,7 @@ AIRLINE_WIDEBODY = {
     "EK": ["A388", "B77W", "A359"],
     "QR": ["A359", "A35K", "A388", "B77W", "B789", "B788"],
     "EY": ["A35K", "A388", "B77W", "B789", "B78X"],  # FIXED: -A333, +B78X
-    "SQ": ["A359", "A388", "B77W", "B78X"],  # FIXED: -A35K (not operated), +B78X (28)
+    "SQ": ["A359", "A35J", "A388", "B77W", "B78X"],  # +A35J (A350-900ULR, SIN-JFK/EWR)
     "CX": ["A359", "A35K", "A333", "B77W"],
     "QF": ["A388", "B789", "A333", "A332"],  # FIXED: +A332 (8)
     "JL": ["A359", "A35K", "B789", "B788", "B77W"],
@@ -270,6 +270,7 @@ AIRCRAFT_MAX_RANGE = {
     "A388": 15200,   # A380-800
     "A359": 15000,   # A350-900
     "A35K": 16100,   # A350-1000
+    "A35J": 18000,   # A350-900ULR (SQ专用超远程构型, 9,700nmi)
     "A346": 14450,   # A340-600
     "A343": 13700,   # A340-300
     "A345": 16670,   # A340-500 (ultra-long range)
@@ -294,7 +295,7 @@ NARROWBODY_SAFE_RANGE = 5260  # 80% of best narrowbody (6584×0.8, B38M)
 NARROWBODY_CODES = {"A320", "A20N", "A321", "B738", "B38M", "B739"}
 
 # Ultra-long-range aircraft that can handle virtually any commercial route
-ULTRA_LONG_RANGE = {"A345", "B77L"}
+ULTRA_LONG_RANGE = {"A345", "B77L", "A35J"}
 
 # Technical-stop airports (major hubs with good connections for refueling stops)
 TECH_STOP_AIRPORTS = {
