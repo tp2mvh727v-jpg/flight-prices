@@ -50,6 +50,7 @@
 || v5.16 | 2026-05-27 | 移除 OpenSky ADS-B 实时航班模块 — 删除 server.py API 路由 + results-page.js 实时面板 + flight-profile.js Globe 叠加层 + CSS 样式 |
 || v5.17 | 2026-05-27 | 机型图片库全量规范化 — 统一命名(285文件) + 格式转换(5张) + 新下载(25组合) + 错配修正(2张) + 覆盖率76%→99% |
 || v5.18 | 2026-05-27 | 体验打磨 — search-loading过渡动画 + trend tooltip增强(星期+价格对比+最低价标记) + 移动端track-btn 40→44px + E2E Test 5骨架屏修复 + form submit加固 + 66条航线校验(0机型错配) + SW/href/cache triple-bump |
+|| v5.19 | 2026-05-28 | 项目重构 — Python脚本整理到 scripts/{data,images,utils}/ 子目录 + server.py import 路径同步修正 + .gitignore 大体积文件排除(图片/缓存/数据) |
 
 ---
 
@@ -284,10 +285,16 @@ cityWarning          ← v4.4: 同城多机场提醒消息
 | `static/icon.svg` | PWA 图标 (雷达飞机, 512x512) | ~20 |
 | `static/manifest.json` | PWA manifest | ~15 |
 | `static/sw.js` | Service Worker v5 (precache CDN + cache-first + network-first) | ~95 |
-| `server.py` | Flask 服务器 + /api/analytics + /sw.js 路由 | ~370 |
-| `scraper.py` | Google Flights Playwright 抓取器 | ~400 |
-| `build_fleet_library.py` | 机队图片库构建器 v3.0 — 真实机队映射 45航司×14机型 + Commons搜索/下载/续传 (v5.3) | ~310 |
-| `download_images.py` | 指定图片批量下载器 — 精确文件名列表 | ~136 |
+| `server.py` | Flask 服务器 + AirLabs API 代理路由 | ~700 |
+| `scripts/utils/scraper.py` | Google Flights Playwright 抓取器 | ~1400 |
+| `scripts/data/airlabs_fetcher.py` | AirLabs API 7天缓存代理 | ~135 |
+| `scripts/data/build_route_db.py` | OpenFlights 26K 真实航线解析 | ~165 |
+| `scripts/data/build_fleet_library.py` | 机队图片库构建器 — 真实机队映射 (v5.3) | ~310 |
+| `scripts/data/warm_airlabs_cache.py` | AirLabs 缓存预热器 | ~70 |
+| `scripts/images/download_aircraft_images.py` | 统一图片下载器 (合并6个旧脚本) | ~332 |
+| `scripts/images/incremental_downloader.py` | 批量下载器，自动续传 | ~178 |
+| `scripts/images/sync_aircraft_images.py` | 扫描文件系统 → 生成 AIRCRAFT_IMAGES | ~111 |
+| `scripts/utils/validate_verified_routes.py` | 66条锚定航线 AirLabs 校验 | ~211 |
 
 ---
 

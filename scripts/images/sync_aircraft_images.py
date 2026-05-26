@@ -5,9 +5,10 @@ Run after build_fleet_library.py completes.
 """
 import os, json, re
 
-BASE = os.path.join(os.path.dirname(__file__), 'static', 'images', 'aircraft')
-TARGET = os.path.join(os.path.dirname(__file__), 'static', 'js', 'flight-profile.js')
-MANIFEST = os.path.join(os.path.dirname(__file__), 'static', 'images', 'aircraft', 'manifest.json')
+PROJECT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE = os.path.join(PROJECT, 'static', 'images', 'aircraft')
+TARGET = os.path.join(PROJECT, 'static', 'js', 'flight-profile.js')
+MANIFEST = os.path.join(PROJECT, 'static', 'images', 'aircraft', 'manifest.json')
 
 def scan_images():
     """Scan filesystem and return {model: {airline: [filenames]}}"""

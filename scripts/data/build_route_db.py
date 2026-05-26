@@ -9,9 +9,11 @@ import csv
 import json
 from collections import defaultdict
 
-ROUTES_FILE = "data/openflights_routes.dat"
-AIRLINES_FILE = "data/openflights_airlines.dat"
-OUTPUT = "data/route_db.json"
+import os, sys
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+ROUTES_FILE = os.path.join(PROJECT_ROOT, "data", "openflights_routes.dat")
+AIRLINES_FILE = os.path.join(PROJECT_ROOT, "data", "openflights_airlines.dat")
+OUTPUT = os.path.join(PROJECT_ROOT, "data", "route_db.json")
 
 # Our supported carrier IATA codes (from flightService.js MOCK_CARRIERS)
 SUPPORTED_CARRIERS = {
@@ -98,7 +100,7 @@ for route_key, carrier_equip in equipment_index.items():
     equip_db[route_key] = {c: sorted(e) for c, e in carrier_equip.items()}
 
 # ── Merge supplementary equipment (known multi-type routes) ──
-SUPPLEMENT_FILE = "data/equipment_supplement.json"
+SUPPLEMENT_FILE = os.path.join(PROJECT_ROOT, "data", "equipment_supplement.json")
 import os
 if os.path.exists(SUPPLEMENT_FILE):
     with open(SUPPLEMENT_FILE, 'r', encoding='utf-8') as f:

@@ -22,7 +22,7 @@ Aero-Hub 飞行器图片下载器 (合并版)
 import os, sys, time, json, urllib.request, urllib.parse, urllib.error, ssl, subprocess
 
 # —— 配置 ——
-BASE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'images', 'aircraft')
+BASE = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'static', 'images', 'aircraft')
 BASE_URL = 'https://commons.wikimedia.org/wiki/Special:FilePath/'
 UA = 'AeroHub-Downloader/3.0'
 ssl_ctx = ssl.create_default_context()

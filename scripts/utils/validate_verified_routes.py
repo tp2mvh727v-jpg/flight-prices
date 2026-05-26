@@ -19,7 +19,7 @@ import time
 from datetime import datetime
 
 SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR = SCRIPTS_DIR
+PROJECT_DIR = os.path.dirname(os.path.dirname(SCRIPTS_DIR))  # up from scripts/utils → scripts → root
 DATA_DIR = os.path.join(PROJECT_DIR, "data")
 VERIFIED_PATH = os.path.join(DATA_DIR, "verified_routes.json")
 SERVER_URL = "http://localhost:5088"

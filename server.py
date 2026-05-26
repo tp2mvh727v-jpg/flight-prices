@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from flask import Flask, jsonify, render_template, request
 from dotenv import load_dotenv
 
-from scraper import (scrape_google_flights, scrape_date_range,
+from scripts.utils.scraper import (scrape_google_flights, scrape_date_range,
                       scrape_date_range_parallel, _get_flight_segments,
                       _classify_aircraft, _get_typical_aircraft,
                       FLIGHT_NUMBERS, AIRLINE_WIDEBODY, can_operate_route,
@@ -16,7 +16,7 @@ from scraper import (scrape_google_flights, scrape_date_range,
 
 # AirLabs route fetcher (server-side caching, no per-user API calls)
 try:
-    from airlabs_fetcher import fetch_routes as airlabs_fetch_routes, get_cache_stats
+    from scripts.data.airlabs_fetcher import fetch_routes as airlabs_fetch_routes, get_cache_stats
 except ImportError:
     airlabs_fetch_routes = None
     get_cache_stats = None

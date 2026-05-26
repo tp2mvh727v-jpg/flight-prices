@@ -14,7 +14,7 @@ import urllib.request
 from pathlib import Path
 
 API_KEY_FILE = "/tmp/airlabs_key.txt"
-CACHE_DIR = Path(__file__).parent / "data" / "airlabs_cache"
+CACHE_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "airlabs_cache"
 CACHE_TTL = 7 * 86400  # 7 days
 
 def _load_api_key():
