@@ -2,7 +2,7 @@
 // Aero-Hub Service Worker — PWA offline support
 // ============================================================
 
-const CACHE_NAME = 'aerohub-v5.18';
+const CACHE_NAME = 'aerohub-v5.20';
 
 const PRECACHE_URLS = [
   '/',

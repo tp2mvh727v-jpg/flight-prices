@@ -1,6 +1,6 @@
 # CONTEXT.md — Aero-Hub 项目状态
 
-> 最后更新: 2026-05-28 (v5.18 体验打磨 — loading反馈 + tooltip增强 + 移动端触控 + E2E修复)
+> 最后更新: 2026-05-28 (v5.20 版本同步 + 缓存预热)
 
 ---
 
@@ -51,6 +51,7 @@
 || v5.17 | 2026-05-27 | 机型图片库全量规范化 — 统一命名(285文件) + 格式转换(5张) + 新下载(25组合) + 错配修正(2张) + 覆盖率76%→99% |
 || v5.18 | 2026-05-27 | 体验打磨 — search-loading过渡动画 + trend tooltip增强(星期+价格对比+最低价标记) + 移动端track-btn 40→44px + E2E Test 5骨架屏修复 + form submit加固 + 66条航线校验(0机型错配) + SW/href/cache triple-bump |
 || v5.19 | 2026-05-28 | 项目重构 — Python脚本整理到 scripts/{data,images,utils}/ 子目录 + server.py import 路径同步修正 + .gitignore 大体积文件排除(图片/缓存/数据) |
+|| v5.20 | 2026-05-28 | 版本同步 — SW/HTML四重bump (v5.18→v5.20) + footer-version badge样式 + AirLabs缓存预热(44航线/374连接) + CONTEXT.md版本记录修正 |
 
 ---
 
@@ -1964,4 +1965,4 @@ let seg1Minutes = 0, seg2Minutes = 0, layoverMinutes = 0;
 - **A333/AD**: 下载的 Azul A330 图片实际为 A330-200 (A332) 而非 A330-300，保留作为近似替代
 
 ---
-> 最后更新: 2026-05-27 (v5.17 机型图片库全量规范化)
+> 最后更新: 2026-05-28 (v5.20 版本同步 + 缓存预热)

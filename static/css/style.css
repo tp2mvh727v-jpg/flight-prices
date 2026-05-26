@@ -4520,6 +4520,8 @@ footer a { color: var(--primary); text-decoration: none; }
   }
 }
 
+.footer-version { display: inline-block; background: var(--primary-light,#eff6ff); color: var(--primary,#38bdf8); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; letter-spacing: 0.05em; font-weight: 500; }
+
 /* ============================================================
    Phone breakpoint (420px) — iPhone SE/12/13/14/Pro, Pixel, etc.
    ============================================================ */
