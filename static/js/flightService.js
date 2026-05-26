@@ -569,6 +569,7 @@ const AIRCRAFT_DB = {
   // Wide-body
   'A359': { manufacturer: '空客', model: 'A350-941', fullName: '空客 A350-900', seats: 300, layout: [3,3,3], rows: 34, cruiseAlt: 41000, cruiseMach: 0.85, rangeKm: 15000 },
   'A35K': { manufacturer: '空客', model: 'A350-1041', fullName: '空客 A350-1000', seats: 334, layout: [3,3,3], rows: 38, cruiseAlt: 41000, cruiseMach: 0.85, rangeKm: 16100 },
+  'A35J': { manufacturer: '空客', model: 'A350-941ULR', fullName: '空客 A350-900ULR', seats: 161, layout: [1,2,1], rows: 17, cruiseAlt: 41000, cruiseMach: 0.85, rangeKm: 18000 },
   'A332': { manufacturer: '空客', model: 'A330-243', fullName: '空客 A330-200', seats: 246, layout: [2,4,2], rows: 32, cruiseAlt: 39000, cruiseMach: 0.82, rangeKm: 13450 },
   'A333': { manufacturer: '空客', model: 'A330-343', fullName: '空客 A330-300', seats: 277, layout: [2,4,2], rows: 36, cruiseAlt: 39000, cruiseMach: 0.82, rangeKm: 11750 },
   'A388': { manufacturer: '空客', model: 'A380-841', fullName: '空客 A380-800', seats: 525, layout: [3,4,3], rows: 44, cruiseAlt: 43000, cruiseMach: 0.85, rangeKm: 15200 },

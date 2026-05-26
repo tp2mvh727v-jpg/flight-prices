@@ -187,6 +187,7 @@ const WINDOWLESS_SEATS = {
   'B788': { A: [7,8,18,19,20], K: [7,8,18,19,20] },
   'A359': { A: [11,24], K: [11,24] },
   'A35K': { A: [12,27], K: [12,27] },
+  'A35J': { A: [7,8], K: [7,8] },  // SQ ULR: 67商务+94超经, 1-2-1
   'A333': { A: [8,19], H: [8,19] },
   'B77W': { A: [10,25,26], K: [10,25,26] },
   'A388': { A: [11,26,27], K: [11,26,27] },
@@ -194,7 +195,7 @@ const WINDOWLESS_SEATS = {
 
 const EXIT_ROWS = {
   'B789': [16,17,32,33], 'B788': [14,15,27,28],
-  'A359': [14,15,33,34], 'A35K': [16,17,37,38],
+  'A359': [14,15,33,34], 'A35K': [16,17,37,38], 'A35J': [7,8],
   'A333': [12,13,25,26], 'B77W': [19,20,44,45],
   'A388': [17,18,29,30,48,49],
   'A320': [11,12], 'A321': [11,12,28,29],
@@ -244,7 +245,7 @@ function _getAcInfo(acCode) {
     };
   }
 
-  const isWide = ['A359','A35K','A332','A333','B78X','B789','B788','B77W'].includes(acCode);
+  const isWide = ['A359','A35K','A35J','A332','A333','B78X','B789','B788','B77W'].includes(acCode);
   const totalRows = isWide ? 33 : 29;
 
   if (isWide) {
@@ -310,6 +311,7 @@ const AIRCRAFT_VISUAL = {
   // Wide-body — 2 engines
   'A359': { family:'a350', fuselageLen:320, fuselageH:38, nose:'curved', engines:2, engineSize:16, tailH:70, wingSweep:28, deckRows:14 },
   'A35K':{ family:'a350', fuselageLen:350, fuselageH:38, nose:'curved', engines:2, engineSize:17, tailH:72, wingSweep:28, deckRows:16 },
+  'A35J':{ family:'a350', fuselageLen:350, fuselageH:38, nose:'curved', engines:2, engineSize:17, tailH:72, wingSweep:28, deckRows:16 },
   'A333':{ family:'a330', fuselageLen:300, fuselageH:40, nose:'blunt',  engines:2, engineSize:16, tailH:68, wingSweep:26, deckRows:12 },
   'B789':{ family:'b787', fuselageLen:310, fuselageH:38, nose:'pointed', engines:2, engineSize:17, tailH:70, wingSweep:30, deckRows:13 },
   'B788':{ family:'b787', fuselageLen:280, fuselageH:38, nose:'pointed', engines:2, engineSize:17, tailH:68, wingSweep:30, deckRows:11 },
@@ -357,7 +359,7 @@ const AIRLINE_COLORS = {
 // ============================================================
 
 const AIRCRAFT_IMAGES = {
-  // Auto-generated from static/images/aircraft/ — 303 model×airline combos
+  // Auto-generated from static/images/aircraft/ — 310 model×airline combos
   'A20N': {
     '3U': ['A20N.jpg'],
     '5J': ['A20N.jpg'],
@@ -406,6 +408,7 @@ const AIRCRAFT_IMAGES = {
     'TR': ['A320.jpg'],
     'UA': ['A320.jpg'],
     'ZH': ['A320.jpg'],
+    '_generic': ['A320.jpg'],
   },
   'A321': {
     '3U': ['A321.jpg'],
@@ -441,6 +444,7 @@ const AIRCRAFT_IMAGES = {
     'UA': ['A321.jpg'],
     'VN': ['A321_01.jpg', 'A321_02.jpg'],
     'ZH': ['A321_01.jpg', 'A321_02.jpg'],
+    '_generic': ['A321.jpg'],
   },
   'A332': {
     '3U': ['A332.jpg'],
@@ -464,6 +468,7 @@ const AIRCRAFT_IMAGES = {
     'CI': ['A333.jpg'],
     'CX': ['A333.jpg'],
     'CZ': ['A333.jpg'],
+    'D7': ['A333.jpg'],
     'DL': ['A333.jpg'],
     'GA': ['A333.jpg'],
     'HU': ['A333.jpg'],
@@ -510,6 +515,10 @@ const AIRCRAFT_IMAGES = {
     'TG': ['A359.jpg'],
     'TK': ['A359.jpg'],
     'VN': ['A359.jpg'],
+    '_generic': ['A359.jpg'],
+  },
+  'A35J': {
+    'SQ': ['A35J.jpg'],
   },
   'A35K': {
     'BA': ['A35K.jpg'],
@@ -521,6 +530,7 @@ const AIRCRAFT_IMAGES = {
     'PR': ['A35K.jpg'],
     'QR': ['A35K.jpg'],
     'VS': ['A35K.jpg'],
+    '_generic': ['A35K.jpg'],
   },
   'A388': {
     'BA': ['A388.jpg'],
@@ -686,6 +696,7 @@ const AIRCRAFT_IMAGES = {
     'UA': ['B789.jpg'],
     'VN': ['B789.jpg'],
     'VS': ['B789.jpg'],
+    '_generic': ['B789.jpg'],
   },
   'B78X': {
     'BA': ['B78X.jpg'],
@@ -697,7 +708,8 @@ const AIRCRAFT_IMAGES = {
     'UA': ['B78X.jpg'],
     'VN': ['B78X.jpg'],
   },
-};;;
+};
+;;;
 ;
 ;
 ;
@@ -1561,7 +1573,7 @@ function _getHardwareKey(cabinClass, acCode) {
   if (cabinClass === 'first') return 'first';
   if (cabinClass === 'premium') return 'premium';
   if (cabinClass === 'business') {
-    const widebodies = ['A359','A35K','A333','B789','B788','B77W','A388','B748'];
+    const widebodies = ['A359','A35K','A35J','A333','B789','B788','B77W','A388','B748'];
     return widebodies.includes(acCode) ? 'business_wide' : 'business_narrow';
   }
   return 'economy';
