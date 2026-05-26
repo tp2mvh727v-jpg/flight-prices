@@ -1,7 +1,29 @@
-.DS_Store
+# Python
 __pycache__/
 *.pyc
-*.log
+*.pyo
+venv/
 .env
+
+# 图片缓存（体积大，不应上传）
+static/images/aircraft/
+
+# 本地数据缓存
+data/*.json
+data/*.csv
+data/airlabs_cache/
+
+# 日志
+*.log
+
+# macOS
+.DS_Store
+
+# Claude Code
 .claude/
+
+# 凭据
 credentials.json
+
+# 本地任务文件（每晚自动生成，不需要同步）
+TONIGHT_TASKS.md
