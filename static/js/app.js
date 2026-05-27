@@ -483,20 +483,21 @@ function _bootstrap() {
         if (!confirm('您尚未完成往返选择，确定要返回搜索吗？')) return;
       }
     }
+    // Set flight lookup data BEFORE showView so renderResults sees it
+    const p = (e.detail.view === 'results') ? (e.detail.params || {}) : {};
+    AppState.flightLookupData = null;
+    if (p.flightData) {
+      AppState.flightLookupData = p.flightData;
+    }
+
     showView(e.detail.view, e.detail.params || {});
     if (e.detail.view === 'results') {
-      const p = e.detail.params || {};
       if (p.from && p.to) {
         Analytics.trackSearch(p.from, p.to, p.trip || 'oneway');
       }
       // M2: Show same-city multi-airport warning
       if (e.detail.cityWarning) {
         AppState.cityWarning = e.detail.cityWarning;
-      }
-      // Store flight lookup data for results page — clear first, set if present
-      AppState.flightLookupData = null;
-      if (p.flightData) {
-        AppState.flightLookupData = p.flightData;
       }
     }
   });
