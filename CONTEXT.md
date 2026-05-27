@@ -53,6 +53,7 @@
 || v5.19 | 2026-05-28 | 项目重构 — Python脚本整理到 scripts/{data,images,utils}/ 子目录 + server.py import 路径同步修正 + .gitignore 大体积文件排除(图片/缓存/数据) + 机型航程修正(A35J 18,000km) + CA981 B748执飞 + JFK-SIN A35J修正 |
 || v5.20 | 2026-05-28 | 版本同步 — SW/HTML四重bump (v5.18→v5.20) + footer-version badge样式 + AirLabs缓存预热(44航线/374连接) + CONTEXT.md版本记录修正 |
 | v5.21 | 2026-05-28 | 数据质量治理 — A333/AD机型错配修正 + 4空目录清理 + sync_aircraft_images重生成(310组合) |
+| v5.22 | 2026-05-28 | 航班号直搜 — AirLabs schedules API代理 + 搜索模式切换(城市/航班号) + 机型verified_routes回填 + 结果卡片 |
 
 ---
 
@@ -1964,6 +1965,56 @@ let seg1Minutes = 0, seg2Minutes = 0, layoverMinutes = 0;
 - **175 张 <1000px 缩略图**: 原 `download_images.py` 使用 `?width=800` 导致。文件已重命名，无法用原始 Wikimedia 文件名重新下载高分辨率版本。需要手动逐个从 Wikimedia 获取高清原图
 - **3 个空目录**: Wikimedia Commons 暂无对应图片，可关注后续上传或使用其他来源
 - **A333/AD**: 下载的 Azul A330 图片实际为 A330-200 (A332) 而非 A330-300，保留作为近似替代
+
+---
+
+> 最后更新: 2026-05-28 (v5.22 航班号直搜)
+
+---
+
+## 39. v5.22 — 航班号直搜 (2026-05-28)
+
+### 39.1 功能概述
+
+用户可通过航班号直接搜索航班，AirLabs `/v9/schedules` API 代理 + 机型 verified_routes.json 回填。
+
+### 39.2 API 端点
+
+`GET /api/flight-lookup?flight=CA981`
+
+- 参数格式化: 统一大写去空格 (CA981/CA 981/ca981 → CA981)
+- 缓存: `data/airlabs_cache/flight_{code}.json`, TTL 6h
+- 机型回填: 查 `verified_routes.json` 按 dep-arr 路由匹配
+- 错误: 400(无参数)/404(未找到)/502(API故障)
+
+### 39.3 前端搜索模式切换
+
+- `.search-mode-group` 两个pill按钮: 🏙️城市搜索 / ✈️航班号
+- 城市模式: 显示现有城市/日期/乘客行
+- 航班号模式: 显示单个航班号输入框
+- 激活态: 蓝底 #2563eb + 金字 #fbbf24
+
+### 39.4 结果展示
+
+航班号结果卡片 `.flight-lookup-card`:
+- Header: 航班号 + 航司名
+- Route bar: 出发→到达 + 航站楼
+- Details: 时间、时长、状态
+- Aircraft section: 机型图片 (如有)
+
+### 39.5 修改文件清单
+
+| 文件 | 变更 |
+|------|------|
+| `server.py` | +90行: /api/flight-lookup + _format_flight_result + _backfill_aircraft + _AIRLINE_IATA_TO_ICAO |
+| `templates/index.html` | search-mode-group + flightModeRow + flightLookupResult容器 |
+| `static/js/search-page.js` | setSearchMode() + 异步onSubmit航班号模式 |
+| `static/js/results-page.js` | renderFlightLookupResult() + flight参数处理 |
+| `static/js/app.js` | flightLookupData状态 + hash restore |
+| `static/css/style.css` | .search-mode + .flight-lookup-card + 移动端420px |
+| `static/sw.js` | CACHE_NAME → v5.22 |
+| `CONTEXT.md` | v5.22条目 |
+| `TONIGHT_TASKS.md` | 批注更新 |
 
 ---
 > 最后更新: 2026-05-28 (v5.21 数据质量治理)

@@ -554,6 +554,91 @@ body {
   50% { opacity: 0.3; }
 }
 
+/* —— Search mode switch (city vs flight number) —— */
+.search-mode-group {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.search-mode-btn {
+  flex: 1;
+  padding: 10px 18px;
+  border: 1px solid var(--aero-border);
+  background: var(--aero-input-bg);
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 20px;
+  transition: all 0.25s ease;
+  font-family: inherit;
+  letter-spacing: 0.5px;
+}
+
+.search-mode-btn:hover:not(.active) {
+  border-color: var(--aero-accent);
+  color: var(--aero-text);
+}
+
+.search-mode-btn.active {
+  background: #2563eb;
+  color: #fbbf24;
+  border-color: #2563eb;
+  box-shadow: 0 0 16px rgba(37, 99, 235, 0.35);
+}
+
+/* —— Flight number input row —— */
+.flight-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.flight-input-group {
+  width: 100%;
+}
+
+.flight-input-group label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--aero-label);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 7px;
+}
+
+.flight-input-group input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid var(--aero-input-border);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: var(--aero-input-bg);
+  color: var(--aero-accent);
+  transition: all 0.25s ease;
+  text-align: center;
+  letter-spacing: 2px;
+  font-weight: 700;
+}
+
+.flight-input-group input:focus {
+  outline: none;
+  border-color: var(--aero-accent);
+  box-shadow: var(--aero-focus-glow);
+  transform: scale(1.012);
+}
+
+.flight-input-group input::placeholder {
+  color: rgba(148, 163, 184, 0.5);
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
 /* —— Trip type toggle (Cockpit mode selector) —— */
 .trip-type-group {
   display: flex;
@@ -3936,6 +4021,177 @@ footer a { color: var(--primary); text-decoration: none; }
 }
 
 /* ============================================================
+   Flight Lookup Result Card
+   ============================================================ */
+.flight-lookup-card {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.flight-lookup-card .section {
+  background: var(--aero-panel);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--aero-border);
+  border-radius: 24px;
+  box-shadow: var(--aero-card-shadow);
+  overflow: hidden;
+}
+
+.fl-lookup-header {
+  padding: 28px 28px 20px;
+  text-align: center;
+  border-bottom: 1px solid var(--aero-border);
+}
+
+.fl-flight-code {
+  font-size: 2.4rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--aero-accent);
+  line-height: 1.1;
+}
+
+.fl-airline-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--aero-label);
+  margin-top: 4px;
+}
+
+.fl-route-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--aero-border);
+}
+
+.fl-airport-block {
+  text-align: center;
+}
+
+.fl-airport-code {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--aero-text);
+  letter-spacing: 1px;
+  line-height: 1.1;
+}
+
+.fl-airport-terminal {
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.fl-route-arrow {
+  font-size: 1.5rem;
+  color: var(--aero-accent);
+  font-weight: 300;
+}
+
+.fl-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--aero-border);
+}
+
+.fl-detail-item {
+  background: var(--aero-panel);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fl-detail-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.fl-detail-value {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--aero-text);
+}
+
+.fl-status-badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
+}
+
+.fl-status-scheduled { background: var(--accent-blue); color: var(--accent-blue-text); }
+.fl-status-active, .fl-status-en-route { background: var(--accent-mint); color: var(--accent-mint-text); }
+.fl-status-landed { background: var(--accent-slate); color: var(--accent-slate-text); }
+.fl-status-cancelled { background: var(--red-light); color: #991b1b; }
+.fl-status-unknown { background: var(--accent-amber); color: var(--accent-amber-text); }
+
+.fl-aircraft-section {
+  padding: 20px 28px;
+  text-align: center;
+  border-top: 1px solid var(--aero-border);
+}
+
+.fl-aircraft-photo {
+  max-width: 100%;
+  max-height: 260px;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.fl-aircraft-label {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 14px;
+  background: rgba(56, 189, 248, 0.1);
+  color: var(--aero-accent);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.fl-aircraft-na {
+  font-size: 0.82rem;
+  color: var(--muted);
+  padding: 10px 0;
+}
+
+.fl-lookup-error {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.fl-lookup-error .error-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.fl-lookup-error h3 {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.fl-lookup-error p {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ============================================================
    Responsive
    ============================================================ */
 
@@ -4762,6 +5018,42 @@ footer a { color: var(--primary); text-decoration: none; }
   .filter-bar button {
     font-size: 0.7rem;
     padding: 5px 10px;
+  }
+
+  /* Search mode buttons */
+  .search-mode-btn {
+    font-size: 0.72rem;
+    padding: 8px 12px;
+  }
+
+  /* Flight input */
+  .flight-input-group input {
+    font-size: 0.85rem;
+    padding: 10px 12px;
+  }
+
+  /* Flight lookup card */
+  .fl-flight-code {
+    font-size: 1.8rem;
+  }
+  .fl-airport-code {
+    font-size: 1.3rem;
+  }
+  .fl-lookup-header {
+    padding: 20px 16px 14px;
+  }
+  .fl-route-bar {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+  .fl-details-grid {
+    grid-template-columns: 1fr;
+  }
+  .fl-detail-item {
+    padding: 12px 16px;
+  }
+  .fl-aircraft-section {
+    padding: 14px 16px;
   }
 
   /* Footer */

@@ -10,12 +10,12 @@
 <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
 <link rel="apple-touch-icon" href="/static/icon.svg">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" href="/static/css/style.css?v=5.21">
+<link rel="stylesheet" href="/static/css/style.css?v=5.22">
 <script>
 // One-time SW cleanup on version bump — clears stale cached JS
 (function() {
   var KEY = 'aerohub-sw-cleared';
-  var VERSION = '5.21';
+  var VERSION = '5.22';
   if (sessionStorage.getItem(KEY) === VERSION) return;
   if (!('serviceWorker' in navigator)) { sessionStorage.setItem(KEY, VERSION); return; }
   navigator.serviceWorker.getRegistrations().then(function(regs) {
@@ -92,8 +92,14 @@
             <button type="button" class="trip-type-btn" data-type="roundtrip" aria-pressed="false">往返</button>
           </div>
 
+          <!-- Search mode switch -->
+          <div class="search-mode-group">
+            <button type="button" class="search-mode-btn active" data-mode="city">🏙️ 城市搜索</button>
+            <button type="button" class="search-mode-btn" data-mode="flight">✈️ 航班号</button>
+          </div>
+
           <!-- Cities with smart autocomplete -->
-          <div class="city-row">
+          <div class="city-row" id="cityModeRow">
             <div class="city-group">
               <label for="originInput">出发地</label>
               <input type="text" id="originInput" autocorrect="off" autocapitalize="off" spellcheck="false">
@@ -104,6 +110,14 @@
             <div class="city-group">
               <label for="destInput">目的地</label>
               <input type="text" id="destInput" autocorrect="off" autocapitalize="off" spellcheck="false">
+            </div>
+          </div>
+
+          <!-- Flight number search row (hidden by default) -->
+          <div class="flight-row" id="flightModeRow" style="display:none">
+            <div class="flight-input-group">
+              <label for="flightInput">航班号</label>
+              <input type="text" id="flightInput" placeholder="例: CA981" autocorrect="off" autocapitalize="off" spellcheck="false">
             </div>
           </div>
 
@@ -220,6 +234,11 @@
       <div id="alertArea"></div>
     </div>
 
+    <!-- Flight lookup result card -->
+    <div class="results-container" id="flightLookupResult" style="display:none">
+      <!-- JS 动态填充 -->
+    </div>
+
     <!-- Main: Single-day results (always visible, drives the page) -->
     <div class="results-container" id="singleDaySection" style="padding-top:0;"></div>
 
@@ -230,13 +249,13 @@
       数据来源: <span id="sourceInfo">Google Flights</span> &nbsp;|&nbsp;
       免费 · 无需注册 &nbsp;|&nbsp;
       <a href="http://flightprice88:5088">flightprice88:5088</a>
-      <span class="footer-version">v5.21</span>
+      <span class="footer-version">v5.22</span>
     </footer>
   </div>
 </div>
 
 <!-- App entry point -->
-<script type="module" src="/static/js/app.js?v=5.20"></script>
+<script type="module" src="/static/js/app.js?v=5.22"></script>
 
 </body>
 </html>

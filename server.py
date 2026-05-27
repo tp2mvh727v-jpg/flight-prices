@@ -3,6 +3,9 @@ import time
 import random
 import socket
 import json
+import re
+import urllib.request
+from pathlib import Path
 from datetime import datetime, timedelta
 
 from flask import Flask, jsonify, render_template, request
@@ -412,6 +415,166 @@ def api_airlabs_cache_stats():
         return jsonify({"error": "AirLabs not available"}), 503
     return jsonify(get_cache_stats())
 
+
+# ── Flight Number Direct Lookup ──
+@app.route("/api/flight-lookup")
+def api_flight_lookup():
+    """Direct flight number lookup via AirLabs /v9/schedules with aircraft backfill."""
+    raw = request.args.get("flight", "").strip()
+    if not raw:
+        return jsonify({"error": "航班号不能为空", "flight": ""}), 400
+
+    # Normalize: uppercase, remove spaces → "CA981"
+    flight = re.sub(r'\s+', '', raw).upper()
+    if not re.match(r'^[A-Z0-9]{3,8}$', flight):
+        return jsonify({"error": "无效的航班号格式", "flight": flight}), 400
+
+    # Check cache
+    cache_dir = Path("data/airlabs_cache")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    cache_file = cache_dir / f"flight_{flight}.json"
+
+    if cache_file.exists():
+        try:
+            cached = json.loads(cache_file.read_text())
+            if time.time() - cached.get("ts", 0) < CACHE_TTL:
+                result = _format_flight_result(flight, cached["data"])
+                return jsonify(result)
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+    # Call AirLabs API
+    key_file = Path("/tmp/airlabs_key.txt")
+    if not key_file.exists():
+        return jsonify({"error": "AirLabs API key 未配置", "flight": flight}), 502
+
+    api_key = key_file.read_text().strip()
+    url = f"https://airlabs.co/api/v9/schedules?api_key={api_key}&flight_iata={flight}"
+
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Aero-Hub/5.22"})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            api_data = json.loads(resp.read().decode())
+    except urllib.error.URLError as e:
+        return jsonify({"error": f"AirLabs 请求失败: {str(e)}", "flight": flight}), 502
+    except json.JSONDecodeError:
+        return jsonify({"error": "AirLabs 返回数据格式异常", "flight": flight}), 502
+
+    # Check for API-level errors
+    if api_data.get("error"):
+        return jsonify({"error": api_data["error"].get("message", "AirLabs API 错误"), "flight": flight}), 502
+
+    response_data = api_data.get("response", [])
+    if not response_data:
+        # Cache empty results too (short TTL)
+        cache_file.write_text(json.dumps({"ts": time.time(), "data": []}))
+        return jsonify({"error": f"未找到航班 {flight} 的信息", "flight": flight}), 404
+
+    # Take the first matching schedule
+    schedule = response_data[0] if isinstance(response_data, list) else response_data
+
+    # Cache result
+    cache_file.write_text(json.dumps({"ts": time.time(), "data": schedule}))
+
+    result = _format_flight_result(flight, schedule)
+    return jsonify(result)
+
+
+def _format_flight_result(flight, schedule):
+    """Format a single AirLabs schedule entry into the API response."""
+    dep_iata = schedule.get("dep_iata", "")
+    arr_iata = schedule.get("arr_iata", "")
+    dep_time = schedule.get("dep_time", "")
+    arr_time = schedule.get("arr_time", "")
+    duration_min = schedule.get("duration", 0)
+    status = schedule.get("status", "scheduled")
+    airline_iata = schedule.get("airline_iata", flight[:2])
+
+    # Backfill aircraft from verified_routes.json
+    aircraft = _backfill_aircraft(dep_iata, arr_iata)
+
+    # Build ISO timestamps
+    # AirLabs may return date+time ("2026-05-27 19:25") or just time ("19:25")
+    today = datetime.now().strftime("%Y-%m-%d")
+    if dep_time and ' ' in dep_time:
+        dep_iso = dep_time.replace(' ', 'T')
+    else:
+        dep_iso = f"{today}T{dep_time}" if dep_time else None
+    
+    if arr_time and ' ' in arr_time:
+        arr_iso = arr_time.replace(' ', 'T')
+    else:
+        arr_iso = f"{today}T{arr_time}" if arr_time else None
+
+    # If arrival appears before departure, push arrival to next day
+    if dep_iso and arr_iso and arr_iso <= dep_iso:
+        next_day = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+        arr_iso = f"{next_day}T{arr_time}"
+
+    # Airline ICAO lookup
+    airline_icao = _AIRLINE_IATA_TO_ICAO.get(airline_iata, "")
+
+    return {
+        "flight": flight,
+        "airline": {
+            "iata": airline_iata,
+            "icao": airline_icao,
+        },
+        "departure": {
+            "airport": dep_iata,
+            "terminal": schedule.get("dep_terminal") or None,
+            "time": dep_iso,
+        },
+        "arrival": {
+            "airport": arr_iata,
+            "terminal": schedule.get("arr_terminal") or None,
+            "time": arr_iso,
+        },
+        "duration_min": duration_min,
+        "status": status,
+        "aircraft": aircraft,
+    }
+
+
+def _backfill_aircraft(dep, arr):
+    """Look up aircraft type from verified_routes.json by dep-arr route."""
+    if not dep or not arr:
+        return None
+    try:
+        routes_path = Path("data/verified_routes.json")
+        if not routes_path.exists():
+            return None
+        routes_data = json.loads(routes_path.read_text())
+        routes = routes_data.get("routes", {})
+        route_key = f"{dep}-{arr}"
+        return routes.get(route_key, {}).get("aircraft") or None
+    except (json.JSONDecodeError, IOError):
+        return None
+
+
+# IATA → ICAO airline code mapping for major carriers
+_AIRLINE_IATA_TO_ICAO = {
+    "CA": "CCA", "CZ": "CSN", "MU": "CES", "HU": "CHH", "MF": "CXA",
+    "3U": "CSC", "ZH": "CSZ", "FM": "CSH", "CX": "CPA", "SQ": "SIA",
+    "KE": "KAL", "NH": "ANA", "JL": "JAL", "QF": "QFA", "OZ": "AAR",
+    "BR": "EVA", "CI": "CAL", "TR": "TGW", "NZ": "ANZ", "FJ": "FJI",
+    "TG": "THA", "VN": "HVN", "PR": "PAL", "MH": "MAS", "GA": "GIA",
+    "AI": "AIC", "UL": "ALK", "EK": "UAE", "QR": "QTR", "TK": "THY",
+    "EY": "ETD", "GF": "GFA", "WY": "OMA", "LH": "DLH", "AF": "AFR",
+    "BA": "BAW", "KL": "KLM", "VS": "VIR", "SK": "SAS", "AY": "FIN",
+    "LX": "SWR", "OS": "AUA", "TP": "TAP", "LO": "LOT", "EI": "EIN",
+    "SN": "BEL", "UA": "UAL", "DL": "DAL", "AA": "AAL", "AC": "ACA",
+    "LA": "LAN", "ET": "ETH", "SA": "SAA", "MS": "MSR", "AT": "RAM",
+    "IB": "IBE", "AZ": "ITY", "UX": "AEA", "DE": "CFG", "JU": "ASL",
+    "SV": "SVA", "LY": "ELY", "RJ": "RJA", "G9": "ABY", "FZ": "FDB",
+    "J9": "JZR", "JX": "SJX", "HX": "CRK", "NX": "AMU", "6E": "IGO",
+    "VJ": "VJC", "PG": "BKP", "7C": "JJA", "YP": "APZ",
+    "SC": "CDG", "HO": "DKH", "JD": "CBJ", "TV": "TBA", "GS": "GCR",
+    "AS": "ASA", "TS": "TSC", "HY": "UZB", "J2": "AHY", "WB": "RWD",
+    "AH": "DAH",
+}
+
+
 # ── AirLabs Connecting Flights API ──
 # Matches real schedules through transit hubs.
 # Rules: same airline > same alliance > layover < 24h > detour < 2x
@@ -790,7 +953,7 @@ if __name__ == "__main__":
     lan_ip = _get_lan_ip()
     banner = f"""
 ┌────────────────────────────────────────────────────────┐
-│  🚀 机票展示网页 v5.14 启动成功！                      │
+│  🚀 机票展示网页 v5.22 启动成功！                      │
 ├────────────────────────────────────────────────────────┤
 │  💻 本地开发访问:  http://localhost:5088               │
 │  📱 手机同步测试:  http://{lan_ip}:5088                │

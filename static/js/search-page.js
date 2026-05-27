@@ -144,12 +144,54 @@ function setDefaultDates() {
   returnInput.min   = tomorrow;
 }
 
+// ——— Search mode toggle ———
+
+let _searchMode = 'city'; // 'city' | 'flight'
+
+function setSearchMode(mode) {
+  _searchMode = mode;
+  document.querySelectorAll('.search-mode-btn').forEach(btn => {
+    const isActive = btn.dataset.mode === mode;
+    btn.classList.toggle('active', isActive);
+  });
+
+  const cityRow = document.getElementById('cityModeRow');
+  const dateRow = document.getElementById('dateRow');
+  const paxCabinRow = document.querySelector('.pax-cabin-row');
+  const tripTypeGroup = document.querySelector('.trip-type-group');
+  const flightRow = document.getElementById('flightModeRow');
+  const carrierRow = document.querySelector('.carrier-filter-row');
+
+  if (mode === 'flight') {
+    if (cityRow) cityRow.style.display = 'none';
+    if (dateRow) dateRow.style.display = 'none';
+    if (paxCabinRow) paxCabinRow.style.display = 'none';
+    if (tripTypeGroup) tripTypeGroup.style.display = 'none';
+    if (carrierRow) carrierRow.style.display = 'none';
+    if (flightRow) flightRow.style.display = '';
+  } else {
+    if (cityRow) cityRow.style.display = '';
+    if (dateRow) dateRow.style.display = '';
+    if (paxCabinRow) paxCabinRow.style.display = '';
+    if (tripTypeGroup) tripTypeGroup.style.display = '';
+    if (carrierRow) carrierRow.style.display = '';
+    if (flightRow) flightRow.style.display = 'none';
+  }
+
+  clearFieldErrors();
+}
+
 // ——— DOM event bindings ———
 
 function bindEvents() {
   // Trip type toggle
   document.querySelectorAll('.trip-type-btn').forEach(btn => {
     btn.addEventListener('click', () => onTripTypeChange(btn.dataset.type));
+  });
+
+  // Search mode toggle
+  document.querySelectorAll('.search-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => setSearchMode(btn.dataset.mode));
   });
 
   // Swap cities
@@ -251,8 +293,48 @@ function onDepartDateChange() {
 
 // ——— Form submit — reads from AppState (single source of truth) ———
 
-function onSubmit(e) {
+async function onSubmit(e) {
   e.preventDefault();
+
+  // ——— Flight number mode ———
+  if (_searchMode === 'flight') {
+    const flightInput = document.getElementById('flightInput');
+    const flightValue = (flightInput?.value || '').trim();
+    if (!flightValue) {
+      showFieldError('flightInput', '请输入航班号');
+      return;
+    }
+    clearFieldErrors();
+
+    // Normalize and show loading
+    const flight = flightValue.replace(/\s+/g, '').toUpperCase();
+    const btn = document.querySelector('.btn-search');
+    if (btn) { btn.disabled = true; btn.textContent = 'SCANNING FLIGHT...'; }
+
+    try {
+      const resp = await fetch(`/api/flight-lookup?flight=${encodeURIComponent(flight)}`);
+      const data = await resp.json();
+      if (!resp.ok) {
+        showFieldError('flightInput', data.error || '查询失败');
+        return;
+      }
+      // Navigate to results with flight lookup data
+      document.dispatchEvent(new CustomEvent('navigate', { detail: {
+        view: 'results',
+        params: {
+          flight: flight,
+          flightData: data,
+        },
+      }}));
+    } catch (err) {
+      showFieldError('flightInput', '网络错误，请稍后重试');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'ENGAGE RADAR SEARCH'; }
+    }
+    return;
+  }
+
+  // ——— City search mode ———
 
   // Guard: autocomplete must be initialized
   if (!_ac.origin || !_ac.dest) {

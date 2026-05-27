@@ -46,6 +46,15 @@ export async function renderResults() {
   _abortController = createAbortController();
   const signal = _abortController.signal;
 
+  // ——— Flight lookup mode ———
+  const flightData = AppState.flightLookupData;
+  if (flightData && flightData.flight) {
+    renderFlightLookupResult(flightData);
+    // Clear after rendering so city searches work next time
+    AppState.flightLookupData = null;
+    return;
+  }
+
   const summary = AppState.getSearchSummary();
   updateResultsHeader(summary);
 
@@ -1188,6 +1197,160 @@ function renderStatsGrid(prices) {
         <div class="sub">${escapeHtml(sorted[sorted.length - 1].airline_name || '')}</div>
       </div>
     </div>`;
+}
+
+// ============================================================
+//  Flight Lookup Result Card
+// ============================================================
+
+const AIRCRAFT_IMAGES = {
+  'B748': 'https://cdn.jetphotos.com/400/5/748_1629400.jpg',
+  'B744': 'https://cdn.jetphotos.com/400/6/744_1630500.jpg',
+  'B77W': 'https://cdn.jetphotos.com/400/5/77w_1629500.jpg',
+  'B773': 'https://cdn.jetphotos.com/400/6/773_1630400.jpg',
+  'B789': 'https://cdn.jetphotos.com/400/5/789_1629600.jpg',
+  'B788': 'https://cdn.jetphotos.com/400/6/788_1630300.jpg',
+  'A388': 'https://cdn.jetphotos.com/400/5/388_1629700.jpg',
+  'A359': 'https://cdn.jetphotos.com/400/5/359_1629800.jpg',
+  'A35K': 'https://cdn.jetphotos.com/400/6/35k_1630600.jpg',
+  'A333': 'https://cdn.jetphotos.com/400/5/333_1629900.jpg',
+  'A332': 'https://cdn.jetphotos.com/400/6/332_1630200.jpg',
+};
+
+const STATUS_LABELS = {
+  'scheduled': '计划中',
+  'active': '飞行中',
+  'en-route': '飞行中',
+  'landed': '已降落',
+  'cancelled': '已取消',
+  'unknown': '未知',
+};
+
+function renderFlightLookupResult(data) {
+  // Hide normal results sections
+  const singleDay = document.getElementById('singleDaySection');
+  const flightCard = document.getElementById('flightLookupResult');
+  if (singleDay) singleDay.innerHTML = '';
+
+  // Update header
+  document.querySelector('.search-summary .route-text').textContent = `✈️ ${data.flight}`;
+  document.querySelector('.search-summary .date-info').textContent = '航班号直搜';
+  document.querySelector('.search-summary .pax-info').textContent = '';
+  document.getElementById('alertArea').innerHTML = '';
+  document.getElementById('sourceInfo').textContent = 'AirLabs Schedules';
+
+  if (!flightCard) return;
+
+  const dep = data.departure || {};
+  const arr = data.arrival || {};
+  const airline = data.airline || {};
+  const statusKey = (data.status || 'unknown').toLowerCase();
+  const statusLabel = STATUS_LABELS[statusKey] || data.status || '未知';
+  const statusClass = `fl-status-${statusKey}`;
+
+  // Format times
+  const depTime = dep.time ? formatDateTime(dep.time) : '--:--';
+  const arrTime = arr.time ? formatDateTime(arr.time) : '--:--';
+
+  // Duration
+  const durMin = data.duration_min || 0;
+  const durH = Math.floor(durMin / 60);
+  const durM = durMin % 60;
+  const durStr = durMin > 0 ? `${durH}h${durM.toString().padStart(2, '0')}m` : '--';
+
+  // Aircraft image
+  const aircraft = data.aircraft;
+  const imgSrc = aircraft ? (AIRCRAFT_IMAGES[aircraft] || '') : '';
+
+  // Airline name lookup
+  const airlineName = getAirlineName(airline.iata);
+
+  flightCard.style.display = '';
+  flightCard.innerHTML = `
+    <div class="flight-lookup-card">
+      <div class="section">
+        <div class="fl-lookup-header">
+          <div class="fl-flight-code">${escapeHtml(data.flight)}</div>
+          <div class="fl-airline-name">${escapeHtml(airlineName)}${airline.icao ? ` (${escapeHtml(airline.iata)}/${escapeHtml(airline.icao)})` : ''}</div>
+        </div>
+
+        <div class="fl-route-bar">
+          <div class="fl-airport-block">
+            <div class="fl-airport-code">${escapeHtml(dep.airport || '--')}</div>
+            ${dep.terminal ? `<div class="fl-airport-terminal">T${escapeHtml(dep.terminal)}</div>` : ''}
+          </div>
+          <div class="fl-route-arrow">→</div>
+          <div class="fl-airport-block">
+            <div class="fl-airport-code">${escapeHtml(arr.airport || '--')}</div>
+            ${arr.terminal ? `<div class="fl-airport-terminal">T${escapeHtml(arr.terminal)}</div>` : ''}
+          </div>
+        </div>
+
+        <div class="fl-details-grid">
+          <div class="fl-detail-item">
+            <span class="fl-detail-label">出发时间</span>
+            <span class="fl-detail-value">${escapeHtml(depTime)}</span>
+          </div>
+          <div class="fl-detail-item">
+            <span class="fl-detail-label">到达时间</span>
+            <span class="fl-detail-value">${escapeHtml(arrTime)}</span>
+          </div>
+          <div class="fl-detail-item">
+            <span class="fl-detail-label">飞行时长</span>
+            <span class="fl-detail-value">${escapeHtml(durStr)}</span>
+          </div>
+          <div class="fl-detail-item">
+            <span class="fl-detail-label">状态</span>
+            <span class="fl-detail-value">
+              <span class="fl-status-badge ${statusClass}">${escapeHtml(statusLabel)}</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="fl-aircraft-section">
+          ${aircraft
+            ? (imgSrc
+              ? `<div class="fp-aircraft-photo-wrap" style="margin:0 auto;max-width:500px;">
+                   <img class="fp-aircraft-img" src="${escapeHtml(imgSrc)}" alt="${escapeHtml(aircraft)}" loading="lazy"
+                        onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                   <div class="fp-aircraft-fallback" style="display:none;">
+                     <span class="fp-fallback-icon">✈️</span>
+                     <span>${escapeHtml(aircraft)}</span>
+                   </div>
+                 </div>`
+              : `<div class="fl-aircraft-label">${escapeHtml(aircraft)}</div>`)
+            : '<div class="fl-aircraft-na">机型信息暂无 (AirLabs 免费层限制)</div>'
+          }
+        </div>
+      </div>
+    </div>`;
+}
+
+function formatDateTime(isoStr) {
+  if (!isoStr) return '--:--';
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return isoStr.slice(-5) || isoStr;
+    return d.toLocaleString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+  } catch {
+    return isoStr;
+  }
+}
+
+function getAirlineName(iata) {
+  const names = {
+    'CA': '中国国航', 'CZ': '南方航空', 'MU': '东方航空', 'HU': '海南航空',
+    'MF': '厦门航空', '3U': '四川航空', 'ZH': '深圳航空', 'FM': '上海航空',
+    'CX': '国泰航空', 'SQ': '新加坡航空', 'KE': '大韩航空', 'NH': '全日空',
+    'JL': '日本航空', 'QF': '澳洲航空', 'OZ': '韩亚航空', 'BR': '长荣航空',
+    'CI': '中华航空', 'TR': '酷航', 'NZ': '新西兰航空', 'TG': '泰国航空',
+    'VN': '越南航空', 'PR': '菲律宾航空', 'MH': '马来西亚航空', 'GA': '印尼鹰航',
+    'AI': '印度航空', 'EK': '阿联酋航空', 'QR': '卡塔尔航空', 'TK': '土耳其航空',
+    'EY': '阿提哈德航空', 'LH': '汉莎航空', 'AF': '法国航空', 'BA': '英国航空',
+    'KL': '荷兰皇家航空', 'UA': '美联航', 'DL': '达美航空', 'AA': '美国航空',
+    'AC': '加拿大航空', 'ET': '埃塞俄比亚航空', 'MS': '埃及航空',
+  };
+  return names[iata] || iata || '未知航司';
 }
 
 function _classifyError(e) {

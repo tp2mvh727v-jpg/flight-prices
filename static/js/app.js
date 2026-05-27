@@ -340,6 +340,7 @@ function showView(viewName, params = {}) {
     if (params.date) p.set('date', params.date);
     if (params.returnDate) p.set('return', params.returnDate);
     if (params.trip) p.set('trip', params.trip);
+    if (params.flight) p.set('flight', params.flight);
     const url = new URL(window.location);
     url.hash = '#results';
     if ([...p.keys()].length) url.hash += '?' + p.toString();
@@ -367,6 +368,14 @@ function _restoreFromHash() {
       for (const [k, v] of sp) params[k] = v;
     }
 
+    // Handle flight lookup restore — re-fetch data
+    if (params.flight) {
+      fetch(`/api/flight-lookup?flight=${encodeURIComponent(params.flight)}`)
+        .then(r => r.json())
+        .then(data => { AppState.flightLookupData = data; })
+        .catch(() => {});
+    }
+
     // Set AppState from URL params
     if (params.from) AppState.origin = params.from;
     if (params.to) AppState.dest = params.to;
@@ -379,7 +388,7 @@ function _restoreFromHash() {
     if (params.trip) AppState.tripType = params.trip;
 
     // Go straight to results
-    showView('results', { from: params.from, to: params.to, date: params.date, returnDate: params.return, trip: params.trip });
+    showView('results', { from: params.from, to: params.to, date: params.date, returnDate: params.return, trip: params.trip, flight: params.flight });
   } else if (hash === '#search') {
     // Deactivate splash, show search view
     showView('search');
@@ -483,6 +492,10 @@ function _bootstrap() {
       // M2: Show same-city multi-airport warning
       if (e.detail.cityWarning) {
         AppState.cityWarning = e.detail.cityWarning;
+      }
+      // Store flight lookup data for results page
+      if (p.flightData) {
+        AppState.flightLookupData = p.flightData;
       }
     }
   });
