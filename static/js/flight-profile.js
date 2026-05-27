@@ -358,7 +358,7 @@ const AIRLINE_COLORS = {
 //  Run: python download_images.py to populate
 // ============================================================
 
-const AIRCRAFT_IMAGES = {
+export const AIRCRAFT_IMAGES = {
   // Auto-generated from static/images/aircraft/ — 310 model×airline combos
   'A20N': {
     '3U': ['A20N.jpg'],

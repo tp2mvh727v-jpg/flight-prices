@@ -10,6 +10,7 @@ import {
   getTripTypeLabel, escapeHtml
 } from './utils.js';
 import { addToWatchlist, removeFromWatchlist, isTracked, refreshWatchlistFromResults } from './watchlist.js';
+import { AIRCRAFT_IMAGES } from './flight-profile.js';
 
 let trendChart = null;
 let trendPanelOpen = false;
@@ -48,6 +49,10 @@ export async function renderResults() {
 
   // ——— Flight lookup mode ———
   const flightData = AppState.flightLookupData;
+  if (!flightData) {
+    const flightCard = document.getElementById('flightLookupResult');
+    if (flightCard) flightCard.style.display = 'none';
+  }
   if (flightData && flightData.flight) {
     renderFlightLookupResult(flightData);
     // Clear after rendering so city searches work next time
@@ -1203,20 +1208,6 @@ function renderStatsGrid(prices) {
 //  Flight Lookup Result Card
 // ============================================================
 
-const AIRCRAFT_IMAGES = {
-  'B748': 'https://cdn.jetphotos.com/400/5/748_1629400.jpg',
-  'B744': 'https://cdn.jetphotos.com/400/6/744_1630500.jpg',
-  'B77W': 'https://cdn.jetphotos.com/400/5/77w_1629500.jpg',
-  'B773': 'https://cdn.jetphotos.com/400/6/773_1630400.jpg',
-  'B789': 'https://cdn.jetphotos.com/400/5/789_1629600.jpg',
-  'B788': 'https://cdn.jetphotos.com/400/6/788_1630300.jpg',
-  'A388': 'https://cdn.jetphotos.com/400/5/388_1629700.jpg',
-  'A359': 'https://cdn.jetphotos.com/400/5/359_1629800.jpg',
-  'A35K': 'https://cdn.jetphotos.com/400/6/35k_1630600.jpg',
-  'A333': 'https://cdn.jetphotos.com/400/5/333_1629900.jpg',
-  'A332': 'https://cdn.jetphotos.com/400/6/332_1630200.jpg',
-};
-
 const STATUS_LABELS = {
   'scheduled': '计划中',
   'active': '飞行中',
@@ -1260,7 +1251,14 @@ function renderFlightLookupResult(data) {
 
   // Aircraft image
   const aircraft = data.aircraft;
-  const imgSrc = aircraft ? (AIRCRAFT_IMAGES[aircraft] || '') : '';
+  const airlineIata = data.airline?.iata || '';
+  let imgSrc = '';
+  if (aircraft && AIRCRAFT_IMAGES[aircraft] && AIRCRAFT_IMAGES[aircraft][airlineIata]) {
+    const files = AIRCRAFT_IMAGES[aircraft][airlineIata];
+    if (files && files.length > 0) {
+      imgSrc = `/static/images/aircraft/${aircraft}/${airlineIata}/${files[0]}`;
+    }
+  }
 
   // Airline name lookup
   const airlineName = getAirlineName(airline.iata);
