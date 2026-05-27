@@ -12,7 +12,15 @@
       "departure": "13:00",
       "arrival": "13:30",
       "duration": 810,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "note": "国航旗舰航线，波音747-8执飞"
     },
     "JFK-PEK": {
@@ -23,7 +31,15 @@
       "departure": "16:50",
       "arrival": "18:20",
       "duration": 810,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "arrivalDayOffset": 1
     },
     "PEK-LAX": {
@@ -34,7 +50,15 @@
       "departure": "21:00",
       "arrival": "17:00",
       "duration": 720,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "LAX-PEK": {
       "airline": "CA",
@@ -44,7 +68,15 @@
       "departure": "01:40",
       "arrival": "05:20",
       "duration": 780,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "arrivalDayOffset": 1
     },
     "PEK-SFO": {
@@ -55,7 +87,15 @@
       "departure": "16:00",
       "arrival": "11:00",
       "duration": 660,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "PVG-JFK": {
       "airline": "MU",
@@ -65,7 +105,15 @@
       "departure": "11:30",
       "arrival": "12:25",
       "duration": 870,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "JFK-PVG": {
       "airline": "MU",
@@ -75,7 +123,15 @@
       "departure": "16:25",
       "arrival": "19:15",
       "duration": 890,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "arrivalDayOffset": 1
     },
     "PVG-LAX": {
@@ -86,7 +142,15 @@
       "departure": "13:00",
       "arrival": "08:30",
       "duration": 690,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "PVG-SFO": {
       "airline": "MU",
@@ -96,7 +160,12 @@
       "departure": "14:00",
       "arrival": "09:00",
       "duration": 660,
-      "days": [1,3,5,7]
+      "days": [
+        1,
+        3,
+        5,
+        7
+      ]
     },
     "PVG-SYD": {
       "airline": "MU",
@@ -106,7 +175,15 @@
       "departure": "20:20",
       "arrival": "09:30",
       "duration": 670,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "arrivalDayOffset": 1
     },
     "CAN-JFK": {
@@ -117,7 +194,15 @@
       "departure": "17:30",
       "arrival": "18:40",
       "duration": 850,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "CAN-LAX": {
       "airline": "CZ",
@@ -127,7 +212,12 @@
       "departure": "21:30",
       "arrival": "18:10",
       "duration": 760,
-      "days": [1,3,5,7]
+      "days": [
+        1,
+        3,
+        5,
+        7
+      ]
     },
     "FOC-JFK": {
       "airline": "MF",
@@ -137,7 +227,11 @@
       "departure": "09:15",
       "arrival": "10:30",
       "duration": 870,
-      "days": [1,4,6]
+      "days": [
+        1,
+        4,
+        6
+      ]
     },
     "CTU-LAX": {
       "airline": "3U",
@@ -147,9 +241,12 @@
       "departure": "21:00",
       "arrival": "19:00",
       "duration": 780,
-      "days": [2,4,6]
+      "days": [
+        2,
+        4,
+        6
+      ]
     },
-
     "SIN-JFK": {
       "airline": "SQ",
       "airlineName": "新加坡航空",
@@ -158,7 +255,15 @@
       "departure": "00:05",
       "arrival": "06:30",
       "duration": 1105,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "note": "世界最长航线之一，A350-900ULR执飞 (18,000km/9,700nmi)"
     },
     "JFK-SIN": {
@@ -169,7 +274,15 @@
       "departure": "22:30",
       "arrival": "05:00",
       "duration": 1115,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "note": "A350-900ULR执飞，全球最长商业航线之一",
       "arrivalDayOffset": 2
     },
@@ -181,7 +294,15 @@
       "departure": "08:55",
       "arrival": "09:05",
       "duration": 910,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "SIN-LHR": {
       "airline": "SQ",
@@ -191,7 +312,15 @@
       "departure": "23:30",
       "arrival": "05:55",
       "duration": 800,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "arrivalDayOffset": 1
     },
     "SIN-SYD": {
@@ -202,7 +331,15 @@
       "departure": "00:45",
       "arrival": "10:30",
       "duration": 465,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "SIN-NRT": {
       "airline": "SQ",
@@ -212,9 +349,16 @@
       "departure": "09:25",
       "arrival": "17:30",
       "duration": 425,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
-
     "HND-JFK": {
       "airline": "JL",
       "airlineName": "日本航空",
@@ -223,7 +367,15 @@
       "departure": "10:50",
       "arrival": "09:30",
       "duration": 780,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "JFK-HND": {
       "airline": "JL",
@@ -233,7 +385,15 @@
       "departure": "13:30",
       "arrival": "16:30",
       "duration": 840,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "arrivalDayOffset": 1
     },
     "HND-LAX": {
@@ -244,7 +404,15 @@
       "departure": "00:05",
       "arrival": "16:30",
       "duration": 585,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "note": "跨国际日期变更线，同日到达"
     },
     "NRT-JFK": {
@@ -255,9 +423,16 @@
       "departure": "11:00",
       "arrival": "09:30",
       "duration": 750,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
-
     "ICN-JFK": {
       "airline": "KE",
       "airlineName": "大韩航空",
@@ -266,7 +441,15 @@
       "departure": "10:00",
       "arrival": "09:30",
       "duration": 840,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "ICN-LAX": {
       "airline": "KE",
@@ -276,7 +459,15 @@
       "departure": "14:30",
       "arrival": "08:30",
       "duration": 630,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "ICN-SFO": {
       "airline": "OZ",
@@ -286,9 +477,16 @@
       "departure": "15:40",
       "arrival": "09:00",
       "duration": 620,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
-
     "HKG-JFK": {
       "airline": "CX",
       "airlineName": "国泰航空",
@@ -297,7 +495,15 @@
       "departure": "09:05",
       "arrival": "12:05",
       "duration": 900,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "JFK-HKG": {
       "airline": "CX",
@@ -307,7 +513,15 @@
       "departure": "14:55",
       "arrival": "18:55",
       "duration": 960,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "arrivalDayOffset": 1
     },
     "HKG-LAX": {
@@ -318,7 +532,15 @@
       "departure": "00:05",
       "arrival": "20:30",
       "duration": 735,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "HKG-LHR": {
       "airline": "CX",
@@ -328,10 +550,17 @@
       "departure": "23:15",
       "arrival": "05:40",
       "duration": 810,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "arrivalDayOffset": 1
     },
-
     "DXB-JFK": {
       "airline": "EK",
       "airlineName": "阿联酋航空",
@@ -340,7 +569,15 @@
       "departure": "02:50",
       "arrival": "08:50",
       "duration": 840,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "DXB-LAX": {
       "airline": "EK",
@@ -350,7 +587,15 @@
       "departure": "08:55",
       "arrival": "13:55",
       "duration": 960,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "DXB-LHR": {
       "airline": "EK",
@@ -360,7 +605,15 @@
       "departure": "07:45",
       "arrival": "12:25",
       "duration": 460,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "DXB-SYD": {
       "airline": "EK",
@@ -370,10 +623,17 @@
       "departure": "10:15",
       "arrival": "06:05",
       "duration": 830,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "arrivalDayOffset": 1
     },
-
     "DOH-JFK": {
       "airline": "QR",
       "airlineName": "卡塔尔航空",
@@ -382,7 +642,15 @@
       "departure": "01:30",
       "arrival": "07:30",
       "duration": 840,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "DOH-LAX": {
       "airline": "QR",
@@ -392,7 +660,15 @@
       "departure": "08:05",
       "arrival": "14:05",
       "duration": 960,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "DOH-LHR": {
       "airline": "QR",
@@ -402,9 +678,16 @@
       "departure": "01:30",
       "arrival": "06:30",
       "duration": 420,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
-
     "SYD-LAX": {
       "airline": "QF",
       "airlineName": "澳洲航空",
@@ -413,7 +696,15 @@
       "departure": "10:20",
       "arrival": "06:00",
       "duration": 820,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "LAX-SYD": {
       "airline": "QF",
@@ -423,7 +714,15 @@
       "departure": "22:30",
       "arrival": "06:30",
       "duration": 870,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "arrivalDayOffset": 2
     },
     "SYD-LHR": {
@@ -434,7 +733,15 @@
       "departure": "16:30",
       "arrival": "05:45",
       "duration": 1275,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "arrivalDayOffset": 1,
       "note": "经停SIN，但这里按直飞展示"
     },
@@ -446,9 +753,16 @@
       "departure": "10:30",
       "arrival": "06:30",
       "duration": 840,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
-
     "PEK-LHR": {
       "airline": "CA",
       "airlineName": "中国国航",
@@ -457,7 +771,15 @@
       "departure": "12:30",
       "arrival": "15:55",
       "duration": 625,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "LHR-PEK": {
       "airline": "CA",
@@ -467,7 +789,15 @@
       "departure": "20:25",
       "arrival": "14:00",
       "duration": 635,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "arrivalDayOffset": 1
     },
     "PVG-LHR": {
@@ -478,7 +808,15 @@
       "departure": "13:00",
       "arrival": "17:30",
       "duration": 720,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "PEK-CDG": {
       "airline": "CA",
@@ -488,7 +826,15 @@
       "departure": "13:35",
       "arrival": "17:55",
       "duration": 640,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "PVG-CDG": {
       "airline": "MU",
@@ -498,7 +844,15 @@
       "departure": "00:10",
       "arrival": "05:30",
       "duration": 680,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "PEK-FRA": {
       "airline": "CA",
@@ -508,7 +862,15 @@
       "departure": "13:55",
       "arrival": "17:10",
       "duration": 615,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "PVG-FRA": {
       "airline": "MU",
@@ -518,9 +880,16 @@
       "departure": "00:10",
       "arrival": "05:45",
       "duration": 680,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
-
     "BKK-LHR": {
       "airline": "TG",
       "airlineName": "泰国航空",
@@ -529,7 +898,15 @@
       "departure": "00:10",
       "arrival": "07:10",
       "duration": 720,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "DEL-JFK": {
       "airline": "AI",
@@ -539,7 +916,15 @@
       "departure": "02:05",
       "arrival": "07:30",
       "duration": 900,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "IST-JFK": {
       "airline": "TK",
@@ -549,7 +934,15 @@
       "departure": "07:00",
       "arrival": "10:55",
       "duration": 655,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "AUH-JFK": {
       "airline": "EY",
@@ -559,7 +952,15 @@
       "departure": "02:45",
       "arrival": "08:00",
       "duration": 815,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "ADD-JFK": {
       "airline": "ET",
@@ -569,10 +970,17 @@
       "departure": "22:30",
       "arrival": "05:00",
       "duration": 870,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "arrivalDayOffset": 1
     },
-
     "LHR-JFK": {
       "airline": "BA",
       "airlineName": "英国航空",
@@ -581,7 +989,15 @@
       "departure": "08:20",
       "arrival": "11:00",
       "duration": 460,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "CDG-JFK": {
       "airline": "AF",
@@ -591,7 +1007,15 @@
       "departure": "13:30",
       "arrival": "15:30",
       "duration": 480,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "AMS-JFK": {
       "airline": "KL",
@@ -601,9 +1025,16 @@
       "departure": "10:25",
       "arrival": "12:25",
       "duration": 480,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
-
     "NRT-LHR": {
       "airline": "JL",
       "airlineName": "日本航空",
@@ -612,7 +1043,15 @@
       "departure": "10:00",
       "arrival": "15:00",
       "duration": 720,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "HND-LHR": {
       "airline": "NH",
@@ -622,7 +1061,15 @@
       "departure": "11:35",
       "arrival": "15:30",
       "duration": 715,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "HKG-SFO": {
       "airline": "CX",
@@ -632,9 +1079,16 @@
       "departure": "13:50",
       "arrival": "09:25",
       "duration": 700,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
-
     "FRA-JFK": {
       "airline": "LH",
       "airlineName": "汉莎航空",
@@ -643,7 +1097,15 @@
       "departure": "11:00",
       "arrival": "13:25",
       "duration": 505,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "MUC-JFK": {
       "airline": "LH",
@@ -653,7 +1115,15 @@
       "departure": "12:00",
       "arrival": "14:30",
       "duration": 510,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "ZRH-JFK": {
       "airline": "LX",
@@ -663,9 +1133,16 @@
       "departure": "10:00",
       "arrival": "12:30",
       "duration": 510,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
-
     "AKL-LAX": {
       "airline": "NZ",
       "airlineName": "新西兰航空",
@@ -674,7 +1151,15 @@
       "departure": "19:40",
       "arrival": "10:10",
       "duration": 690,
-      "days": [1,2,3,4,5,6,7]
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
     },
     "SFO-TPE": {
       "airline": "BR",
@@ -684,7 +1169,15 @@
       "departure": "01:00",
       "arrival": "05:30",
       "duration": 810,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "arrivalDayOffset": 1
     },
     "LAX-TPE": {
@@ -695,8 +1188,36 @@
       "departure": "00:05",
       "arrival": "05:00",
       "duration": 775,
-      "days": [1,2,3,4,5,6,7],
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
       "arrivalDayOffset": 1
+    },
+    "PEK-SYD": {
+      "airline": "CA",
+      "flightNo": "CA173",
+      "aircraft": "B77W",
+      "departure": "01:40",
+      "arrival": "14:50",
+      "duration": 670,
+      "arrivalDayOffset": 0,
+      "note": "国航北京-悉尼航线"
+    },
+    "SYD-PEK": {
+      "airline": "CA",
+      "flightNo": "CA174",
+      "aircraft": "B77W",
+      "departure": "19:40",
+      "arrival": "05:30",
+      "duration": 670,
+      "arrivalDayOffset": 1,
+      "note": "国航悉尼-北京航线"
     }
   }
 }

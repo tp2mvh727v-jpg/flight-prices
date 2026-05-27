@@ -438,7 +438,10 @@ def api_flight_lookup():
         try:
             cached = json.loads(cache_file.read_text())
             if time.time() - cached.get("ts", 0) < CACHE_TTL:
-                result = _format_flight_result(flight, cached["data"])
+                data = cached.get("data")
+                if isinstance(data, list):
+                    return jsonify({"error": f"未找到航班 {flight} 的信息", "flight": flight}), 404
+                result = _format_flight_result(flight, data)
                 return jsonify(result)
         except (json.JSONDecodeError, KeyError):
             pass
