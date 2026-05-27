@@ -1,6 +1,6 @@
 # CONTEXT.md — Aero-Hub 项目状态
 
-> 最后更新: 2026-05-28 (v5.20 版本同步 + 缓存预热)
+> 最后更新: 2026-05-28 (v5.21 数据质量治理)
 
 ---
 
@@ -52,6 +52,7 @@
 || v5.18 | 2026-05-27 | 体验打磨 — search-loading过渡动画 + trend tooltip增强(星期+价格对比+最低价标记) + 移动端track-btn 40→44px + E2E Test 5骨架屏修复 + form submit加固 + 66条航线校验(0机型错配) + SW/href/cache triple-bump |
 || v5.19 | 2026-05-28 | 项目重构 — Python脚本整理到 scripts/{data,images,utils}/ 子目录 + server.py import 路径同步修正 + .gitignore 大体积文件排除(图片/缓存/数据) + 机型航程修正(A35J 18,000km) + CA981 B748执飞 + JFK-SIN A35J修正 |
 || v5.20 | 2026-05-28 | 版本同步 — SW/HTML四重bump (v5.18→v5.20) + footer-version badge样式 + AirLabs缓存预热(44航线/374连接) + CONTEXT.md版本记录修正 |
+| v5.21 | 2026-05-28 | 数据质量治理 — A333/AD机型错配修正 + 4空目录清理 + sync_aircraft_images重生成(310组合) |
 
 ---
 
@@ -1965,4 +1966,60 @@ let seg1Minutes = 0, seg2Minutes = 0, layoverMinutes = 0;
 - **A333/AD**: 下载的 Azul A330 图片实际为 A330-200 (A332) 而非 A330-300，保留作为近似替代
 
 ---
-> 最后更新: 2026-05-28 (v5.20 版本同步 + 缓存预热)
+> 最后更新: 2026-05-28 (v5.21 数据质量治理)
+
+---
+
+## 38. v5.21 — 数据质量治理 (2026-05-28)
+
+### 38.1 五角色会议结论
+
+- 航班号直搜: P0 需求，需先做 API 预评估再排期 v5.22
+- 低分辨率缩略图: `incremental_downloader.py` 已无新任务可执行
+- 本版本聚焦: 机型错配修正 + 空目录清理
+
+### 38.2 A333/AD 机型错配修正
+
+Azul Brazilian Airlines (AD) 实际运营 A330-200 (A332) 和 A330-900 (A339)，非 A330-300 (A333)。
+
+| 文件 | 变更 |
+|------|------|
+| `scripts/utils/scraper.py` | `AIRLINE_WIDEBODY['AD']`: `['A333']` → `['A332','A339']` |
+| `static/js/flightService.js` | `AIRLINE_WIDEBODY['AD']`: `['A333']` → `['A332','A339']` |
+| `static/images/aircraft/A333/AD/` | 移动至 `A332/AD/` |
+| `static/js/flight-profile.js` | `sync_aircraft_images.py` 重生成 (310 组合) |
+
+### 38.3 空目录清理
+
+4 个空目录全部处理：
+
+| 目录 | 查询结果 | 操作 |
+|------|----------|------|
+| `A20N/_generic/` | 项目规则不允许 _generic | **删除** |
+| `A20N/SA/` | SAA 不运营 A320neo（仅 A320ceo/A333/A343） | **删除** |
+| `A339/LO/` | LOT 不运营 A330-900（B788/B789，A339 2024年已退租） | **删除** |
+| `B38M/JL/` | JAL 尚未接收 737 MAX 8（38架订单，2026年起交付） | **删除** |
+
+### 38.4 已知待处理 (更新)
+
+- **175 张 <1000px 缩略图**: `incremental_downloader.py` Phase 2 无新任务，需手动逐个从 Wikimedia 获取高清原图
+- ~~3 个空目录~~ → 已清理
+- ~~A333/AD 错配~~ → 已修正为 A332/AD
+
+### 38.5 修改文件清单
+
+| 文件 | 变更 |
+|------|------|
+| `scripts/utils/scraper.py` | AD 宽体机队修正 |
+| `static/js/flightService.js` | AD 宽体机队修正 |
+| `static/js/flight-profile.js` | AIRCRAFT_IMAGES 同步 (A333/AD → A332/AD) |
+| `static/sw.js` | CACHE_NAME → `aerohub-v5.21` |
+| `templates/index.html` | CSS/JS/inline VERSION/footer → v5.21 |
+| `static/images/aircraft/A332/AD/` | 从 A333/AD 移动 |
+| `static/images/aircraft/A333/AD/` | 已删除 |
+| `static/images/aircraft/A20N/_generic/` | 已删除 |
+| `static/images/aircraft/A20N/SA/` | 已删除 |
+| `static/images/aircraft/A339/LO/` | 已删除 |
+| `static/images/aircraft/B38M/JL/` | 已删除 |
+| `CONTEXT.md` | v5.21 条目 |
+| `TONIGHT_TASKS.md` | 会议任务清单 |

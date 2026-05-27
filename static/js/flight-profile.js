@@ -448,6 +448,7 @@ const AIRCRAFT_IMAGES = {
   },
   'A332': {
     '3U': ['A332.jpg'],
+    'AD': ['A333.jpg'],
     'AF': ['A332.jpg'],
     'CA': ['A332.jpg'],
     'DL': ['A332.jpg'],
@@ -462,7 +463,6 @@ const AIRCRAFT_IMAGES = {
     '3U': ['A333.jpg'],
     '5J': ['A333.jpg'],
     'AC': ['A333.jpg'],
-    'AD': ['A333.jpg'],
     'BR': ['A333.jpg'],
     'CA': ['A333.jpg'],
     'CI': ['A333.jpg'],
@@ -709,6 +709,7 @@ const AIRCRAFT_IMAGES = {
     'VN': ['B78X.jpg'],
   },
 };
+;
 ;;;
 ;
 ;
