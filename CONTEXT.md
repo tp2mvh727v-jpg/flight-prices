@@ -1,6 +1,6 @@
 # CONTEXT.md — Aero-Hub 项目状态
 
-> 最后更新: 2026-05-28 (v5.21 数据质量治理)
+> 最后更新: 2026-05-28 (v5.24 本地数据库兜底)
 
 ---
 
@@ -53,7 +53,10 @@
 || v5.19 | 2026-05-28 | 项目重构 — Python脚本整理到 scripts/{data,images,utils}/ 子目录 + server.py import 路径同步修正 + .gitignore 大体积文件排除(图片/缓存/数据) + 机型航程修正(A35J 18,000km) + CA981 B748执飞 + JFK-SIN A35J修正 |
 || v5.20 | 2026-05-28 | 版本同步 — SW/HTML四重bump (v5.18→v5.20) + footer-version badge样式 + AirLabs缓存预热(44航线/374连接) + CONTEXT.md版本记录修正 |
 | v5.21 | 2026-05-28 | 数据质量治理 — A333/AD机型错配修正 + 4空目录清理 + sync_aircraft_images重生成(310组合) |
-| v5.22 | 2026-05-28 | 航班号直搜 — AirLabs schedules API代理 + 搜索模式切换(城市/航班号) + 机型verified_routes回填 + 结果卡片 |
+| v5.22 | 2026-05-28 | 航班号直搜 — AirLabs schedules API代理 + 搜索模式切换 + 机型verified_routes回填 |
+| v5.23 | 2026-05-28 | 航班号搜索Bug修复 — 搜索混淆/图片路径/空结果崩溃/机型补全 |
+| v5.23.4 | 2026-05-28 | 航站楼显示TTBIT修复 + 跨天时间修复 |
+| v5.24 | 2026-05-28 | 本地数据库兜底 + 来源标签badge化 |
 
 ---
 

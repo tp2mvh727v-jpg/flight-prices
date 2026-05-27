@@ -10,12 +10,12 @@
 <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
 <link rel="apple-touch-icon" href="/static/icon.svg">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="stylesheet" href="/static/css/style.css?v=5.23">
+<link rel="stylesheet" href="/static/css/style.css?v=5.24">
 <script>
 // One-time SW cleanup on version bump — clears stale cached JS
 (function() {
   var KEY = 'aerohub-sw-cleared';
-  var VERSION = '5.23';
+  var VERSION = '5.24';
   if (sessionStorage.getItem(KEY) === VERSION) return;
   if (!('serviceWorker' in navigator)) { sessionStorage.setItem(KEY, VERSION); return; }
   navigator.serviceWorker.getRegistrations().then(function(regs) {
@@ -249,13 +249,13 @@
       数据来源: <span id="sourceInfo">Google Flights</span> &nbsp;|&nbsp;
       免费 · 无需注册 &nbsp;|&nbsp;
       <a href="http://flightprice88:5088">flightprice88:5088</a>
-      <span class="footer-version">v5.23</span>
+      <span class="footer-version">v5.24</span>
     </footer>
   </div>
 </div>
 
 <!-- App entry point -->
-<script type="module" src="/static/js/app.js?v=5.23"></script>
+<script type="module" src="/static/js/app.js?v=5.24"></script>
 
 </body>
 </html>

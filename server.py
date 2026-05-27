@@ -440,6 +440,11 @@ def api_flight_lookup():
             if time.time() - cached.get("ts", 0) < CACHE_TTL:
                 data = cached.get("data")
                 if isinstance(data, list):
+                    local = _search_verified_route_by_flight(flight)
+                    if local:
+                        route_key, route_data = local
+                        result = _build_verified_result(flight, route_key, route_data)
+                        return jsonify(result)
                     return jsonify({"error": f"未找到航班 {flight} 的信息", "flight": flight}), 404
                 result = _format_flight_result(flight, data)
                 return jsonify(result)
@@ -469,7 +474,12 @@ def api_flight_lookup():
 
     response_data = api_data.get("response", [])
     if not response_data:
-        # Cache empty results too (short TTL)
+        # Fallback: try verified_routes.json before giving up
+        route_key, route_data = _search_verified_route_by_flight(flight)
+        if route_key:
+            result = _build_verified_result(flight, route_key, route_data)
+            return jsonify(result)
+        # Cache empty results
         cache_file.write_text(json.dumps({"ts": time.time(), "data": []}))
         return jsonify({"error": f"未找到航班 {flight} 的信息", "flight": flight}), 404
 
@@ -551,9 +561,86 @@ def _backfill_aircraft(dep, arr):
         routes_data = json.loads(routes_path.read_text())
         routes = routes_data.get("routes", {})
         route_key = f"{dep}-{arr}"
-        return routes.get(route_key, {}).get("aircraft") or None
+        # Exact match (old format)
+        if route_key in routes:
+            return routes[route_key].get("aircraft") or None
+        # ROUTE|AIRLINE format
+        prefix = f"{route_key}|"
+        for key, val in routes.items():
+            if key.startswith(prefix):
+                return val.get("aircraft") or None
     except (json.JSONDecodeError, IOError):
         return None
+
+
+def _search_verified_route_by_flight(flight):
+    """Search verified_routes.json for a matching flight number.
+    Returns (route_key, route_data) or (None, None).
+    """
+    try:
+        routes_path = Path("data/verified_routes.json")
+        if not routes_path.exists():
+            return None, None
+        data = json.loads(routes_path.read_text())
+        routes = data.get("routes", {})
+        for route_key, route_data in routes.items():
+            if route_data.get("flightNo") == flight:
+                return route_key, route_data
+    except (json.JSONDecodeError, IOError):
+        pass
+    return None, None
+
+
+def _build_verified_result(flight, route_key, route_data):
+    """Build a flight lookup response from verified_routes.json data,
+    matching the format of _format_flight_result."""
+    # Handle ROUTE|AIRLINE key format
+    if '|' in route_key:
+        pure_route = route_key.split('|')[0]
+    else:
+        pure_route = route_key
+    parts = pure_route.split("-")
+    dep_iata = parts[0] if len(parts) >= 2 else ""
+    arr_iata = parts[1] if len(parts) >= 2 else ""
+
+    dep_time = route_data.get("departure", "")
+    arr_time = route_data.get("arrival", "")
+    duration_min = route_data.get("duration", 0)
+    aircraft = route_data.get("aircraft") or None
+    airline_iata = route_data.get("airline", flight[:2])
+
+    airline_icao = _AIRLINE_IATA_TO_ICAO.get(airline_iata, "")
+
+    today = datetime.now().strftime("%Y-%m-%d")
+    dep_iso = f"{today}T{dep_time}" if dep_time else None
+    arr_iso = f"{today}T{arr_time}" if arr_time else None
+
+    if dep_iso and arr_iso and arr_iso <= dep_iso:
+        next_day = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+        time_part = arr_iso.split("T")[1] if "T" in arr_iso else arr_iso
+        arr_iso = f"{next_day}T{time_part}"
+
+    return {
+        "flight": flight,
+        "airline": {
+            "iata": airline_iata,
+            "icao": airline_icao,
+        },
+        "departure": {
+            "airport": dep_iata,
+            "terminal": None,
+            "time": dep_iso,
+        },
+        "arrival": {
+            "airport": arr_iata,
+            "terminal": None,
+            "time": arr_iso,
+        },
+        "duration_min": duration_min,
+        "status": "scheduled",
+        "aircraft": aircraft,
+        "source": "verified_db",
+    }
 
 
 # IATA → ICAO airline code mapping for major carriers

@@ -1228,7 +1228,14 @@ function renderFlightLookupResult(data) {
   document.querySelector('.search-summary .date-info').textContent = '航班号直搜';
   document.querySelector('.search-summary .pax-info').textContent = '';
   document.getElementById('alertArea').innerHTML = '';
-  document.getElementById('sourceInfo').textContent = 'AirLabs Schedules';
+  const sourceEl = document.getElementById('sourceInfo');
+  if (data.source === 'verified_db') {
+    sourceEl.innerHTML = '<span class="source-badge source-local">本地数据库</span>';
+    sourceEl.title = '基于过往航班数据总结；若航司飞行计划变更未能及时更新，欢迎反馈';
+  } else {
+    sourceEl.innerHTML = '<span class="source-badge source-live">AirLabs Schedules</span>';
+    sourceEl.title = '实时航班数据，来源：AirLabs API';
+  }
 
   if (!flightCard) return;
 

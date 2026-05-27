@@ -1,6 +1,6 @@
 Aero-Hub E2E Test Report
 ========================
-Timestamp: 2026-05-27 20:00:21
+Timestamp: 2026-05-27 23:12:09
 
 Tests executed:
   1. Splash → ENTER CONSOLE → search page   — PASS
