@@ -1218,6 +1218,16 @@
       "duration": 670,
       "arrivalDayOffset": 1,
       "note": "国航悉尼-北京航线"
+    },
+    "NRT-LAX": {
+      "airline": "SQ",
+      "flightNo": "SQ12",
+      "aircraft": "A359",
+      "departure": "18:40",
+      "arrival": "12:50",
+      "duration": 610,
+      "arrivalDayOffset": 0,
+      "note": "新航东京-洛杉矶第五航权"
     }
   }
 }

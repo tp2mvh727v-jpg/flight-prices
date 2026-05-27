@@ -512,7 +512,8 @@ def _format_flight_result(flight, schedule):
     # If arrival appears before departure, push arrival to next day
     if dep_iso and arr_iso and arr_iso <= dep_iso:
         next_day = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
-        arr_iso = f"{next_day}T{arr_time}"
+        time_part = arr_iso.split('T')[1] if 'T' in arr_iso else arr_iso
+        arr_iso = f"{next_day}T{time_part}"
 
     # Airline ICAO lookup
     airline_icao = _AIRLINE_IATA_TO_ICAO.get(airline_iata, "")

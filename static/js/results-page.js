@@ -1275,12 +1275,12 @@ function renderFlightLookupResult(data) {
         <div class="fl-route-bar">
           <div class="fl-airport-block">
             <div class="fl-airport-code">${escapeHtml(dep.airport || '--')}</div>
-            ${dep.terminal ? `<div class="fl-airport-terminal">T${escapeHtml(dep.terminal)}</div>` : ''}
+            ${dep.terminal ? `<div class="fl-airport-terminal">${/^\d+$/.test(dep.terminal) ? 'T' : ''}${escapeHtml(dep.terminal)}</div>` : ''}
           </div>
           <div class="fl-route-arrow">→</div>
           <div class="fl-airport-block">
             <div class="fl-airport-code">${escapeHtml(arr.airport || '--')}</div>
-            ${arr.terminal ? `<div class="fl-airport-terminal">T${escapeHtml(arr.terminal)}</div>` : ''}
+            ${arr.terminal ? `<div class="fl-airport-terminal">${/^\d+$/.test(arr.terminal) ? 'T' : ''}${escapeHtml(arr.terminal)}</div>` : ''}
           </div>
         </div>
 
