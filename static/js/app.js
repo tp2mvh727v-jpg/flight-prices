@@ -493,7 +493,8 @@ function _bootstrap() {
       if (e.detail.cityWarning) {
         AppState.cityWarning = e.detail.cityWarning;
       }
-      // Store flight lookup data for results page
+      // Store flight lookup data for results page — clear first, set if present
+      AppState.flightLookupData = null;
       if (p.flightData) {
         AppState.flightLookupData = p.flightData;
       }
