@@ -4697,7 +4697,7 @@ footer a { color: var(--primary); text-decoration: none; }
   overflow: hidden;
   background: linear-gradient(135deg, #0f172a 0%, #1a2740 50%, #0f172a 100%);
   border: 1px solid var(--border);
-  min-height: 200px;
+  min-height: 260px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4708,9 +4708,17 @@ footer a { color: var(--primary); text-decoration: none; }
   display: block;
   width: 100%;
   height: auto;
-  max-height: 400px;
+  max-height: 520px;
   object-fit: contain;
   border-radius: var(--radius);
+}
+
+.fp-aircraft-type-label {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  padding: 4px 0 2px;
+  letter-spacing: 0.03em;
 }
 
 .fp-aircraft-fallback {

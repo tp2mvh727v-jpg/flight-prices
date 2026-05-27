@@ -1230,8 +1230,7 @@ function renderFlightLookupResult(data) {
   document.getElementById('alertArea').innerHTML = '';
   const sourceEl = document.getElementById('sourceInfo');
   if (data.source === 'verified_db') {
-    sourceEl.innerHTML = '<span class="source-badge source-local">本地数据库</span>';
-    sourceEl.title = '基于过往航班数据总结；若航司飞行计划变更未能及时更新，欢迎反馈';
+    sourceEl.innerHTML = '<span class="source-badge source-local">本地数据库（基于过往航班数据总结；若航司飞行计划变更未能及时更新，欢迎反馈）</span>';
   } else {
     sourceEl.innerHTML = '<span class="source-badge source-live">AirLabs Schedules</span>';
     sourceEl.title = '实时航班数据，来源：AirLabs API';
@@ -1315,15 +1314,16 @@ function renderFlightLookupResult(data) {
         <div class="fl-aircraft-section">
           ${aircraft
             ? (imgSrc
-              ? `<div class="fp-aircraft-photo-wrap" style="margin:0 auto;max-width:500px;">
+              ? `<div class="fp-aircraft-photo-wrap" style="margin:0 auto;max-width:700px;">
                    <img class="fp-aircraft-img" src="${escapeHtml(imgSrc)}" alt="${escapeHtml(aircraft)}" loading="lazy"
                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
                    <div class="fp-aircraft-fallback" style="display:none;">
                      <span class="fp-fallback-icon">✈️</span>
                      <span>${escapeHtml(aircraft)}</span>
                    </div>
+                   <div class="fp-aircraft-type-label">${escapeHtml(aircraft)}</div>
                  </div>`
-              : `<div class="fl-aircraft-label">${escapeHtml(aircraft)}</div>`)
+              : `<div style="text-align:center;padding:16px 0;"><div style="font-size:2rem;margin-bottom:6px;">✈️</div><div style="font-weight:700;font-size:1rem;color:var(--aero-accent);margin-bottom:4px;">${escapeHtml(aircraft)}</div><div style="font-size:0.7rem;color:#94a3b8;">机型</div></div>`)
             : '<div class="fl-aircraft-na">机型信息暂无 (AirLabs 免费层限制)</div>'
           }
         </div>

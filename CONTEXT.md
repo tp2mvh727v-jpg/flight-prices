@@ -1,6 +1,6 @@
 # CONTEXT.md — Aero-Hub 项目状态
 
-> 最后更新: 2026-05-28 (v5.24 本地数据库兜底)
+> 最后更新: 2026-05-28 (v5.25 机型标签统一 + 图片模块放大)
 
 ---
 
@@ -57,6 +57,7 @@
 | v5.23 | 2026-05-28 | 航班号搜索Bug修复 — 搜索混淆/图片路径/空结果崩溃/机型补全 |
 | v5.23.4 | 2026-05-28 | 航站楼显示TTBIT修复 + 跨天时间修复 |
 | v5.24 | 2026-05-28 | 本地数据库兜底 + 来源标签badge化 |
+| v5.25 | 2026-05-28 | 机型标签统一（AirLabs真实机型也标注型号）+ 图片展示模块放大（700px宽/520px高） |
 
 ---
 
@@ -2077,3 +2078,38 @@ Azul Brazilian Airlines (AD) 实际运营 A330-200 (A332) 和 A330-900 (A339)，
 | `static/images/aircraft/B38M/JL/` | 已删除 |
 | `CONTEXT.md` | v5.21 条目 |
 | `TONIGHT_TASKS.md` | 会议任务清单 |
+
+---
+
+## 39. v5.25 — 机型标签统一 + 图片模块放大 (2026-05-28)
+
+### 39.1 背景
+
+- v5.24 已为本地数据库兜底结果添加机型标签（图片下方标注 B738 等）
+- AirLabs 真实机型来源（有 aircraft 值但无图片）只用简单 `<div>` 显示，缺乏机型标签
+- 用户要求：AirLabs 机型下方也标注「机型」，同时图片展示模块放大
+
+### 39.2 改动
+
+| 改动 | 文件 | 内容 |
+|------|------|------|
+| 1 | `results-page.js:1326` | AirLabs 无机型图片时改为 ✈️ + 型号 + 「机型」三行标签布局 |
+| 2 | `results-page.js:1317` | 图片容器 max-width: 500px → **700px** |
+| 3 | `style.css:4711` | `.fp-aircraft-img` max-height: 400px → **520px** |
+| 4 | `style.css:4700` | `.fp-aircraft-photo-wrap` min-height: 200px → **260px** |
+
+### 39.3 效果
+
+- **本地库兜底**（有图片）：图片更大（700px宽容器 / 520px高），下方标注机型
+- **AirLabs 真实**（无图片）：✈️ 图标 + 机型代号 + 「机型」标签，视觉一致
+- **无数据**：保持「机型信息暂无」提示
+
+### 39.4 修改文件清单
+
+| 文件 | 变更 |
+|------|------|
+| `static/js/results-page.js` | line 1317 max-width 500→700；line 1326 机型标签三行布局 |
+| `static/css/style.css` | `.fp-aircraft-img` max-height 400→520；`.fp-aircraft-photo-wrap` min-height 200→260 |
+| `static/sw.js` | CACHE_NAME → `aerohub-v5.25` |
+| `templates/index.html` | footer → v5.25 |
+| `CONTEXT.md` | v5.25 条目 |
