@@ -5201,4 +5201,10 @@ footer a { color: var(--primary); text-decoration: none; }
   opacity: 0.6;
 }
 
+  .aircraft-image-container {
+    width: calc(100vw - 32px);
+    height: 240px;
+    max-width: 388px;
+  }
+
 }
