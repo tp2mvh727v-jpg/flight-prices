@@ -1,6 +1,6 @@
 # CONTEXT.md — Aero-Hub 项目状态
 
-> 最后更新: 2026-07-01 (v5.25→v5.26 版本号补齐 + 移动端图片响应式)
+> 最后更新: 2026-07-08 (v5.27 缓存预热 + 版本号补齐 + CONTEXT表重排)
 
 ---
 
@@ -42,23 +42,24 @@
 | v5.8.8 | 2026-05-25 | UX增强 — Globe骨架屏+趋势首屏展开+移动端搜索层级+档案拖拽横条 |
 | v5.9 | 2026-05-25 | 航司归属全链路 — 航司仅运营涉及本国的航线 + 中转枢纽为本国机场 + 绕路比>2x过滤 |
 | v5.10 | 2026-05-25 | 搜索质量优化 — 时间跨天+独立选型+分钟规范化+时长推算+联盟排序全修 |
-|| v5.11 | 2026-05-25 | 移动端排版重构 + PC列宽调优 + 操作列拆分 + Cloudflare隧道 |
-|| v5.12 | 2026-05-25 | OpenFlights 真实航线数据库集成(26,167条) + AirLabs中转航班注入 + 图片库增量下载 |
-|| v5.13 | 2026-05-25 | 座位图修复 + 航司归属逻辑修正 + sync_aircraft_images 自动化 |
-|| v5.14 | 2026-05-26 | 段级到达日期修复(seg1Minutes→let) + AirLabs 丰富化路由 |
-|| v5.15 | 2026-05-27 | 真实航线锚定系统 — verified_routes.json (66条) + CA981机型修正 + AirLabs保护 |
-|| v5.16 | 2026-05-27 | 移除 OpenSky ADS-B 实时航班模块 — 删除 server.py API 路由 + results-page.js 实时面板 + flight-profile.js Globe 叠加层 + CSS 样式 |
-|| v5.17 | 2026-05-27 | 机型图片库全量规范化 — 统一命名(285文件) + 格式转换(5张) + 新下载(25组合) + 错配修正(2张) + 覆盖率76%→99% |
-|| v5.18 | 2026-05-27 | 体验打磨 — search-loading过渡动画 + trend tooltip增强(星期+价格对比+最低价标记) + 移动端track-btn 40→44px + E2E Test 5骨架屏修复 + form submit加固 + 66条航线校验(0机型错配) + SW/href/cache triple-bump |
-|| v5.19 | 2026-05-28 | 项目重构 — Python脚本整理到 scripts/{data,images,utils}/ 子目录 + server.py import 路径同步修正 + .gitignore 大体积文件排除(图片/缓存/数据) + 机型航程修正(A35J 18,000km) + CA981 B748执飞 + JFK-SIN A35J修正 |
-|| v5.20 | 2026-05-28 | 版本同步 — SW/HTML四重bump (v5.18→v5.20) + footer-version badge样式 + AirLabs缓存预热(44航线/374连接) + CONTEXT.md版本记录修正 |
+| v5.11 | 2026-05-25 | 移动端排版重构 + PC列宽调优 + 操作列拆分 + Cloudflare隧道 |
+| v5.12 | 2026-05-25 | OpenFlights 真实航线数据库集成(26,167条) + AirLabs中转航班注入 + 图片库增量下载 |
+| v5.13 | 2026-05-25 | 座位图修复 + 航司归属逻辑修正 + sync_aircraft_images 自动化 |
+| v5.14 | 2026-05-26 | 段级到达日期修复(seg1Minutes→let) + AirLabs 丰富化路由 |
+| v5.15 | 2026-05-27 | 真实航线锚定系统 — verified_routes.json (66条) + CA981机型修正 + AirLabs保护 |
+| v5.16 | 2026-05-27 | 移除 OpenSky ADS-B 实时航班模块 — 删除 server.py API 路由 + results-page.js 实时面板 + flight-profile.js Globe 叠加层 + CSS 样式 |
+| v5.17 | 2026-05-27 | 机型图片库全量规范化 — 统一命名(285文件) + 格式转换(5张) + 新下载(25组合) + 错配修正(2张) + 覆盖率76%→99% |
+| v5.18 | 2026-05-27 | 体验打磨 — search-loading过渡动画 + trend tooltip增强(星期+价格对比+最低价标记) + 移动端track-btn 40→44px + E2E Test 5骨架屏修复 + form submit加固 + 66条航线校验(0机型错配) + SW/href/cache triple-bump |
+| v5.19 | 2026-05-28 | 项目重构 — Python脚本整理到 scripts/{data,images,utils}/ 子目录 + server.py import 路径同步修正 + .gitignore 大体积文件排除(图片/缓存/数据) + 机型航程修正(A35J 18,000km) + CA981 B748执飞 + JFK-SIN A35J修正 |
+| v5.20 | 2026-05-28 | 版本同步 — SW/HTML四重bump (v5.18→v5.20) + footer-version badge样式 + AirLabs缓存预热(44航线/374连接) + CONTEXT.md版本记录修正 |
 | v5.21 | 2026-05-28 | 数据质量治理 — A333/AD机型错配修正 + 4空目录清理 + sync_aircraft_images重生成(310组合) |
 | v5.22 | 2026-05-28 | 航班号直搜 — AirLabs schedules API代理 + 搜索模式切换 + 机型verified_routes回填 |
 | v5.23 | 2026-05-28 | 航班号搜索Bug修复 — 搜索混淆/图片路径/空结果崩溃/机型补全 |
 | v5.23.4 | 2026-05-28 | 航站楼显示TTBIT修复 + 跨天时间修复 |
 | v5.24 | 2026-05-28 | 本地数据库兜底 + 来源标签badge化 |
-|| v5.25 | 2026-05-28 | 机型标签统一（AirLabs真实机型也标注型号）+ 图片展示模块放大（700px宽/520px高） |
-|| v5.26 | 2026-07-01 | 版本号补齐（CSS/JS/VERSION v5.24→v5.25）+ 移动端图片响应式降尺寸（@media 内 aircraft-image-container 388×240） |
+| v5.25 | 2026-05-28 | 机型标签统一（AirLabs真实机型也标注型号）+ 图片展示模块放大（700px宽/520px高） |
+| v5.26 | 2026-07-01 | 版本号补齐（CSS/JS/VERSION v5.24→v5.25）+ 移动端图片响应式降尺寸（@media 内 aircraft-image-container 388×240） |
+| v5.27 | 2026-07-08 | 缓存预热 + 版本号补齐 + CONTEXT表重排 |
 
 ---
 
@@ -2114,3 +2115,41 @@ Azul Brazilian Airlines (AD) 实际运营 A330-200 (A332) 和 A330-900 (A339)，
 | `static/sw.js` | CACHE_NAME → `aerohub-v5.25` |
 | `templates/index.html` | footer → v5.25 |
 | `CONTEXT.md` | v5.25 条目 |
+
+---
+
+## 40. v5.27 — 缓存预热 + 版本号补齐 + CONTEXT表重排 (2026-07-08)
+
+### 40.1 版本号补齐
+
+SW/HTML 五重版本号 bump v5.25→v5.27：
+
+| 位置 | 旧值 | 新值 |
+|------|------|------|
+| `sw.js` CACHE_NAME | `aerohub-v5.25` | `aerohub-v5.27` |
+| `index.html` CSS 缓存破坏 | `?v=5.25` | `?v=5.27` |
+| `index.html` JS 缓存破坏 | `?v=5.25` | `?v=5.27` |
+| `index.html` inline VERSION | `5.25` | `5.27` |
+| `index.html` footer | `v5.25` | `v5.27` |
+
+### 40.2 Service Worker 缓存预热
+
+版本号 bump 触发新 SW 安装 → `install` 事件预缓存所有静态资源 + CDN 依赖（chart.js / globe.gl），旧缓存自动清理。
+
+### 40.3 CONTEXT.md 版本演进表重排
+
+- 修复 12 行 `||` 双竖线格式 → `|` 单竖线
+- 按日期+版本号从小到大重新排序
+- 新增 v5.27 条目
+
+### 40.4 修改文件清单
+
+| 文件 | 变更 |
+|------|------|
+| `static/sw.js` | CACHE_NAME → v5.27（触发缓存预热） |
+| `templates/index.html` | 四重版本号 bump v5.25→v5.27 |
+| `CONTEXT.md` | 版本演进表重排 + v5.27 记录段 |
+
+---
+
+> 最后更新: 2026-07-08 (v5.27 发布)
