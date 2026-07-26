@@ -1,6 +1,6 @@
 # CONTEXT.md — Aero-Hub 项目状态
 
-> 最后更新: 2026-07-08 (v5.27 缓存预热 + 版本号补齐 + CONTEXT表重排)
+> 最后更新: 2026-07-26 (v5.28 图片占位优化 + 移动端日期选择器 + 航线覆盖扩展)
 
 ---
 
@@ -60,6 +60,7 @@
 | v5.25 | 2026-05-28 | 机型标签统一（AirLabs真实机型也标注型号）+ 图片展示模块放大（700px宽/520px高） |
 | v5.26 | 2026-07-01 | 版本号补齐（CSS/JS/VERSION v5.24→v5.25）+ 移动端图片响应式降尺寸（@media 内 aircraft-image-container 388×240） |
 | v5.27 | 2026-07-08 | 缓存预热 + 版本号补齐 + CONTEXT表重排 |
+| v5.28 | 2026-07-26 | 图片占位优化 + 移动端日期选择器 + 航线覆盖扩展 + 版本号补齐 |
 
 ---
 
@@ -2152,4 +2153,47 @@ SW/HTML 五重版本号 bump v5.25→v5.27：
 
 ---
 
-> 最后更新: 2026-07-08 (v5.27 发布)
+## 41. v5.28 — 图片占位优化 + 移动端日期选择器 + 航线覆盖扩展 (2026-07-26)
+
+### 41.1 图片加载占位优化
+
+- `.fp-aircraft-photo-wrap` 新增 `aspect-ratio: 16/10` 保持布局稳定，`background: var(--surface-variant, #f0f0f0)` 占位底色
+- `.fp-aircraft-img` 新增 `opacity: 0` + `transition: opacity 0.3s ease` 渐入效果
+- `.fp-aircraft-img.loaded` 设置 `opacity: 1` 完成过渡
+- `flight-profile.js` 为图片添加 `onload` 处理器 + 已缓存图片 `img.complete` 检测
+
+### 41.2 移动端日期选择器
+
+- `@media (max-width: 420px)` 内新增 `.search-dates` 规则：纵向排列 + 12px 间距
+- 日期输入框 `min-height: 44px`（满足 iOS 触摸目标）+ `font-size: 16px`（防止 iOS 缩放）
+
+### 41.3 航线覆盖扩展
+
+更新 `data/verified_routes.json` 和 `static/data/verified_routes.json` 中 4 条已有航线数据：
+
+| 航线 | 变更 |
+|------|------|
+| PVG-JFK | arrival 12:25→13:25, duration 870→895, +arrivalDayOffset, +note |
+| PVG-LAX | arrival 08:30→09:05, duration 690→725, +arrivalDayOffset, +note |
+| CTU-LAX | flightNo 3U3837→3U8637, departure 21:00→21:55, arrival 19:00→19:50, duration 780→835, +arrivalDayOffset, +note |
+| CAN-JFK | flightNo CZ699→CZ399, departure 17:30→01:35, arrival 18:40→04:15, duration 850→940, +arrivalDayOffset, +note |
+
+### 41.4 版本号补齐
+
+SW/HTML 五重版本号 bump v5.27→v5.28
+
+### 41.5 修改文件清单
+
+| 文件 | 变更 |
+|------|------|
+| `static/css/style.css` | 图片占位符 CSS + 移动端日期选择器 |
+| `static/js/flight-profile.js` | 图片 onload 渐入处理 |
+| `data/verified_routes.json` | 4 条航线数据更新 |
+| `static/data/verified_routes.json` | 同上 |
+| `static/sw.js` | CACHE_NAME → v5.28 |
+| `templates/index.html` | 四重版本号 bump v5.27→v5.28 |
+| `CONTEXT.md` | v5.28 条目 |
+
+---
+
+> 最后更新: 2026-07-26 (v5.28 发布)

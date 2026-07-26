@@ -4703,6 +4703,8 @@ footer a { color: var(--primary); text-decoration: none; }
   align-items: center;
   justify-content: center;
   position: relative;
+  aspect-ratio: 16 / 10;
+  background: var(--surface-variant, #f0f0f0);
 }
 
 .fp-aircraft-img {
@@ -4712,6 +4714,12 @@ footer a { color: var(--primary); text-decoration: none; }
   max-height: 520px;
   object-fit: contain;
   border-radius: var(--radius);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.fp-aircraft-img.loaded {
+  opacity: 1;
 }
 
 .fp-aircraft-type-label {
@@ -4927,6 +4935,16 @@ footer a { color: var(--primary); text-decoration: none; }
   .date-row {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+
+  /* Search dates — mobile-optimized inputs */
+  .search-dates {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .search-dates input[type="date"] {
+    min-height: 44px;
+    font-size: 16px;
   }
 
   /* Passenger & cabin selects — side by side on phone */

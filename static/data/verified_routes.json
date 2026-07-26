@@ -105,8 +105,9 @@
       "flightNo": "MU587",
       "aircraft": "B77W",
       "departure": "11:30",
-      "arrival": "12:25",
-      "duration": 870,
+      "arrival": "13:25",
+      "duration": 895,
+      "arrivalDayOffset": 0,
       "days": [
         1,
         2,
@@ -115,7 +116,8 @@
         5,
         6,
         7
-      ]
+      ],
+      "note": "东航旗舰航线 上海-纽约"
     },
     "JFK-PVG": {
       "airline": "MU",
@@ -142,8 +144,9 @@
       "flightNo": "MU583",
       "aircraft": "B77W",
       "departure": "13:00",
-      "arrival": "08:30",
-      "duration": 690,
+      "arrival": "09:05",
+      "duration": 725,
+      "arrivalDayOffset": 0,
       "days": [
         1,
         2,
@@ -152,7 +155,8 @@
         5,
         6,
         7
-      ]
+      ],
+      "note": "东航 上海-洛杉矶"
     },
     "PVG-SFO": {
       "airline": "MU",
@@ -191,11 +195,12 @@
     "CAN-JFK": {
       "airline": "CZ",
       "airlineName": "南方航空",
-      "flightNo": "CZ699",
+      "flightNo": "CZ399",
       "aircraft": "B77W",
-      "departure": "17:30",
-      "arrival": "18:40",
-      "duration": 850,
+      "departure": "01:35",
+      "arrival": "04:15",
+      "duration": 940,
+      "arrivalDayOffset": 0,
       "days": [
         1,
         2,
@@ -204,7 +209,8 @@
         5,
         6,
         7
-      ]
+      ],
+      "note": "南航 广州-纽约"
     },
     "CAN-LAX": {
       "airline": "CZ",
@@ -238,16 +244,18 @@
     "CTU-LAX": {
       "airline": "3U",
       "airlineName": "四川航空",
-      "flightNo": "3U3837",
+      "flightNo": "3U8637",
       "aircraft": "A359",
-      "departure": "21:00",
-      "arrival": "19:00",
-      "duration": 780,
+      "departure": "21:55",
+      "arrival": "19:50",
+      "duration": 835,
+      "arrivalDayOffset": 0,
       "days": [
         2,
         4,
         6
-      ]
+      ],
+      "note": "川航 成都-洛杉矶"
     },
     "SIN-JFK": {
       "airline": "SQ",

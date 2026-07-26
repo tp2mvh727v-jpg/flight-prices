@@ -1686,13 +1686,18 @@ function openFlightProfile(flight) {
   document.body.appendChild(container);
   document.body.style.overflow = 'hidden';
 
-  // Attach image error fallback (replaces unsafe inline onerror)
+  // Attach image error fallback + load placeholder (replaces unsafe inline onerror)
   container.querySelectorAll('.fp-aircraft-img').forEach(img => {
     img.addEventListener('error', function() {
       this.style.display = 'none';
       const fallback = this.parentElement.querySelector('.fp-aircraft-fallback');
       if (fallback) fallback.style.display = 'flex';
     });
+    if (img.complete) {
+      img.classList.add('loaded');
+    } else {
+      img.onload = function() { this.classList.add('loaded'); };
+    }
   });
 
   const closeBtn = document.getElementById('fpClose');
