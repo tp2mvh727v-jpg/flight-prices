@@ -2226,7 +2226,7 @@ function _pickAircraftForSegment(carrierCode, origin, dest, preferredWide = fals
   if (equipPool.length > 0) {
     const validEquip = equipPool
       .map(code => ({ code, db: AIRCRAFT_DB[code] }))
-      .filter(e => e.db && e.db.rangeKm >= segDist * 0.8);
+      .filter(e => e.db && e.db.rangeKm >= segDist * (e.code === 'A35J' ? 1.0 : 1.111));
     if (validEquip.length > 0) {
       const wide = validEquip.filter(e => (e.db.rangeKm >= 10000 || e.db.seats >= 250));
       const candidates = preferredWide && wide.length > 0 ? wide : validEquip;
@@ -2267,19 +2267,35 @@ function _pickAircraftForSegment(carrierCode, origin, dest, preferredWide = fals
   candidates.sort((a, b) => b.range - a.range);
   
   if (candidates.length === 0) {
-    return { code: 'B789', distanceKm: segDist, rangeKm: 14140, rangePct: Math.round(segDist / 14140 * 100) };
+    if (segDist <= 14140) {
+      return { code: 'B789', distanceKm: segDist, rangeKm: 14140, rangePct: Math.round(segDist / 14140 * 100) };
+    }
+    if (segDist <= 18000) {
+      return { code: 'A35J', distanceKm: segDist, rangeKm: 18000, rangePct: Math.round(segDist / 18000 * 100) };
+    }
+    return { code: 'A35K', distanceKm: segDist, rangeKm: 16100, rangePct: Math.round(segDist / 16100 * 100) };
   }
   
-  // Pick shortest-range aircraft that can handle 85% of distance
+  // Pick shortest-range aircraft that can handle 90% of distance
   // (prefer realistic assignment over always picking the longest-range)
-  const targetRange = segDist / 0.85;  // need range to cover distance at 85% utilization
+  const targetRange = segDist / 0.9;  // need range to cover distance at 90% utilization
   let best = candidates[0];  // default: longest range
   for (const c of candidates) {
     if (c.range >= targetRange) {
       best = c;  // this one can handle it
     }
   }
-  
+
+  // ULR special case: no aircraft meets the 90% target — A35J may fly up to 100%
+  if (best.range < targetRange) {
+    const ulr = candidates.find(c => c.code === 'A35J');
+    if (ulr && segDist <= 18000) {
+      best = ulr;
+    }
+  }
+
+  // Last resort: if still over 100% (no ULR in fleet / distance > 18000),
+  // keep the longest-range type — rangePct may exceed 100.
   return {
     code: best.code,
     distanceKm: segDist,

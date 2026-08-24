@@ -7,7 +7,7 @@ import { fetchPrices, fetchDateRange, createAbortController } from './api.js';
 import { renderFlightRow, renderFlightCard, renderRoundtripSummary } from './flight-card.js';
 import {
   sourceLabel, modeBadge, formatDate, formatPrice,
-  getTripTypeLabel, escapeHtml
+  getTripTypeLabel, escapeHtml, loadScript
 } from './utils.js';
 import { addToWatchlist, removeFromWatchlist, isTracked, refreshWatchlistFromResults } from './watchlist.js';
 import { AIRCRAFT_IMAGES } from './flight-profile.js';
@@ -661,7 +661,7 @@ function renderTrendToggle() {
   document.getElementById('trendToggle').addEventListener('click', () => toggleTrendPanel());
 }
 
-function toggleTrendPanel() {
+async function toggleTrendPanel() {
   const summary = AppState.getSearchSummary();
   trendPanelOpen = !trendPanelOpen;
   const panel = document.getElementById('trendPanel');
@@ -681,7 +681,7 @@ function toggleTrendPanel() {
       // Re-render trend content to reflect current focus date highlight
       const results = AppState.trendData?.results || [];
       const activeIdx = results.findIndex(r => r.date === AppState.currentFocusDate);
-      renderMiniChart(results, activeIdx >= 0 ? activeIdx : -1);
+      await renderMiniChart(results, activeIdx >= 0 ? activeIdx : -1);
       renderDateGrid(results, summary, activeIdx >= 0 ? activeIdx : -1);
     }
   } else {
@@ -725,7 +725,7 @@ async function fetchTrendData(summary, days) {
 
     // Rendering happens in a separate try so API data is never lost on render errors
     try {
-      renderTrendPanelContent(data, summary, days);
+      await renderTrendPanelContent(data, summary, days);
     } catch (renderErr) {
       console.error('renderTrendPanelContent failed:', renderErr);
       body.innerHTML = `
@@ -735,7 +735,9 @@ async function fetchTrendData(summary, days) {
           <button class="btn" id="retryTrendRender">重新渲染</button>
         </div>`;
       document.getElementById('retryTrendRender').addEventListener('click', () => {
-        renderTrendPanelContent(data, summary, days);
+        renderTrendPanelContent(data, summary, days).catch(err => {
+          console.error('renderTrendPanelContent failed:', err);
+        });
       });
     }
   } catch (e) {
@@ -752,7 +754,7 @@ async function fetchTrendData(summary, days) {
 
 // ——— Render full trend panel content ———
 
-function renderTrendPanelContent(data, summary, days) {
+async function renderTrendPanelContent(data, summary, days) {
   const body = document.getElementById('trendPanelBody');
   const results = data.results || [];
 
@@ -793,7 +795,7 @@ function renderTrendPanelContent(data, summary, days) {
   const currentDateStr = AppState.departDate;
   const activeIdx = results.findIndex(r => r.date === currentDateStr);
 
-  renderMiniChart(results, activeIdx >= 0 ? activeIdx : -1);
+  await renderMiniChart(results, activeIdx >= 0 ? activeIdx : -1);
   renderTrendInlineSummary(results);
   renderDateGrid(results, summary, activeIdx >= 0 ? activeIdx : -1);
 }
@@ -868,12 +870,18 @@ function formatTooltipDate(dateStr) {
   return `${parseInt(parts[1])}月${parseInt(parts[2])}日 (${wd})`;
 }
 
-function renderMiniChart(results, activeIdx) {
+async function renderMiniChart(results, activeIdx) {
   const canvas = document.getElementById('trendMiniChart');
   if (!canvas) return;
   if (typeof Chart === 'undefined') {
-    console.warn('Chart.js not loaded, skipping mini chart');
-    return;
+    try {
+      await loadScript('/static/vendor/chart.umd.min.js');
+    } catch (e) {
+      console.error('Chart.js lazy load failed:', e);
+      const wrap = canvas.parentElement;
+      if (wrap) wrap.innerHTML = '<div class="empty-state" style="padding:20px;"><p>趋势图表库加载失败，无法渲染图表</p></div>';
+      return;
+    }
   }
   const ctx = canvas.getContext('2d');
   if (trendChart) trendChart.destroy();

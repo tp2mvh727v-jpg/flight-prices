@@ -1,6 +1,6 @@
 # CONTEXT.md — Aero-Hub 项目状态
 
-> 最后更新: 2026-08-24 (v5.30 价格确定性 + 图片压缩 + 注册号修复)
+> 最后更新: 2026-08-24 (v5.31 航程利用率修复 + CDN本地化懒加载)
 
 ---
 
@@ -63,6 +63,7 @@
 | v5.28 | 2026-07-26 | 图片占位优化 + 移动端日期选择器 + 航线覆盖扩展 + 版本号补齐 |
 | v5.29 | 2026-08-24 | 深航 A359 机队 + SZX-LHR 航线 + AirLabs 数据基建 + 隧道自愈 |
 | v5.30 | 2026-08-24 | 价格确定性算法 + 图片压缩85% + 注册号修复 + 日期切换即时反馈 |
+| v5.31 | 2026-08-24 | 航程利用率修复(≤90%) + CDN本地化懒加载(首屏2.5s→0.1s) |
 
 ---
 
@@ -2254,4 +2255,31 @@ SW/HTML 五重版本号 bump v5.27→v5.28
 
 ---
 
-> 最后更新: 2026-08-24 (v5.30 发布)
+## 44. v5.31 — 航程利用率修复 + CDN本地化懒加载 (2026-08-24)
+
+### 44.1 背景
+
+- 用户反馈出现航程利用率>100%的航班（飞行距离超过机型最大航程）
+- 首屏加载慢（unpkg CDN 的 globe.gl 1.84MB 同步阻塞）
+
+### 44.2 修改文件清单
+
+| 文件 | 变更 |
+|------|------|
+| `static/js/flightService.js` | `_pickAircraftForSegment` 航程利用率修复——普通机型要求利用率≤90%（rangeKm ≥ 距离×1.111），A35J（A350-900ULR）特例允许≤100%；分支2 targetRange 改为 segDist/0.9；极端航线 A35J 兜底；fallback 按距离分层（B789≤14140/A35J≤18000/A35K） |
+| `static/js/utils.js` | 新增 loadScript(src) 动态加载 helper |
+| `static/js/flight-profile.js` | globe.gl 改为按需懒加载（打开航线轨迹 tab 时从 /static/vendor/ 加载，失败降级 fallback） |
+| `static/js/results-page.js` | chart.js 改为按需懒加载（渲染趋势图前加载，失败降级纯文字） |
+| `templates/index.html` | 移除 unpkg globe.gl 与 jsdelivr chart.js 两个同步 CDN script |
+| `static/vendor/` | 新增本地第三方库（chart.umd.min.js 200KB + globe.gl.min.js 1.84MB） |
+| `static/sw.js` + `templates/index.html` | 版本五重 bump → v5.31 |
+
+### 44.3 备注
+
+- 首屏 domcontentloaded 2.5s→0.1s
+- 航线轨迹 3D 地球 0.4s 按需渲染
+- E2E 11 项全通过
+
+---
+
+> 最后更新: 2026-08-24 (v5.31 发布)

@@ -175,7 +175,7 @@ async function _resolveAllCoordsAsync(flight) {
 // ============================================================
 
 import AppState from './state.js';
-import { formatPrice, escapeHtml } from './utils.js';
+import { formatPrice, escapeHtml, loadScript } from './utils.js';
 import Analytics from './analytics.js';
 
 // ============================================================
@@ -1490,9 +1490,14 @@ async function _initGlobeAsync(container, flight) {
       return;
     }
 
-    if (!window.Globe) {
-      _showGlobeFallback(el, 'Globe.gl 库加载超时，请重试', flight);
-      return;
+    if (typeof window.Globe === 'undefined') {
+      try {
+        await loadScript('/static/vendor/globe.gl.min.js');
+      } catch (e) {
+        console.error('[FlightProfile] Globe.gl lazy load failed:', e);
+        _showGlobeFallback(el, '3D 航线轨迹库加载失败，请重试', flight);
+        return;
+      }
     }
 
     if (flight.segments && flight.segments.length > 1 && allCoords.size > 2) {
