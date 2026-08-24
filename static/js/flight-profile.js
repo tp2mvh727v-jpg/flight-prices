@@ -709,18 +709,9 @@ export const AIRCRAFT_IMAGES = {
     'VN': ['B78X.jpg'],
   },
 };
-;
-;
-;;;
-;
-;
-;
-;
-;
-;
 
 function _localImageUrl(model, airline, filename) {
-  return `/static/images/aircraft/${encodeURIComponent(model)}/${encodeURIComponent(airline)}/${encodeURIComponent(filename)}`;
+  return `/static/images/aircraft-thumb/${encodeURIComponent(model)}/${encodeURIComponent(airline)}/${encodeURIComponent(filename)}`;
 }
 
 // Wikimedia Commons search URL for manual lookup
@@ -736,7 +727,7 @@ function _getAircraftImageUrls(acCode, airlineCode) {
   // Priority 1: exact airline match
   if (airlineCode && modelData[airlineCode]) {
     const list = modelData[airlineCode];
-    const fname = list[Math.floor(Math.random() * list.length)];
+    const fname = list[0];
     return { local: _localImageUrl(acCode, airlineCode, fname), source: 'airline' };
   }
 
@@ -1008,7 +999,7 @@ function _buildAircraftIdBlock(flight, segIdx) {
 
   // Row 3: model name + registration
   const registration = g.registration || 'B-0000';
-  const modelAndReg = `${escapeHtml(fullModel)} · ${escapeHtml(registration)}`;
+  const modelAndReg = `${escapeHtml(acCode)} · ${escapeHtml(fullModel)} · ${escapeHtml(registration)}`;
 
   const panelId = segIdx !== undefined ? segIdx : '';
 

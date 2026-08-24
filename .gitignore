@@ -7,6 +7,7 @@ venv/
 
 # 图片缓存（体积大，不应上传）
 static/images/aircraft/
+static/images/aircraft-thumb/
 
 # 本地数据缓存
 data/*.json

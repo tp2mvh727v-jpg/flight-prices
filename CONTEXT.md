@@ -1,6 +1,6 @@
 # CONTEXT.md — Aero-Hub 项目状态
 
-> 最后更新: 2026-08-24 (v5.29 深航 A359 机队 + SZX-LHR 航线 + AirLabs 数据基建)
+> 最后更新: 2026-08-24 (v5.30 价格确定性 + 图片压缩 + 注册号修复)
 
 ---
 
@@ -62,6 +62,7 @@
 | v5.27 | 2026-07-08 | 缓存预热 + 版本号补齐 + CONTEXT表重排 |
 | v5.28 | 2026-07-26 | 图片占位优化 + 移动端日期选择器 + 航线覆盖扩展 + 版本号补齐 |
 | v5.29 | 2026-08-24 | 深航 A359 机队 + SZX-LHR 航线 + AirLabs 数据基建 + 隧道自愈 |
+| v5.30 | 2026-08-24 | 价格确定性算法 + 图片压缩85% + 注册号修复 + 日期切换即时反馈 |
 
 ---
 
@@ -2224,4 +2225,33 @@ SW/HTML 五重版本号 bump v5.27→v5.28
 
 ---
 
-> 最后更新: 2026-08-24 (v5.29 发布)
+## 43. v5.30 — 体验优化：价格确定性 + 图片压缩 + 注册号修复 (2026-08-24)
+
+### 43.1 背景
+
+三个体验问题修复：
+- 价格每次刷新都变，缺乏确定性
+- 详情图片加载慢，且型号/注册号显示不一致
+- 寻找低价点击无反馈
+
+### 43.2 修改文件清单
+
+| 文件 | 变更 |
+|------|------|
+| `static/js/flightService.js` | 价格改为确定性算法（_seededRandom，同航线同天价格稳定、日期自然波动）；注册号生成器补全（BR/AC/DL/UA/BA/VS/NZ 等 + _countryRegBody 按国家生成合法前缀）；getFlights/getDateRange 结果缓存（上限200条） |
+| `static/js/flight-profile.js` | 图片确定性选择（固定第一张）；图片路径指向 aircraft-thumb 缩略图目录；型号显示统一为「代码 · 全名 · 注册号」；清理孤立分号行 |
+| `static/js/results-page.js` | 日期切换即时反馈（点击立即切 active + switching 遮罩） |
+| `static/css/style.css` | 新增 .switching 遮罩样式 |
+| `scripts/data/compress_aircraft_images.py` | 新增图片批量压缩脚本（sips，最长边800px，质量82） |
+| `static/sw.js` + `templates/index.html` | 版本五重 bump → v5.30 |
+| `.gitignore` | 新增 static/images/aircraft-thumb/ 忽略 |
+
+### 43.3 备注
+
+- 317 张图片压缩 197.5MB→30.4MB（-85%）
+- E2E 7 项全通过
+- 隧道链接已恢复
+
+---
+
+> 最后更新: 2026-08-24 (v5.30 发布)

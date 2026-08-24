@@ -2442,6 +2442,13 @@ body {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ——— Transient dim while switching dates ——— */
+.switching {
+  opacity: 0.4;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
 /* ——— Skeleton shimmer placeholders ——— */
 
 @keyframes shimmer {

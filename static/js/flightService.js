@@ -380,6 +380,20 @@ const FLIGHT_API_KEY = 'PLACEHOLDER';
 const FLIGHT_API_BASE = 'https://api.flightapi.io/onewaytrip';
 
 // ——————————————————————————————————————————
+// Result cache (prices are deterministic via _seededRandom)
+// ——————————————————————————————————————————
+const _RESULT_CACHE = new Map();
+const _CACHE_MAX = 200; // prevent unbounded growth
+function _cacheGet(key) { return _RESULT_CACHE.get(key); }
+function _cacheSet(key, val) {
+  if (_RESULT_CACHE.size >= _CACHE_MAX) {
+    const firstKey = _RESULT_CACHE.keys().next().value;
+    _RESULT_CACHE.delete(firstKey);
+  }
+  _RESULT_CACHE.set(key, val);
+}
+
+// ——————————————————————————————————————————
 // Airline / Airport pools for mock data
 // ——————————————————————————————————————————
 const MOCK_CARRIERS = [
@@ -712,8 +726,46 @@ function _uniqueSuffix() {
 }
 function _resetRegSuffix() { _regUsed = new Set(); }
 
+// Country-code → valid registration prefix (used by the default branch)
+function _countryRegBody(country) {
+  const A = _REG_SUFFIX;
+  const D = '0123456789';
+  const letters = (n) => Array.from({ length: n }, () => _pickRandom(A)).join('');
+  const digits = (n) => Array.from({ length: n }, () => _pickRandom(D)).join('');
+  switch (country) {
+    case 'CN': return 'B-' + _pickRandom(['1083','2067','3015','5947','6073','7865','8491']);
+    case 'US': return 'N' + _pickRandom(['310','330','380','480','720','780','810','910']) + letters(1);
+    case 'GB': return 'G-' + letters(4);
+    case 'JP': return 'JA' + _pickRandom(['801','812','827','835','843','859','867','874']);
+    case 'KR': return 'HL' + _pickRandom(['8201','7633','7538','8003','8345','7582']);
+    case 'SG': return '9V-' + letters(3);
+    case 'AE': return 'A6-' + letters(3);
+    case 'QA': return 'A7-' + letters(3);
+    case 'AU': return 'VH-' + letters(3);
+    case 'DE': return 'D-' + letters(3);
+    case 'FR': return 'F-' + letters(3);
+    case 'CA': return _pickRandom(['C-F','C-G']) + letters(3);
+    case 'NZ': return 'ZK-' + letters(3);
+    case 'HK': return _pickRandom(['B-H','B-L']) + letters(2);
+    case 'RU': return 'RA-' + digits(5);
+    case 'BR': return _pickRandom(['PR-','PT-']) + letters(3);
+    case 'IN': return 'VT-' + letters(3);
+    case 'TH': return 'HS-' + letters(3);
+    case 'ID': return 'PK-' + letters(3);
+    case 'TR': return 'TC-' + letters(3);
+    case 'IT': return 'I-' + letters(3);
+    case 'NL': return 'PH-' + letters(3);
+    case 'CH': return 'HB-' + letters(3);
+    case 'FI': return 'OH-' + letters(3);
+    case 'AT': return 'OE-' + letters(3);
+    case 'ES': return 'EC-' + letters(3);
+    default: return 'B-' + digits(4);
+  }
+}
+
 function _generateRegistration(airlineCode, acCode) {
   const suffix = _uniqueSuffix();
+  const chars = _REG_SUFFIX;
   const patterns = {
     'CA': () => 'B-' + _pickRandom(['1083','2067','3015','5947','6073','7865','8491']) + suffix,
     'MU': () => 'B-' + _pickRandom(['7365','8231','5943','3031','2008','6530','8972']) + suffix,
@@ -734,11 +786,22 @@ function _generateRegistration(airlineCode, acCode) {
     'AF': () => 'F-HP' + _pickRandom(['AA','BB','CC','DD','EE','FF','GG']) + suffix,
     'TK': () => 'TC-J' + _pickRandom(['NA','OB','PC','RD','SE','TF']) + suffix,
     'EY': () => 'A6-E' + _pickRandom(['BA','CB','DC','ED','FE','GF']) + suffix,
-    'default': () => {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
-      const prefix = _pickRandom(['N','G','F','HS','VT','PK','9M','B-','D-','EC','LV']);
-      return prefix + _pickRandom(chars) + _pickRandom(chars) + _pickRandom(chars) + suffix;
-    },
+    // v5.29: 补全缺失航司注册号 pattern
+    'BR': () => 'B-' + _pickRandom(['16701','16703','16705','16707','16709','16711','16715','16718','17801','17803','17805','17807','17809']) + suffix,
+    'AC': () => _pickRandom(['C-F','C-G']) + _pickRandom(chars) + _pickRandom(chars) + _pickRandom(chars) + suffix,
+    'DL': () => 'N' + _pickRandom(['3301','3302','3303','3305','3306','1801','1802','1803','1901','1902']) + _pickRandom(chars) + suffix,
+    'UA': () => 'N' + _pickRandom(['2701','2702','2703','3701','3702','3801','3802','4801','4802']) + _pickRandom(chars) + suffix,
+    'AA': () => 'N' + _pickRandom(['8001','8002','8003','8004','9001','9002','9003','9101','9102']) + _pickRandom(chars) + suffix,
+    'BA': () => 'G-' + _pickRandom(['XW','ST','ZB','YM']) + _pickRandom(chars) + _pickRandom(chars) + suffix,
+    'VS': () => 'G-V' + _pickRandom(['SXY','BOW','NYC','SPY','WHO','RED','DRE','FIT','GAL']) + suffix,
+    'NZ': () => 'ZK-O' + _pickRandom(chars) + _pickRandom(chars) + suffix,
+    'AY': () => 'OH-L' + _pickRandom(chars) + _pickRandom(chars) + suffix,
+    'OS': () => 'OE-L' + _pickRandom(chars) + _pickRandom(chars) + suffix,
+    'IB': () => 'EC-' + _pickRandom(chars) + _pickRandom(chars) + _pickRandom(chars) + suffix,
+    'AZ': () => 'I-' + _pickRandom(chars) + _pickRandom(chars) + _pickRandom('0123456789') + _pickRandom('0123456789') + suffix,
+    'KL': () => 'PH-B' + _pickRandom(chars) + _pickRandom(chars) + suffix,
+    'LX': () => 'HB-I' + _pickRandom(chars) + _pickRandom(chars) + suffix,
+    'default': () => _countryRegBody(AIRLINE_COUNTRY_JS[airlineCode]),
   };
   const fn = patterns[airlineCode] || patterns['default'];
   return fn();
@@ -1228,7 +1291,17 @@ function _shuffle(arr) {
 // ——————————————————————————————————————————
 // Price simulation: days-ahead + weekend multiplier
 // ——————————————————————————————————————————
-function _simulateBasePrice(dateStr) {
+// Deterministic pseudo-random from string seed (stable across refreshes)
+function _seededRandom(seedStr) {
+  let h = 2166136261;
+  for (let i = 0; i < seedStr.length; i++) {
+    h ^= seedStr.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 10000) / 10000; // 0~1 stable
+}
+
+function _simulateBasePrice(routeKey, dateStr) {
   const target = new Date(dateStr + 'T00:00:00');
   const now = new Date();
   const daysAhead = Math.max(1, Math.round((target - now) / 86400000));
@@ -1243,14 +1316,14 @@ function _simulateBasePrice(dateStr) {
   else urgency = 1.1;
 
   const weekend = (target.getDay() === 5 || target.getDay() === 6) ? 1.25 : 1.0;
-  return { base: 2800 + Math.random() * 1500, urgency, weekend };
+  return { base: 2800 + _seededRandom(routeKey + '-' + dateStr) * 1500, urgency, weekend };
 }
 
 // ——————————————————————————————————————————
 // Core: generate mock FlightAPI.io-format response
 // ——————————————————————————————————————————
 function generateMockFlightAPIResponse(origin, dest, dateStr) {
-  const priceFactors = _simulateBasePrice(dateStr);
+  const priceFactors = _simulateBasePrice(origin + '-' + dest, dateStr);
   const routeDistance = _estimateDistance(origin, dest);
 
   // Filter carriers by route type
@@ -1331,7 +1404,7 @@ function generateMockFlightAPIResponse(origin, dest, dateStr) {
   let itineraryIdx = 0;
 
   for (const carrier of usedCarriers) {
-    const mult = priceFactors.urgency * priceFactors.weekend * (0.78 + Math.random() * 0.44);
+    const mult = priceFactors.urgency * priceFactors.weekend * (0.78 + _seededRandom(origin + '-' + dest + '-' + dateStr + '-' + carrier.code) * 0.44);
     const price = Math.round((priceFactors.base * mult) / 10) * 10; // round to 10
 
     // Determine stops based on airline hub geography
@@ -1869,6 +1942,10 @@ function adaptDateRangeResults(dailyResults, origin, dest) {
  * Returns: { prices: [...], date, origin, dest, mode, source }
  */
 export async function getFlights(origin, dest, date) {
+  const key = `${origin}-${dest}-${date}`;
+  const cached = _cacheGet(key);
+  if (cached) return cached;
+
   _resetRegSuffix();
   let apiData;
   if (ENABLE_REAL_API) {
@@ -1901,7 +1978,8 @@ export async function getFlights(origin, dest, date) {
     }
     console.log(`[flightService] Real connections injected: ${realConnResults.length} for ${origin}→${dest}`);
   }
-  
+
+  _cacheSet(key, result);
   return result;
 }
 
@@ -1910,6 +1988,10 @@ export async function getFlights(origin, dest, date) {
  * Returns: { results: [{date, lowest, offers, best}], origin, dest, mode }
  */
 export async function getDateRange(origin, dest, startDate, days) {
+  const key = `${origin}-${dest}-${startDate}-${days}`;
+  const cached = _cacheGet(key);
+  if (cached) return cached;
+
   _resetRegSuffix();
   const start = safeDate(startDate);
   const dateTasks = [];
@@ -1931,7 +2013,9 @@ export async function getDateRange(origin, dest, startDate, days) {
   }
 
   const dailyResults = await Promise.all(dateTasks);
-  return adaptDateRangeResults(dailyResults, origin, dest);
+  const result = adaptDateRangeResults(dailyResults, origin, dest);
+  _cacheSet(key, result);
+  return result;
 }
 
 /**

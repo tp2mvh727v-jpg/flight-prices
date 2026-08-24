@@ -1062,9 +1062,16 @@ function scrollDateCardIntoView(dateStr) {
 async function switchToDate(newDate) {
   AppState.setFocusDate(newDate);
 
-  // H3: Add pulse indicator to the date card being loaded
+  // Immediate feedback: flip active state + loading pulse before the slow fetch
   const activeCard = document.getElementById(`dateCard-${newDate}`);
-  if (activeCard) activeCard.classList.add('loading');
+  document.querySelectorAll('.date-strip-card.active').forEach(c => c.classList.remove('active'));
+  if (activeCard) activeCard.classList.add('active', 'loading');
+
+  // Dim the current flight list while the new date's data loads
+  const list = document.getElementById('singlePriceList');
+  const cardList = document.getElementById('outboundCardList');
+  if (list) list.classList.add('switching');
+  if (cardList) cardList.classList.add('switching');
 
   const summary = AppState.getSearchSummary();
   let dateInfo = formatDate(summary.departDate);
@@ -1077,8 +1084,13 @@ async function switchToDate(newDate) {
   // H7: Sync URL hash with current focus date
   updateResultsHash(summary);
 
-  await loadSingleDay(summary);
-  if (activeCard) activeCard.classList.remove('loading');
+  try {
+    await loadSingleDay(summary);
+  } finally {
+    if (activeCard) activeCard.classList.remove('loading');
+    if (list) list.classList.remove('switching');
+    if (cardList) cardList.classList.remove('switching');
+  }
 
   // Update savings text if trend is loaded
   if (trendDataLoaded && AppState.trendData) {
