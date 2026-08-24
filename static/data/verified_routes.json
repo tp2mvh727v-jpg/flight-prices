@@ -1,10 +1,10 @@
 {
   "description": "Verified routes — real data from OpenFlights + airline schedules. Aircraft from fleet databases.",
   "source": "OpenFlights, planespotters.net, Google Flights, FR24, airline official schedules",
-  "updated": "2026-05-28",
+  "updated": "2026-08-21",
   "version": "2.0",
-  "total_routes": 543,
-  "verified_flight_numbers": 348,
+  "total_routes": 545,
+  "verified_flight_numbers": 350,
   "routes": {
     "PEK-JFK": {
       "airline": "CA",
@@ -1675,6 +1675,40 @@
         7
       ],
       "note": "已验证航班号"
+    },
+    "SZX-LHR": {
+      "airline": "ZH",
+      "airlineName": "深圳航空",
+      "flightNo": "ZH887",
+      "aircraft": "A359",
+      "departure": "13:40",
+      "arrival": "20:00",
+      "duration": 800,
+      "days": [
+        1,
+        3,
+        5,
+        6,
+        7
+      ],
+      "note": "深航A350-900执飞深圳-伦敦（AirLabs真实数据）"
+    },
+    "LHR-SZX": {
+      "airline": "ZH",
+      "airlineName": "深圳航空",
+      "flightNo": "ZH888",
+      "aircraft": "A359",
+      "departure": "22:05",
+      "arrival": "17:10",
+      "duration": 725,
+      "days": [
+        1,
+        3,
+        5,
+        6,
+        7
+      ],
+      "note": "深航A350-900执飞伦敦-深圳（AirLabs真实数据）"
     },
     "PEK-HND": {
       "airline": "JL",

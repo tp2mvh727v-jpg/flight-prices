@@ -1,6 +1,6 @@
 # CONTEXT.md — Aero-Hub 项目状态
 
-> 最后更新: 2026-07-26 (v5.28 图片占位优化 + 移动端日期选择器 + 航线覆盖扩展)
+> 最后更新: 2026-08-24 (v5.29 深航 A359 机队 + SZX-LHR 航线 + AirLabs 数据基建)
 
 ---
 
@@ -61,6 +61,7 @@
 | v5.26 | 2026-07-01 | 版本号补齐（CSS/JS/VERSION v5.24→v5.25）+ 移动端图片响应式降尺寸（@media 内 aircraft-image-container 388×240） |
 | v5.27 | 2026-07-08 | 缓存预热 + 版本号补齐 + CONTEXT表重排 |
 | v5.28 | 2026-07-26 | 图片占位优化 + 移动端日期选择器 + 航线覆盖扩展 + 版本号补齐 |
+| v5.29 | 2026-08-24 | 深航 A359 机队 + SZX-LHR 航线 + AirLabs 数据基建 + 隧道自愈 |
 
 ---
 
@@ -2196,4 +2197,31 @@ SW/HTML 五重版本号 bump v5.27→v5.28
 
 ---
 
-> 最后更新: 2026-07-26 (v5.28 发布)
+## 42. v5.29 — 深航 A359 机队 + SZX-LHR 航线 + AirLabs 数据基建 (2026-08-24)
+
+### 42.1 背景
+
+- 深航 2026-07-01 引进首架 A350「鲲鹏号」，ZH 宽体机队从 A333 修正为 A359
+- 新增深圳-伦敦 SZX-LHR/LHR-SZX 航线（AirLabs 真实数据 ZH887/888）
+- AirLabs 全量缓存 545 条刷新（数据基建）
+
+### 42.2 修改文件清单
+
+| 文件 | 变更 |
+|------|------|
+| `scripts/utils/scraper.py` | ZH 宽体机队 → A359 |
+| `static/js/flightService.js` | ZH 机队 → A359 |
+| `data/verified_routes.json` + `static/data/verified_routes.json` | 新增 SZX-LHR/LHR-SZX（ZH887 13:40→20:00 / ZH888 22:05→17:10，A359），航线数 543→545 |
+| `scripts/data/airlabs_fetcher.py` | 缓存优先读取 + key 惰性加载 |
+| `scripts/data/refresh_all_routes.py` + `refresh_progress.py` | 新增全量刷新脚本 + 进度监视器 |
+| `static/sw.js` + `templates/index.html` | 版本五重 bump → v5.29 |
+| `~/bin/aerohub-tunnel.sh` | URL 心跳检测 + server 保活 + 启动前清空日志（隧道自愈） |
+
+### 42.3 备注
+
+- A359/ZH 图片 Commons 无图（深航 A350 太新），跳过下载用兜底 UI
+- E2E 7 项全通过
+
+---
+
+> 最后更新: 2026-08-24 (v5.29 发布)

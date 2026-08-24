@@ -29,20 +29,20 @@ def fetch_routes(dep_iata, arr_iata, force_refresh=False):
     Fetch routes for an airport pair from AirLabs.
     Returns: list of route dicts (AirLabs format)
     """
-    api_key = _load_api_key()
-    if not api_key:
-        return {"error": "AirLabs API key not configured", "routes": []}
-    
-    # Check cache
+    # Check cache first (independent of API key)
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     cache_path = CACHE_DIR / f"{dep_iata}-{arr_iata}.json"
-    
+
     if not force_refresh and cache_path.exists():
         age = time.time() - cache_path.stat().st_mtime
         if age < CACHE_TTL:
             data = json.loads(cache_path.read_text())
             return data
-    
+
+    api_key = _load_api_key()
+    if not api_key:
+        return {"error": "AirLabs API key not configured", "routes": []}
+
     # Fetch from API
     import urllib.parse
     params = urllib.parse.urlencode({

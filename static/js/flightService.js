@@ -423,7 +423,7 @@ const AIRLINE_WIDEBODY = {
   'CA': ['A359','A333','A332','B789','B77W','B748'], 'CZ': ['A359','A333','B789','B788','B77W'],
   'MU': ['A359','A332','A333','B789','B77W'],          'HU': ['A333','B789','B788'],                // FIXED: A359 retired from HU
   '3U': ['A359','A332','A333'],                         'MF': ['B789','B788'],                       // All-Boeing widebody fleet, no B78X
-  'ZH': [],  'EK': ['A388','B77W','A359'],              'QR': ['A359','A35K','A388','B77W','B789','B788'],
+  'ZH': ['A359'],  'EK': ['A388','B77W','A359'],              'QR': ['A359','A35K','A388','B77W','B789','B788'],
   'EY': ['A35K','A388','B77W','B789','B78X'],           'SQ': ['A359','A388','B77W','B78X'],         // FIXED: -A35K (not operated), +B78X (28 frames)
   'CX': ['A359','A35K','A333','B77W'],                  'QF': ['A388','B789','A333','A332'],         // FIXED: +A332 (8 frames)
   'JL': ['A359','A35K','B789','B788','B77W'],           'NH': ['A388','B789','B788','B77W','B78X'],  // FIXED: +B78X (8 frames)
