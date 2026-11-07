@@ -24,12 +24,52 @@ except ImportError:
     airlabs_fetch_routes = None
     get_cache_stats = None
 
+# AirLabs quota guard (conserves monthly quota; silently degrades if unavailable)
+try:
+    from scripts.data.cache_guard import should_fetch as airlabs_should_fetch
+except ImportError:
+    airlabs_should_fetch = None
+
 load_dotenv()
 
 app = Flask(__name__)
 
 CACHE = {}
 CACHE_TTL = 3600 * 6  # 6 小时
+
+# —— Google Flights 失败熔断（避免每次请求都等待 Playwright 超时）——
+GF_COOLDOWN = 900  # 15 分钟冷却
+GF_STATE = {"fail_until": 0.0, "last_err": ""}
+
+
+def _get_airlabs_key():
+    """Load the AirLabs API key: /tmp file → environment → project .env fallback.
+    Returns "" when unconfigured. Never hardcodes the key."""
+    tmp_file = Path("/tmp/airlabs_key.txt")
+    if tmp_file.exists():
+        val = tmp_file.read_text().strip()
+        if val:
+            return val
+
+    env_val = os.environ.get("AIRLABS_KEY", "").strip()
+    if env_val:
+        return env_val
+
+    env_path = Path(__file__).resolve().parent / ".env"
+    if env_path.exists():
+        try:
+            for line in env_path.read_text().splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                if k.strip() == "AIRLABS_KEY":
+                    val = v.strip().strip('"').strip("'")
+                    if val:
+                        return val
+        except (IOError, OSError):
+            pass
+    return ""
 
 # ——— 机型分类 ———
 WIDE_PREFIXES = {"A33", "A34", "A35", "A38", "B74", "B76", "B77", "B78",
@@ -287,10 +327,32 @@ def make_best_offer(day_prices):
 
 @app.route("/api/status")
 def api_status():
+    cache_dir = Path("data/airlabs_cache")
+    cache_files = 0
+    stale_files = 0
+    if cache_dir.exists():
+        now = time.time()
+        for f in cache_dir.glob("*.json"):
+            cache_files += 1
+            if now - f.stat().st_mtime > 7 * 86400:
+                stale_files += 1
+
     return jsonify({
         "mode": "google_flights",
         "method": "Google Flights (Playwright)",
         "free": True,
+        "version": "5.33",
+        "airlabs": {
+            "key_configured": bool(_get_airlabs_key()),
+            "cache_files": cache_files,
+            "stale_files": stale_files,
+            "monthly_limit": 1000,
+        },
+        "google_flights": {
+            "circuit_open": time.time() < GF_STATE["fail_until"],
+            "retry_in_sec": max(0, int(GF_STATE["fail_until"] - time.time())),
+            "last_err": GF_STATE["last_err"],
+        },
     })
 
 
@@ -307,11 +369,17 @@ def api_prices():
     entry = CACHE.get(cache_key)
     if entry and (time.time() - entry["ts"]) < CACHE_TTL:
         prices = entry["data"]
+    elif time.time() < GF_STATE["fail_until"]:
+        prices = None  # 熔断中，跳过抓取
     else:
         prices, err = scrape_google_flights(origin, dest, date_str)
         if prices:
             CACHE[cache_key] = {"data": prices, "ts": time.time()}
+            GF_STATE["fail_until"] = 0.0
+            GF_STATE["last_err"] = ""
         else:
+            GF_STATE["fail_until"] = time.time() + GF_COOLDOWN
+            GF_STATE["last_err"] = err or "抓取结果为空"
             print(f"[Server] Google Flights 抓取失败: {err}")
 
     if prices:
@@ -331,6 +399,7 @@ def api_prices():
         "origin": origin, "dest": dest,
         "mode": "demo",
         "hint": "Google Flights 抓取暂不可用，显示模拟数据",
+        "circuit_open": time.time() < GF_STATE["fail_until"],
     })
 
 
@@ -354,7 +423,16 @@ def api_date_range():
 
     # 批量抓取 (并行模式)
     days = min(days, 60)
-    results, err = scrape_date_range_parallel(origin, dest, start, days, workers=3)
+    if time.time() < GF_STATE["fail_until"]:
+        results, err = [], ""  # 熔断中，跳过抓取
+    else:
+        results, err = scrape_date_range_parallel(origin, dest, start, days, workers=3)
+        if results:
+            GF_STATE["fail_until"] = 0.0
+            GF_STATE["last_err"] = ""
+        else:
+            GF_STATE["fail_until"] = time.time() + GF_COOLDOWN
+            GF_STATE["last_err"] = err or "抓取结果为空"
 
     if results:
         CACHE[cache_key] = {"data": results, "ts": time.time()}
@@ -452,15 +530,32 @@ def api_flight_lookup():
             pass
 
     # Call AirLabs API
-    key_file = Path("/tmp/airlabs_key.txt")
-    if not key_file.exists():
-        return jsonify({"error": "AirLabs API key 未配置", "flight": flight}), 502
+    api_key = _get_airlabs_key()
+    if not api_key:
+        # Key missing → try local verified-route anchoring before failing
+        route_key, route_data = _search_verified_route_by_flight(flight)
+        if route_key:
+            result = _build_verified_result(flight, route_key, route_data)
+            return jsonify(result)
+        return jsonify({"error": "实时数据源暂不可用，请稍后再试", "flight": flight}), 503
 
-    api_key = key_file.read_text().strip()
+    # Quota guard: conserve the monthly AirLabs quota (1000/month)
+    if airlabs_should_fetch is not None and not airlabs_should_fetch():
+        route_key, route_data = _search_verified_route_by_flight(flight)
+        if route_key:
+            result = _build_verified_result(flight, route_key, route_data)
+            result["quota_guard"] = True
+            return jsonify(result)
+        return jsonify({
+            "error": "实时数据源暂不可用，请稍后再试",
+            "flight": flight,
+            "quota_guard": True,
+        }), 503
+
     url = f"https://airlabs.co/api/v9/schedules?api_key={api_key}&flight_iata={flight}"
 
     try:
-        req = urllib.request.Request(url, headers={"User-Agent": "Aero-Hub/5.22"})
+        req = urllib.request.Request(url, headers={"User-Agent": "Aero-Hub/5.33"})
         with urllib.request.urlopen(req, timeout=15) as resp:
             api_data = json.loads(resp.read().decode())
     except urllib.error.URLError as e:

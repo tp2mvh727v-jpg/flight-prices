@@ -2282,4 +2282,59 @@ SW/HTML 五重版本号 bump v5.27→v5.28
 
 ---
 
-> 最后更新: 2026-08-24 (v5.31 发布)
+## 45. v5.32 — AirLabs Key 加载链修复 + 配额卫士 (2026-11-07)
+
+### 45.1 背景
+
+项目停滞 75 天（上次发布 v5.31 / 2026-08-24）。今晚五角色会议巡检发现两个运营级故障：
+
+- `/api/flight-lookup` 对所有航班号返回 502 `AirLabs API key 未配置` —— 航班号直搜功能 100% 不可用。根因是 `server.py` 只读 `/tmp/airlabs_key.txt`（重启即失），而 `.env` 里的 `AIRLABS_KEY`（有效至 2026-11-25）虽被 `load_dotenv()` 载入却无人使用。
+- `data/airlabs_cache/` 806 个文件全部超出 7 天 TTL（11 月新增 0 个），一旦被访问会集中外呼，免费额度仅 1000 次/月。
+
+### 45.2 修改文件清单
+
+| 文件 | 变更 |
+|------|------|
+| `server.py` | 新增 `_get_airlabs_key()`（/tmp 文件 → `os.environ` → 项目 `.env` 兜底）；`api_flight_lookup()` key 缺失时先走本地锚定 `_search_verified_route_by_flight()` 返回 200，未命中才 503 友好提示；User-Agent 5.32；`/api/status` 新增 `version` + `airlabs` 健康字段 |
+| `scripts/data/cache_guard.py` | **新增**：`stats()` / `monthly_usage()` / `should_fetch()`（本月 ≥800 次返回 False）+ CLI（报告 / `--purge-90d` dry-run / `--yes` 实删） |
+| `scripts/data/airlabs_fetcher.py` | `CACHE_TTL` 7 天 → 30 天；新增 `EXPIRED_TTL` 90 天；过期未超 90 天走 stale-while-revalidate |
+| `static/sw.js` + `templates/index.html` | 版本五重 bump → v5.32 |
+| `TONIGHT_TASKS.md` | 会议任务清单 |
+
+### 45.3 备注
+
+- 修复后 `CA981` 返回 200（`source: verified_db`），航班号直搜恢复
+- cache_guard 实测：total 806 / fresh 0 / stale(7-90d) 579 / expired_90d 227
+- 会议当晚发现新问题（见 v5.33）
+
+---
+
+## 46. v5.33 — 搜索熔断：43 秒 → 0.003 秒 (2026-11-07)
+
+### 46.1 背景
+
+冒烟测试实测 `/api/prices` 首次 43s、二次 23s、新航线 30s 超时。根因：`api_prices()` 仅在 `scrape_google_flights()` **成功**时写缓存，而本机 Google Flights 抓取持续失败 → 缓存永远写不进 → 每个请求都重跑一遍 Playwright 等超时，再回退 demo 数据。等于用户每搜一次都要罚站半分钟。
+
+### 46.2 修改文件清单
+
+| 文件 | 变更 |
+|------|------|
+| `server.py` | 新增模块级熔断：`GF_COOLDOWN = 900` + `GF_STATE = {"fail_until", "last_err"}`；`api_prices()` / `api_date_range()` 抓取前判熔断，失败置位 15 分钟、成功清零；demo 响应新增 `circuit_open`；`/api/status` 新增 `google_flights: {circuit_open, retry_in_sec, last_err}`；`version` → 5.33、User-Agent → 5.33 |
+| `static/sw.js` + `templates/index.html` | 版本五重 bump → v5.33 |
+
+### 46.3 实测效果
+
+| 场景 | 修复前 | 修复后 |
+|------|--------|--------|
+| 冷航线（熔断关闭） | 43s | 4.3s |
+| 同航线第二次 | 23s | 0.003s |
+| 熔断期间新航线 | 30s+ 超时 | 0.003s |
+
+### 46.4 备注
+
+- curl 冒烟：首页 200 / CA981 200 / 公网隧道 200 / 五处版本号一致（v5.33）
+- E2E 子进程在 cron 上下文受限（pitfall #36），本次用 curl 冒烟替代
+
+---
+
+> 最后更新: 2026-11-07 (v5.33 发布)

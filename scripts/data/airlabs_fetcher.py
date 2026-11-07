@@ -4,7 +4,7 @@ airlabs_fetcher.py — Fetch routes from AirLabs API with server-side caching.
 Used by Aero-Hub server.py to provide real flight schedule data.
 
 Cache: data/airlabs_cache/{dep_iata}-{arr_iata}.json
-TTL: 7 days (routes don't change frequently)
+TTL: 30 days (route topology is static; schedule data is managed server-side at 6h)
 """
 
 import json
@@ -15,7 +15,8 @@ from pathlib import Path
 
 API_KEY_FILE = "/tmp/airlabs_key.txt"
 CACHE_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "airlabs_cache"
-CACHE_TTL = 7 * 86400  # 7 days
+CACHE_TTL = 30 * 86400  # 30 days
+EXPIRED_TTL = 90 * 86400  # hard-expiry; beyond this the cache is refetched
 
 def _load_api_key():
     """Load API key from file (keeps it out of code)."""
@@ -37,6 +38,12 @@ def fetch_routes(dep_iata, arr_iata, force_refresh=False):
         age = time.time() - cache_path.stat().st_mtime
         if age < CACHE_TTL:
             data = json.loads(cache_path.read_text())
+            return data
+        if age < EXPIRED_TTL:
+            # stale-while-revalidate: serve stale cache now, mark it needs refresh
+            data = json.loads(cache_path.read_text())
+            data['stale'] = True
+            data['needs_refresh'] = True
             return data
 
     api_key = _load_api_key()
